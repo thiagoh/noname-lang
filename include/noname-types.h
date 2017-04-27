@@ -271,17 +271,77 @@ class NodeValue {
   int getType() { return type; }
   void* getRawValue() { return value; }
   void* getValue(int as_type) {
+    // int
     if (as_type == TYPE_INT) {
       if (type == TYPE_INT) {
         return value;
       }
       int* intp_res = new int;
-
-      if (type == TYPE_LONG) {
-        int int_res;
-        memcpy(this->value, &value, sizeof(int));
+      if (type == TYPE_DOUBLE) {
+        int int_res = (int)*(double*)value;
+        *intp_res = int_res;
+      } else if (type == TYPE_FLOAT) {
+        int int_res = (int)*(float*)value;
+        *intp_res = int_res;
+      } else if (type == TYPE_LONG) {
+        int int_res = (int)*(long*)value;
+        *intp_res = int_res;
+      } else if (type == TYPE_SHORT) {
+        int int_res = (int)*(short*)value;
+        *intp_res = int_res;
+      } else if (type == TYPE_CHAR) {
+        int int_res = (int)*(char*)value;
+        *intp_res = int_res;
       }
       return intp_res;
+    }
+    // double
+    if (as_type == TYPE_DOUBLE) {
+      if (type == TYPE_DOUBLE) {
+        return value;
+      }
+      double* doublep_res = new double;
+      if (type == TYPE_FLOAT) {
+        double double_res = (double)*(float*)value;
+        *doublep_res = double_res;
+      } else if (type == TYPE_LONG) {
+        double double_res = (double)*(long*)value;
+        *doublep_res = double_res;
+      } else if (type == TYPE_INT) {
+        double double_res = (double)*(int*)value;
+        *doublep_res = double_res;
+      } else if (type == TYPE_SHORT) {
+        double double_res = (double)*(short*)value;
+        *doublep_res = double_res;
+      } else if (type == TYPE_CHAR) {
+        double double_res = (double)*(char*)value;
+        *doublep_res = double_res;
+      }
+      return doublep_res;
+    }
+    // long
+    if (as_type == TYPE_LONG) {
+      if (type == TYPE_LONG) {
+        return value;
+      }
+      long* longp_res = new long;
+      if (type == TYPE_DOUBLE) {
+        long long_res = (long)*(double*)value;
+        *longp_res = long_res;
+      } else if (type == TYPE_FLOAT) {
+        long long_res = (long)*(float*)value;
+        *longp_res = long_res;
+      } else if (type == TYPE_INT) {
+        long long_res = (long)*(int*)value;
+        *longp_res = long_res;
+      } else if (type == TYPE_SHORT) {
+        long long_res = (long)*(short*)value;
+        *longp_res = long_res;
+      } else if (type == TYPE_CHAR) {
+        long long_res = (long)*(char*)value;
+        *longp_res = long_res;
+      }
+      return longp_res;
     }
     return value;
   }
