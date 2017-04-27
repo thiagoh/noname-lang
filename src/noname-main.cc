@@ -1,3 +1,5 @@
+// #define NDEBUG
+// #include "assert.h"
 #include "lexer-utilities.h"
 #include "noname-parse.h"
 #include "noname-types.h"
@@ -53,14 +55,14 @@ void eval(ASTNode *node) {
     return;
   }
 
-  fprintf(stderr, "\neval: ASTNode %s %d", is_of_type<ASTNode>(*node) ? "true" : "false", node->getType());
-  // fprintf(stderr, "\neval: NumberNode %s %d\n", is_of_type<NumberNode>(*node) ? "true" : "false", node->getType());
-  // fprintf(stderr, "\neval: BinaryExpNode %s %d\n", is_of_type<BinaryExpNode>(*node) ? "true" : "false",
+  fprintf(stderr, "\neval: ASTNode %s %d", noname::is_of_type<ASTNode>(*node) ? "true" : "false", node->getType());
+  // fprintf(stderr, "\neval: NumberNode %s %d\n", noname::is_of_type<NumberNode>(*node) ? "true" : "false", node->getType());
+  // fprintf(stderr, "\neval: BinaryExpNode %s %d\n", noname::is_of_type<BinaryExpNode>(*node) ? "true" : "false",
   // node->getType());
-  // fprintf(stderr, "\neval: CallExprNode %s %d\n", is_of_type<CallExprNode>(*node) ? "true" : "false",
+  // fprintf(stderr, "\neval: CallExprNode %s %d\n", noname::is_of_type<CallExprNode>(*node) ? "true" : "false",
   // node->getType());
 
-  if (is_of_type<CallExprNode>(*node)) {
+  if (noname::is_of_type<CallExprNode>(*node)) {
     CallExprNode *callExp = (CallExprNode *)node;
 
     FunctionDefNode *functionNode = context->getFunction(callExp->getCallee());
@@ -80,11 +82,21 @@ void eval(ASTNode *node) {
   }
 }
 
+// void assert_equals(int i1, int i2) {
+//   fprintf(stderr, "v1 '%d' / v2 '%d' %s \n", i1, i2, i1 == i2 ? "equal" : "not equal");
+//   assert(i1 == i2);
+// }
+
 int main(int argc, char **argv) {
   int token;
 
   context = new ASTContext("root");
   context_stack.push(context);
+
+  // assert_equals(noname::cast<int>(17.3), (int)17.3);
+  // assert_equals(noname::cast<double>(333), (double)333);
+  // assert_equals(noname::cast<float>(1000.0), (float)1000.0);
+  // exit(0);
 
   map[258] = "LINE_BREAK";
   map[259] = "STMT_SEP";

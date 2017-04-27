@@ -21,7 +21,6 @@ def bar() {
 
 baz();
 
-
 def qux_int() {
   let var1 = 3;
   let var2 = 2;

@@ -180,6 +180,8 @@ class ASTNode {
   ASTContext* getContext() const { return context; };
 };
 
+namespace noname {
+
 template <typename To, typename From>
 struct is_of_type_impl {
   static inline bool doit(const From& from) {
@@ -192,6 +194,17 @@ struct is_of_type_impl {
 template <class To, class From>
 inline bool is_of_type(const From& from) {
   return is_of_type_impl<To, From>::doit(from);
+}
+
+template <typename To, typename From>
+struct cast_impl {
+  static inline To doit(const From& from) { return (To)from; }
+};
+
+template <class To, class From>
+inline To cast(const From& from) {
+  return cast_impl<To, From>::doit(from);
+}
 }
 
 class ASTContext {
