@@ -35,13 +35,13 @@ AssignmentNode* logErrorV(const char* str) {
 
 void print_node_value(FILE* file, NodeValue& node_value) {
   if (node_value.getType() == TYPE_INT) {
-    fprintf(file, "\n##########[print_node_value] %d", *(int*)node_value.getValue());
+    fprintf(file, "\n##########[print_node_value] %d", *(int*)node_value.getRawValue());
   } else if (node_value.getType() == TYPE_LONG) {
-    fprintf(file, "\n##########[print_node_value] %ld", *(long*)node_value.getValue());
+    fprintf(file, "\n##########[print_node_value] %ld", *(long*)node_value.getRawValue());
   } else if (node_value.getType() == TYPE_DOUBLE) {
-    fprintf(file, "\n##########[print_node_value] %lf", *(double*)node_value.getValue());
+    fprintf(file, "\n##########[print_node_value] %lf", *(double*)node_value.getRawValue());
   } else if (node_value.getType() == TYPE_STRING) {
-    fprintf(file, "\n##########[print_node_value] %s", (*(std::string*)node_value.getValue()).c_str());
+    fprintf(file, "\n##########[print_node_value] %s", (*(std::string*)node_value.getRawValue()).c_str());
   } else {
     fprintf(file, "\n##########[print_node_value] could not print type %d", node_value.getType());
   }
@@ -257,16 +257,64 @@ NodeValue* UnaryExpNode::getValue() {
   return rhs_value;
 }
 
+bool both_of_type(NodeValue* lhs, NodeValue* rhs, int type) {
+  return lhs && rhs && lhs->getType() == type && rhs->getType() == type;
+}
+
+bool any_of_type(NodeValue* lhs, NodeValue* rhs, int type) {
+  return lhs && rhs && (lhs->getType() == type || rhs->getType() == type);
+}
+
+bool match_to_types(NodeValue* lhs, NodeValue* rhs, int type1, int type2) {
+  return lhs && rhs &&
+         ((lhs->getType() == type1 && rhs->getType() == type2) || (lhs->getType() == type2 && rhs->getType() == type1));
+}
+
+int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs) {
+  if (any_of_type(lhs, rhs, TYPE_DOUBLE)) {
+    return TYPE_DOUBLE;
+  }
+  if (both_of_type(lhs, rhs, TYPE_FLOAT)) {
+    return TYPE_FLOAT;
+  }
+  if (match_to_types(lhs, rhs, TYPE_FLOAT, TYPE_LONG)) {
+    return TYPE_DOUBLE;
+  }
+  if (any_of_type(lhs, rhs, TYPE_FLOAT)) {
+    return TYPE_FLOAT;
+  }
+  if (any_of_type(lhs, rhs, TYPE_LONG)) {
+    return TYPE_LONG;
+  }
+  if (any_of_type(lhs, rhs, TYPE_INT)) {
+    return TYPE_INT;
+  }
+  if (any_of_type(lhs, rhs, TYPE_SHORT)) {
+    return TYPE_SHORT;
+  }
+  if (any_of_type(lhs, rhs, TYPE_CHAR)) {
+    return TYPE_CHAR;
+  }
+  return -1;
+}
+
 // UNNECESSARY
 // void BinaryExpNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* BinaryExpNode::getValue() {
-  NodeValue* lhs_value = lhs.get()->getValue();
-  NodeValue* rhs_value = rhs.get()->getValue();
-
+  NodeValue* lhs_node_value = lhs.get()->getValue();
+  NodeValue* rhs_node_value = rhs.get()->getValue();
+  int result_type = get_adequate_result_type(lhs_node_value, rhs_node_value);
+  void* lhs_value = lhs_node_value->getRawValue();
+  void* rhs_value = rhs_node_value->getRawValue();
+  NodeValue* result = nullptr;
   if (op == '+') {
+    if (result_type == TYPE_INT) {
+      // int int_res= *(int*)
+      // result = new NodeValue();
+    }
   }
 
-  return 0;
+  return result;
 }
 
 void AssignmentNode::eval() { getContext()->store(name, getValue()); }

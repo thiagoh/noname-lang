@@ -267,8 +267,24 @@ class NodeValue {
     this->value = new long;
     memcpy(this->value, &value, sizeof(long));
   }
+
   int getType() { return type; }
-  void* getValue() { return value; }
+  void* getRawValue() { return value; }
+  void* getValue(int as_type) {
+    if (as_type == TYPE_INT) {
+      if (type == TYPE_INT) {
+        return value;
+      }
+      int* intp_res = new int;
+
+      if (type == TYPE_LONG) {
+        int int_res;
+        memcpy(this->value, &value, sizeof(int));
+      }
+      return intp_res;
+    }
+    return value;
+  }
 };
 
 class ExpNode : public ASTNode {
