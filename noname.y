@@ -16,13 +16,18 @@
 #include <vector>
 #include <math.h>
 #include "noname-parse.h"
+#include "noname-utils.h"
 #include "noname-types.h"
+
+using namespace llvm;
+using namespace noname;
 
 //# define YY_SYMBOL_PRINT(Title, Type, Value, Location) 
 
 extern ASTContext* context;
 extern std::stack<ASTContext*> context_stack;
 extern int yylex(void);
+extern void write_cursor();
 extern int yydebug;
 extern void yyerror(const char *error_msg);
 extern void division_by_zero(YYLTYPE &yylloc);
@@ -38,14 +43,14 @@ extern void eval(ASTNode* ast_node);
   char* id_v;
   double double_v;
   long long_v;
-  ASTContext* context;
-  stmtlist* stmt_list;
-  explist* exp_list;
-  arglist* arg_list;
-  arg* arg;
 
-  ASTNode* ast_node;
-  ExpNode* exp_node;
+  noname::ASTContext* context;
+  noname::ASTNode* ast_node;
+  noname::ExpNode* exp_node;
+  noname::stmtlist* stmt_list;
+  noname::explist* exp_list;
+  noname::arglist* arg_list;
+  noname::arg* arg;
   char* error_msg;
 };
 
@@ -135,11 +140,18 @@ extern void eval(ASTNode* ast_node);
 //////////////////////////////////////////////////
 
 prog:
-  %empty
+  %empty {
+    write_cursor();
+  }
   | prog stmt {
     eval($2);
+    write_cursor();
   } 
-  | error STMT_SEP         { yyerrok; fprintf(stderr, "Error at %d:%d", @1.first_column, @1.last_column); }
+  | error STMT_SEP { 
+    yyerrok; 
+    fprintf(stderr, "Error at %d:%d", @1.first_column, @1.last_column); 
+    write_cursor();
+  }
 ;
 
 stmt_list:
@@ -154,25 +166,25 @@ ne_stmt_list:
 ;
 
 stmt:
-  declaration STMT_SEP      { 
+  declaration STMT_SEP            { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - declaration]: ");
       }
       $$ = $1;
     }
-  | assignment STMT_SEP     { 
+  | assignment STMT_SEP           { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - assignment]: ");
       }
       $$ = $1;
     }
-  | function_def STMT_SEP     { 
+  | function_def optional_stmt_sep { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - function_def]: ");
       }
       // $$ = $1;
     }
-  | exp STMT_SEP            { 
+  | exp STMT_SEP                  { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt exp]: ");
       }
@@ -180,6 +192,10 @@ stmt:
     }
 ;
 
+optional_stmt_sep:
+  %empty
+  | STMT_SEP
+;
   // 
   // Handling multi level scope/context
   // gnu.org/software/bison/manual/html_node/Using-Mid_002dRule-Actions.html#Using-Mid_002dRule-Actions
@@ -188,14 +204,17 @@ stmt:
 function_def:
     DEF ID {
 
-        fprintf(stderr, "\n[############## processing function_def BEFORE arg_list ##############]");
+        if (yydebug >= 1) {
+          fprintf(stdout, "\n[############## processing function_def BEFORE arg_list ##############]");
+        }
         $<context>$ = new ASTContext(std::string($ID), context);
         context_stack.push($<context>$);
         context = $<context>$;
         
       }[function_context] '(' arg_list ')' {
-        fprintf(stderr, "\n[############## processing function_def BEFORE exp_list ##############]");
-
+        if (yydebug >= 1) {
+          fprintf(stdout, "\n[############## processing function_def BEFORE exp_list ##############]");
+        }
       } '{' stmt_list optional_ret_stmt '}' {
       // ASTContext newContext(context);
 

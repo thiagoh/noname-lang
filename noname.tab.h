@@ -142,19 +142,19 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 37 "noname.y" /* yacc.c:1915  */
+#line 42 "noname.y" /* yacc.c:1915  */
 
   char* id_v;
   double double_v;
   long long_v;
-  ASTContext* context;
-  stmtlist* stmt_list;
-  explist* exp_list;
-  arglist* arg_list;
-  arg* arg;
 
-  ASTNode* ast_node;
-  ExpNode* exp_node;
+  noname::ASTContext* context;
+  noname::ASTNode* ast_node;
+  noname::ExpNode* exp_node;
+  noname::stmtlist* stmt_list;
+  noname::explist* exp_list;
+  noname::arglist* arg_list;
+  noname::arg* arg;
   char* error_msg;
 
 #line 161 "noname.tab.h" /* yacc.c:1915  */

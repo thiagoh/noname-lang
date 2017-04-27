@@ -13,7 +13,7 @@
 
 bool copy_bool(bool);
 void assert_bool(bool);
-void dump_bool(ostream &, int, bool);
+void dump_bool(ostream&, int, bool);
 
 #endif
 
@@ -43,7 +43,6 @@ void dump_bool(ostream &, int, bool);
   * ### BEGIN of noname.tab.h ###
   * #############################
   */
-
 
 /* A Bison parser, made by GNU Bison 3.0.4.  */
 
@@ -78,10 +77,10 @@ void dump_bool(ostream &, int, bool);
    version 2.2 of Bison.  */
 
 #ifndef YY_YY_NONAME_TAB_H_INCLUDED
-# define YY_YY_NONAME_TAB_H_INCLUDED
+#define YY_YY_NONAME_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 1
+#define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -89,54 +88,53 @@ extern int yydebug;
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-  enum yytokentype
-  {
-    LINE_BREAK = 258,
-    STMT_SEP = 259,
-    LETTER = 260,
-    DIGIT = 261,
-    DIGITS = 262,
-    DARROW = 263,
-    ELSE = 264,
-    FALSE = 265,
-    IF = 266,
-    IN = 267,
-    LET = 268,
-    DEF = 269,
-    LOOP = 270,
-    THEN = 271,
-    WHILE = 272,
-    BREAK = 273,
-    CASE = 274,
-    NEW = 275,
-    NOT = 276,
-    RETURN = 277,
-    TRUE = 278,
-    NEWLINE = 279,
-    NOTNEWLINE = 280,
-    WHITESPACE = 281,
-    LE = 282,
-    ASSIGN = 283,
-    NULLCH = 284,
-    BACKSLASH = 285,
-    STAR = 286,
-    NOTSTAR = 287,
-    LEFTPAREN = 288,
-    NOTLEFTPAREN = 289,
-    RIGHTPAREN = 290,
-    NOTRIGHTPAREN = 291,
-    LINE_COMMENT = 292,
-    START_COMMENT = 293,
-    END_COMMENT = 294,
-    QUOTES = 295,
-    ERROR = 296,
-    ID = 297,
-    STR_CONST = 298,
-    DOUBLE = 299,
-    LONG = 300,
-    NEG = 313
-  };
+#define YYTOKENTYPE
+enum yytokentype {
+  LINE_BREAK = 258,
+  STMT_SEP = 259,
+  LETTER = 260,
+  DIGIT = 261,
+  DIGITS = 262,
+  DARROW = 263,
+  ELSE = 264,
+  FALSE = 265,
+  IF = 266,
+  IN = 267,
+  LET = 268,
+  DEF = 269,
+  LOOP = 270,
+  THEN = 271,
+  WHILE = 272,
+  BREAK = 273,
+  CASE = 274,
+  NEW = 275,
+  NOT = 276,
+  RETURN = 277,
+  TRUE = 278,
+  NEWLINE = 279,
+  NOTNEWLINE = 280,
+  WHITESPACE = 281,
+  LE = 282,
+  ASSIGN = 283,
+  NULLCH = 284,
+  BACKSLASH = 285,
+  STAR = 286,
+  NOTSTAR = 287,
+  LEFTPAREN = 288,
+  NOTLEFTPAREN = 289,
+  RIGHTPAREN = 290,
+  NOTRIGHTPAREN = 291,
+  LINE_COMMENT = 292,
+  START_COMMENT = 293,
+  END_COMMENT = 294,
+  QUOTES = 295,
+  ERROR = 296,
+  ID = 297,
+  STR_CONST = 298,
+  DOUBLE = 299,
+  LONG = 300,
+  NEG = 314
+};
 #endif
 /* Tokens.  */
 #define LINE_BREAK 258
@@ -182,53 +180,49 @@ extern int yydebug;
 #define STR_CONST 298
 #define DOUBLE 299
 #define LONG 300
-#define NEG 313
+#define NEG 314
 
 /* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+#if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
 
-union YYSTYPE
-{
-#line 37 "noname.y" /* yacc.c:1915  */
+union YYSTYPE {
+#line 41 "noname.y" /* yacc.c:1915  */
 
   char* id_v;
   double double_v;
   long long_v;
-  ASTContext* context;
-  stmtlist* stmt_list;
-  explist* exp_list;
-  arglist* arg_list;
-  arg* arg;
-
-  ASTNode* ast_node;
-  ExpNode* exp_node;
+  noname::ASTContext* context;
+  noname::ASTNode* ast_node;
+  noname::ExpNode* exp_node;
+  noname::stmtlist* stmt_list;
+  noname::explist* exp_list;
+  noname::arglist* arg_list;
+  noname::arg* arg;
   char* error_msg;
 
 #line 161 "noname.tab.h" /* yacc.c:1915  */
 };
 
 typedef union YYSTYPE YYSTYPE;
-# define YYSTYPE_IS_TRIVIAL 1
-# define YYSTYPE_IS_DECLARED 1
+#define YYSTYPE_IS_TRIVIAL 1
+#define YYSTYPE_IS_DECLARED 1
 #endif
 
 /* Location type.  */
-#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+#if !defined YYLTYPE && !defined YYLTYPE_IS_DECLARED
 typedef struct YYLTYPE YYLTYPE;
-struct YYLTYPE
-{
+struct YYLTYPE {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
 };
-# define YYLTYPE_IS_DECLARED 1
-# define YYLTYPE_IS_TRIVIAL 1
+#define YYLTYPE_IS_DECLARED 1
+#define YYLTYPE_IS_TRIVIAL 1
 #endif
-
 
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
-int yyparse (void);
+int yyparse(void);
 
 #endif /* !YY_YY_NONAME_TAB_H_INCLUDED  */

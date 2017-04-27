@@ -70,7 +70,7 @@ NOTLEFTPAREN    [^(]
 RIGHTPAREN      [)]
 NOTRIGHTPAREN   [^)]
 
-LINE_COMMENT    "--"
+LINE_COMMENT    "//"
 START_COMMENT   "/*"
 END_COMMENT     "*/"
 
@@ -119,7 +119,7 @@ QUOTES          \"
   return (ERROR);
 }
 
-
+<INITIAL>{LINE_COMMENT}{NOTNEWLINE}*  ;
 
 <INITIAL>{QUOTES} {
   BEGIN(STRING);

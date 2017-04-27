@@ -1,3 +1,4 @@
+#include "noname-utils.h"
 #include "noname-types.h"
 #include <stdio.h>
 #include <algorithm>
@@ -11,7 +12,9 @@
 #include <string>
 #include <vector>
 
-extern void yyerror(const char* error_msg);
+using namespace llvm;
+
+namespace noname {
 
 /// LogError* - These are little helper functions for error handling.
 ASTNode* logError(const char* str) {
@@ -19,7 +22,7 @@ ASTNode* logError(const char* str) {
   sprintf(msg, "%s\n", str);
   yyerror(msg);
   // abort();
-  // fprintf(stderr, "Error: %s\n", str);
+  // fprintf(stdout, "Error: %s\n", str);
   return NULL;
 }
 
@@ -34,16 +37,31 @@ AssignmentNode* logErrorV(const char* str) {
 }
 
 void print_node_value(FILE* file, NodeValue& node_value) {
-  if (node_value.getType() == TYPE_INT) {
-    fprintf(file, "\n##########[print_node_value] %d", *(int*)node_value.getRawValue());
-  } else if (node_value.getType() == TYPE_LONG) {
-    fprintf(file, "\n##########[print_node_value] %ld", *(long*)node_value.getRawValue());
-  } else if (node_value.getType() == TYPE_DOUBLE) {
-    fprintf(file, "\n##########[print_node_value] %lf", *(double*)node_value.getRawValue());
-  } else if (node_value.getType() == TYPE_STRING) {
-    fprintf(file, "\n##########[print_node_value] %s", (*(std::string*)node_value.getRawValue()).c_str());
+  if (yydebug >= 1) {
+    if (node_value.getType() == TYPE_INT) {
+      fprintf(file, "\n##########[print_node_value] %d", *(int*)node_value.getRawValue());
+    } else if (node_value.getType() == TYPE_LONG) {
+      fprintf(file, "\n##########[print_node_value] %ld", *(long*)node_value.getRawValue());
+    } else if (node_value.getType() == TYPE_DOUBLE) {
+      fprintf(file, "\n##########[print_node_value] %lf", *(double*)node_value.getRawValue());
+    } else if (node_value.getType() == TYPE_STRING) {
+      fprintf(file, "\n##########[print_node_value] %s", (*(std::string*)node_value.getRawValue()).c_str());
+    } else {
+      fprintf(file == stdout ? stderr : file, "\n##########[print_node_value] [WARN] could not print type %d",
+              node_value.getType());
+    }
   } else {
-    fprintf(file, "\n##########[print_node_value] could not print type %d", node_value.getType());
+    if (node_value.getType() == TYPE_INT) {
+      fprintf(file, "\n%d", *(int*)node_value.getRawValue());
+    } else if (node_value.getType() == TYPE_LONG) {
+      fprintf(file, "\n%ld", *(long*)node_value.getRawValue());
+    } else if (node_value.getType() == TYPE_DOUBLE) {
+      fprintf(file, "\n%lf", *(double*)node_value.getRawValue());
+    } else if (node_value.getType() == TYPE_STRING) {
+      fprintf(file, "\n%s", (*(std::string*)node_value.getRawValue()).c_str());
+    } else {
+      fprintf(file == stdout ? stderr : file, "\n[WARN] could not print type %d", node_value.getType());
+    }
   }
 }
 void print_node_value(NodeValue& node_value) { print_node_value(stdout, node_value); }
@@ -223,8 +241,9 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string& nam
 
   context->store(name, temp_node);  // temp_node is null. It doesn't matter
 
-  fprintf(stderr, "\n[new_assignment %s]", context->getName().c_str());
-
+  if (yydebug >= 1) {
+    fprintf(stdout, "\n[new_assignment %s]", context->getName().c_str());
+  }
   return new_node;
 }
 
@@ -240,20 +259,55 @@ FunctionDefNode* new_function_def(ASTContext* context, const std::string& name, 
   }
 
   parent->store(name, new_node);
-
-  fprintf(stderr, "\n[new_function_def %s]", parent->getName().c_str());
+  if (yydebug >= 1) {
+    fprintf(stdout, "\n[new_function_def %s]", parent->getName().c_str());
+  }
   return new_node;
 }
 
-// UNNECESSARY
-// void VarNode::eval() { NodeValue* node_value = getValue(); }
-NodeValue* VarNode::getValue() { return getContext()->getVariable(name); }
+NodeValue* NumberNode::getValue() {
+  NodeValue* node = nullptr;
+
+  if (type == TYPE_DOUBLE) {
+    node = new NodeValue(*(double*)value);
+  } else if (type == TYPE_LONG) {
+    node = new NodeValue(*(long*)value);
+  } else if (type == TYPE_INT) {
+    node = new NodeValue(*(int*)value);
+  } else if (type == TYPE_FLOAT) {
+    node = new NodeValue(*(float*)value);
+  } else if (type == TYPE_SHORT) {
+    node = new NodeValue(*(short*)value);
+  } else if (type == TYPE_CHAR) {
+    node = new NodeValue(*(char*)value);
+  }
+
+  return node;
+}
+
+NodeValue* StringNode::getValue() {
+  NodeValue* node = new NodeValue(value);
+  return node;
+}
 
 // UNNECESSARY
-// void UnaryExpNode::eval() { NodeValue* node_value = getValue(); }
+// void* VarNode::eval() { NodeValue* node_value = getValue(); }
+NodeValue* VarNode::getValue() {
+  NodeValue* node = getContext()->getVariable(name);
+
+  if (!node) {
+    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
+            getContext()->getName().c_str());
+  }
+
+  return node;
+}
+
+// UNNECESSARY
+// void* UnaryExpNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* UnaryExpNode::getValue() {
   NodeValue* rhs_value = rhs.get()->getValue();
-  fprintf(stderr, "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
+  fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
   return rhs_value;
 }
 
@@ -299,7 +353,7 @@ int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs) {
 }
 
 // UNNECESSARY
-// void BinaryExpNode::eval() { NodeValue* node_value = getValue(); }
+// void* BinaryExpNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* BinaryExpNode::getValue() {
   NodeValue* lhs_node_value = lhs.get()->getValue();
   NodeValue* rhs_node_value = rhs.get()->getValue();
@@ -407,28 +461,34 @@ NodeValue* BinaryExpNode::getValue() {
 
     if (op == '+') {
       result = new NodeValue(typed_lhs_value + typed_rhs_value);
-    } else {
-      result = nullptr;
     }
-
-  } else {
-    return nullptr;
   }
 
   return result;
 }
 
-void AssignmentNode::eval() { getContext()->store(name, getValue()); }
+void* AssignmentNode::eval() {
+  NodeValue* node_value = getValue();
+
+  getContext()->store(name, node_value);
+
+  if (yydebug >= 2) {
+    fprintf(stdout, "\n\n############ stored %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
+  }
+
+  return node_value;
+}
+
 NodeValue* AssignmentNode::getValue() { return rhs.get()->getValue(); }
 
 // UNNECESSARY
-// void CallExprNode::eval() { NodeValue* node_value = getValue(); }
+// void* CallExprNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* CallExprNode::getValue() {
   ASTContext* context = getContext();
   FunctionDefNode* functionNode = context->getFunction(getCallee());
 
   if (!functionNode) {
-    fprintf(stderr, "\n\nThe called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
+    fprintf(stdout, "\n\nThe called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
     return 0;
   }
 
@@ -453,17 +513,23 @@ NodeValue* CallExprNode::getValue() {
   for (; itBodyNodes != bodyNodes->end();) {
     std::unique_ptr<ASTNode>& bodyNode = *itBodyNodes;
     bodyNode.get()->eval();
-
-    fprintf(stderr, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
+    }
     ++itBodyNodes;
   }
 
   if (returnNode) {
-    fprintf(stderr, "\n[## evaluating return]\n");
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[## evaluating return]\n");
+    }
     return returnNode->getValue();
   } else {
-    fprintf(stderr, "\n[## no return given]\n");
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[## no return given]\n");
+    }
   }
 
   return nullptr;
+}
 }

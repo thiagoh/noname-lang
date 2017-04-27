@@ -1,5 +1,5 @@
-#ifndef _NONAME_TREE_H
-#define _NONAME_TREE_H
+#ifndef _NONAME_TYPES_H
+#define _NONAME_TYPES_H
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -19,6 +19,7 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
+#include "noname-utils.h"
 #include "lexer-utilities.h"
 #include <stdio.h>
 #include <algorithm>
@@ -32,8 +33,13 @@
 #include <string>
 #include <vector>
 
+extern int yydebug;
+extern void yyerror(const char* error_msg);
+
 using namespace llvm;
 // using namespace llvm::orc;
+
+namespace noname {
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -174,38 +180,11 @@ class ASTNode {
  public:
   ASTNode(ASTContext* context) : context(context) {}
   virtual ~ASTNode() = default;
-  virtual void eval(){};
+  virtual void* eval() { return nullptr; };
   virtual int getType() const { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_AST_NODE; };
   ASTContext* getContext() const { return context; };
 };
-
-namespace noname {
-
-template <typename To, typename From>
-struct is_of_type_impl {
-  static inline bool doit(const From& from) {
-    // fprintf(stderr, "\ncomparing %d with %d", from.getType(),
-    // To::getClassType());
-    return from.getType() == To::getClassType() || std::is_base_of<To, From>::value;
-  }
-};
-
-template <class To, class From>
-inline bool is_of_type(const From& from) {
-  return is_of_type_impl<To, From>::doit(from);
-}
-
-template <typename To, typename From>
-struct cast_impl {
-  static inline To doit(const From& from) { return (To)from; }
-};
-
-template <class To, class From>
-inline To cast(const From& from) {
-  return cast_impl<To, From>::doit(from);
-}
-}
 
 class ASTContext {
  private:
@@ -235,12 +214,21 @@ class ASTContext {
       return parent->getFunction(name);
     }
 
-    return NULL;
+    return nullptr;
   };
 
   void store(const std::string name, FunctionDefNode* functionNode) { mFunctions[name] = functionNode; }
 
   // Variables
+  NodeValue* getVariableShallow(const std::string& name) {
+    itVariables = mVariables.find(name);
+    if (itVariables != mVariables.end()) {
+      return mVariables[name];
+    }
+
+    return nullptr;
+  };
+
   NodeValue* getVariable(const std::string& name) {
     itVariables = mVariables.find(name);
     if (itVariables != mVariables.end()) {
@@ -253,7 +241,7 @@ class ASTContext {
       return parent->getVariable(name);
     }
 
-    return NULL;
+    return nullptr;
   };
 
   void store(const std::string name, NodeValue* node_value) { mVariables[name] = node_value; }
@@ -441,7 +429,10 @@ class ExpNode : public ASTNode {
   ExpNode(ASTContext* context) : ASTNode(context) {}
   virtual ~ExpNode() = default;
 
-  void eval() override { NodeValue* node_value = getValue(); };
+  void* eval() override {
+    NodeValue* node_value = getValue();
+    return node_value;
+  };
   virtual NodeValue* getValue() = 0;
 
   virtual int getType() const override { return getClassType(); };
@@ -467,18 +458,8 @@ class NumberNode : public ExpNode {
     memcpy(value, &val, sizeof(long));
   };
 
-  NodeValue* getValue() override {
-    if (type == TYPE_DOUBLE) {
-      return new NodeValue(*(double*)value);
-    }
-    if (type == TYPE_LONG) {
-      return new NodeValue(*(long*)value);
-    }
-    if (type == TYPE_INT) {
-      return new NodeValue(*(int*)value);
-    }
-    return NULL;
-  }
+  // void* eval() override;
+  NodeValue* getValue() override;
 
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_NUMBER; };
@@ -494,11 +475,8 @@ class StringNode : public ExpNode {
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_STRING; };
 
-  // void eval() override;
-  NodeValue* getValue() override {
-    NodeValue* node = new NodeValue(value);
-    return node;
-  }
+  // void* eval() override;
+  NodeValue* getValue() override;
 };
 
 class VarNode : public ExpNode {
@@ -509,7 +487,7 @@ class VarNode : public ExpNode {
   VarNode(ASTContext* context, const std::string& name) : ExpNode(context), name(name) {}
   const std::string& getName() const { return name; }
 
-  // void eval() override;
+  // void* eval() override;
   NodeValue* getValue() override;
 
   int getType() const override { return getClassType(); };
@@ -527,7 +505,7 @@ class UnaryExpNode : public ExpNode {
   UnaryExpNode(ASTContext* context, char op, ExpNode* rhs)
       : ExpNode(context), op(op), rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
 
-  // void eval() override;
+  // void* eval() override;
   NodeValue* getValue() override;
 
   int getType() const override { return getClassType(); };
@@ -537,7 +515,8 @@ class UnaryExpNode : public ExpNode {
 class BinaryExpNode : public ExpNode {
  private:
   char op;
-  std::unique_ptr<ExpNode> lhs, rhs;
+  std::unique_ptr<ExpNode> lhs;
+  std::unique_ptr<ExpNode> rhs;
 
  public:
   BinaryExpNode(ASTContext* context, char op, std::unique_ptr<ExpNode> lhs, std::unique_ptr<ExpNode> rhs)
@@ -548,7 +527,7 @@ class BinaryExpNode : public ExpNode {
         lhs(std::unique_ptr<ExpNode>(std::move(lhs))),
         rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
 
-  // void eval() override;
+  // void* eval() override;
   NodeValue* getValue() override;
 
   int getType() const override { return getClassType(); };
@@ -580,7 +559,7 @@ class CallExprNode : public ExpNode {
     }
   }
 
-  // void eval() override;
+  // void* eval() override;
   NodeValue* getValue() override;
 
   const std::string& getCallee() const { return callee; }
@@ -635,7 +614,7 @@ class FunctionDefNode : public ASTNode {
     // free(first_stmt);
   }
 
-  // void eval() override;
+  // void* eval() override;
 
   const std::string& getName() const { return name; }
   std::vector<std::unique_ptr<arg>>& getArgs() { return args; }
@@ -657,7 +636,7 @@ class AssignmentNode : public ExpNode {
   AssignmentNode(ASTContext* context, const std::string& name, ExpNode* rhs)
       : ExpNode(context), name(name), rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
 
-  void eval() override;
+  void* eval() override;
   NodeValue* getValue() override;
 
   const std::string& getName() const { return name; }
@@ -697,5 +676,5 @@ class DeclarationNode : public ASTNode {
 //   int getType() const override { return getClassType(); };
 //   static int getClassType() { return AST_NODE_TYPE_DECLARATION; };
 // };
-
+}
 #endif

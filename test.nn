@@ -38,3 +38,26 @@ def qux_int_vars() {
 };
 
 qux_int_vars();
+
+
+// function that returns the value two
+def ret_two() {
+  let out = 2;
+  return out;
+};
+
+let PI = 3.143; // 3.143 is the value of PI
+let mult = ret_two() * PI;
+
+// function that multiplies the result of ret_two() times PI
+def call_func_that_calls_func() {
+  let ab = ret_two() * PI;
+  return ab;
+}
+
+call_func_that_calls_func(); 
+
+
+
+
+
