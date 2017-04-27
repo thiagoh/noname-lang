@@ -1,0 +1,1064 @@
+Terminals unused in grammar
+
+   "line_break"
+   "letter"
+   "digit"
+   "digits"
+   "darrow"
+   "else"
+   "false"
+   "if"
+   "in"
+   "loop"
+   "then"
+   "while"
+   "break"
+   "case"
+   "new"
+   "not"
+   "true"
+   "newline"
+   "notnewline"
+   "whitespace"
+   "le"
+   "nullch"
+   "backslash"
+   "star"
+   "notstar"
+   "leftparen"
+   "notleftparen"
+   "rightparen"
+   "notrightparen"
+   "line_comment"
+   "start_comment"
+   "end_comment"
+   "quotes"
+   "error"
+   "declaration"
+   "assignment"
+   "optional_ret_stmt"
+   "expression"
+   "function_def"
+   "stmt_list"
+   "ne_stmt_list"
+   "exp_list"
+   "ne_exp_list"
+   "arg_list"
+   "ne_arg_list"
+   "arg"
+   "statement"
+
+
+Grammar
+
+    0 $accept: prog $end
+
+    1 prog: %empty
+    2     | prog stmt
+    3     | error "stmt_sep"
+
+    4 stmt_list: %empty
+    5          | stmt
+    6          | ne_stmt_list stmt
+
+    7 ne_stmt_list: stmt
+    8             | ne_stmt_list stmt
+
+    9 stmt: declaration "stmt_sep"
+   10     | assignment "stmt_sep"
+   11     | function_def "stmt_sep"
+   12     | exp "stmt_sep"
+
+   13 @1: %empty
+
+   14 $@2: %empty
+
+   15 function_def: "def" "identifier" @1 '(' arg_list ')' $@2 '{' stmt_list optional_ret_stmt '}'
+
+   16 optional_ret_stmt: %empty
+   17                  | "return" exp "stmt_sep"
+
+   18 assignment: "identifier" "assign" exp
+   19           | "let" "identifier" "assign" exp
+
+   20 declaration: "let" "identifier"
+
+   21 exp: "identifier"
+   22    | "string_constant"
+   23    | "long"
+   24    | "double"
+   25    | exp "+" exp
+   26    | exp "-" exp
+   27    | exp "*" exp
+   28    | exp "/" exp
+   29    | "-" exp
+   30    | exp "^" exp
+   31    | '(' exp ')'
+   32    | "identifier" '(' exp_list ')'
+
+   33 arg_list: %empty
+   34         | arg
+   35         | ne_arg_list ',' arg
+
+   36 ne_arg_list: arg
+   37            | ne_arg_list ',' arg
+
+   38 arg: "identifier"
+   39    | "identifier" "assign" "double"
+   40    | "identifier" "assign" "long"
+   41    | "identifier" "assign" "string_constant"
+
+   42 exp_list: %empty
+   43         | exp "stmt_sep"
+   44         | ne_exp_list exp "stmt_sep"
+
+   45 ne_exp_list: exp "stmt_sep"
+   46            | ne_exp_list exp "stmt_sep"
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'(' (40) 15 31 32
+')' (41) 15 31 32
+"*" (42) 27
+"+" (43) 25
+',' (44) 35 37
+"-" (45) 26 29
+"/" (47) 28
+"^" (94) 30
+'{' (123) 15
+'}' (125) 15
+error (256) 3
+"line_break" (258)
+"stmt_sep" (259) 3 9 10 11 12 17 43 44 45 46
+"letter" (260)
+"digit" (261)
+"digits" (262)
+"darrow" (263)
+"else" (264)
+"false" (265)
+"if" (266)
+"in" (267)
+"let" (268) 19 20
+"def" (269) 15
+"loop" (270)
+"then" (271)
+"while" (272)
+"break" (273)
+"case" (274)
+"new" (275)
+"not" (276)
+"return" (277) 17
+"true" (278)
+"newline" (279)
+"notnewline" (280)
+"whitespace" (281)
+"le" (282)
+"assign" (283) 18 19 39 40 41
+"nullch" (284)
+"backslash" (285)
+"star" (286)
+"notstar" (287)
+"leftparen" (288)
+"notleftparen" (289)
+"rightparen" (290)
+"notrightparen" (291)
+"line_comment" (292)
+"start_comment" (293)
+"end_comment" (294)
+"quotes" (295)
+"error" (296)
+"identifier" (297) 15 18 19 20 21 32 38 39 40 41
+"string_constant" (298) 22 41
+"double" (299) 24 39
+"long" (300) 23 40
+"declaration" (301)
+"assignment" (302)
+"optional_ret_stmt" (303)
+"expression" (304)
+"function_def" (305)
+"stmt_list" (306)
+"ne_stmt_list" (307)
+"exp_list" (308)
+"ne_exp_list" (309)
+"arg_list" (310)
+"ne_arg_list" (311)
+"arg" (312)
+"statement" (313)
+NEG (314)
+
+
+Nonterminals, with rules where they appear
+
+$accept (70)
+    on left: 0
+prog (71)
+    on left: 1 2 3, on right: 0 2
+stmt_list (72)
+    on left: 4 5 6, on right: 15
+ne_stmt_list (73)
+    on left: 7 8, on right: 6 8
+stmt (74)
+    on left: 9 10 11 12, on right: 2 5 6 7 8
+function_def (75)
+    on left: 15, on right: 11
+@1 (76)
+    on left: 13, on right: 15
+$@2 (77)
+    on left: 14, on right: 15
+optional_ret_stmt (78)
+    on left: 16 17, on right: 15
+assignment (79)
+    on left: 18 19, on right: 10
+declaration (80)
+    on left: 20, on right: 9
+exp (81)
+    on left: 21 22 23 24 25 26 27 28 29 30 31 32, on right: 12 17 18
+    19 25 26 27 28 29 30 31 43 44 45 46
+arg_list (82)
+    on left: 33 34 35, on right: 15
+ne_arg_list (83)
+    on left: 36 37, on right: 35 37
+arg (84)
+    on left: 38 39 40 41, on right: 34 35 36 37
+exp_list (85)
+    on left: 42 43 44, on right: 32
+ne_exp_list (86)
+    on left: 45 46, on right: 44 46
+
+
+State 0
+
+    0 $accept: . prog $end
+
+    error  shift, and go to state 1
+
+    $end               reduce using rule 1 (prog)
+    "let"              reduce using rule 1 (prog)
+    "def"              reduce using rule 1 (prog)
+    "-"                reduce using rule 1 (prog)
+    "identifier"       reduce using rule 1 (prog)
+    "string_constant"  reduce using rule 1 (prog)
+    "double"           reduce using rule 1 (prog)
+    "long"             reduce using rule 1 (prog)
+    '('                reduce using rule 1 (prog)
+
+    prog  go to state 2
+
+
+State 1
+
+    3 prog: error . "stmt_sep"
+
+    "stmt_sep"  shift, and go to state 3
+
+
+State 2
+
+    0 $accept: prog . $end
+    2 prog: prog . stmt
+
+    $end               shift, and go to state 4
+    "let"              shift, and go to state 5
+    "def"              shift, and go to state 6
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 8
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    stmt          go to state 13
+    function_def  go to state 14
+    assignment    go to state 15
+    declaration   go to state 16
+    exp           go to state 17
+
+
+State 3
+
+    3 prog: error "stmt_sep" .
+
+    $default  reduce using rule 3 (prog)
+
+
+State 4
+
+    0 $accept: prog $end .
+
+    $default  accept
+
+
+State 5
+
+   19 assignment: "let" . "identifier" "assign" exp
+   20 declaration: "let" . "identifier"
+
+    "identifier"  shift, and go to state 18
+
+
+State 6
+
+   15 function_def: "def" . "identifier" @1 '(' arg_list ')' $@2 '{' stmt_list optional_ret_stmt '}'
+
+    "identifier"  shift, and go to state 19
+
+
+State 7
+
+   29 exp: "-" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 21
+
+
+State 8
+
+   18 assignment: "identifier" . "assign" exp
+   21 exp: "identifier" .
+   32    | "identifier" . '(' exp_list ')'
+
+    "assign"  shift, and go to state 22
+    '('       shift, and go to state 23
+
+    $default  reduce using rule 21 (exp)
+
+
+State 9
+
+   22 exp: "string_constant" .
+
+    $default  reduce using rule 22 (exp)
+
+
+State 10
+
+   24 exp: "double" .
+
+    $default  reduce using rule 24 (exp)
+
+
+State 11
+
+   23 exp: "long" .
+
+    $default  reduce using rule 23 (exp)
+
+
+State 12
+
+   31 exp: '(' . exp ')'
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 24
+
+
+State 13
+
+    2 prog: prog stmt .
+
+    $default  reduce using rule 2 (prog)
+
+
+State 14
+
+   11 stmt: function_def . "stmt_sep"
+
+    "stmt_sep"  shift, and go to state 25
+
+
+State 15
+
+   10 stmt: assignment . "stmt_sep"
+
+    "stmt_sep"  shift, and go to state 26
+
+
+State 16
+
+    9 stmt: declaration . "stmt_sep"
+
+    "stmt_sep"  shift, and go to state 27
+
+
+State 17
+
+   12 stmt: exp . "stmt_sep"
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+
+    "stmt_sep"  shift, and go to state 28
+    "+"         shift, and go to state 29
+    "-"         shift, and go to state 30
+    "/"         shift, and go to state 31
+    "*"         shift, and go to state 32
+    "^"         shift, and go to state 33
+
+
+State 18
+
+   19 assignment: "let" "identifier" . "assign" exp
+   20 declaration: "let" "identifier" .
+
+    "assign"  shift, and go to state 34
+
+    $default  reduce using rule 20 (declaration)
+
+
+State 19
+
+   15 function_def: "def" "identifier" . @1 '(' arg_list ')' $@2 '{' stmt_list optional_ret_stmt '}'
+
+    $default  reduce using rule 13 (@1)
+
+    @1  go to state 35
+
+
+State 20
+
+   21 exp: "identifier" .
+   32    | "identifier" . '(' exp_list ')'
+
+    '('  shift, and go to state 23
+
+    $default  reduce using rule 21 (exp)
+
+
+State 21
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   29    | "-" exp .
+   30    | exp . "^" exp
+
+    $default  reduce using rule 29 (exp)
+
+
+State 22
+
+   18 assignment: "identifier" "assign" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 36
+
+
+State 23
+
+   32 exp: "identifier" '(' . exp_list ')'
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    $default  reduce using rule 42 (exp_list)
+
+    exp          go to state 37
+    exp_list     go to state 38
+    ne_exp_list  go to state 39
+
+
+State 24
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+   31    | '(' exp . ')'
+
+    "+"  shift, and go to state 29
+    "-"  shift, and go to state 30
+    "/"  shift, and go to state 31
+    "*"  shift, and go to state 32
+    "^"  shift, and go to state 33
+    ')'  shift, and go to state 40
+
+
+State 25
+
+   11 stmt: function_def "stmt_sep" .
+
+    $default  reduce using rule 11 (stmt)
+
+
+State 26
+
+   10 stmt: assignment "stmt_sep" .
+
+    $default  reduce using rule 10 (stmt)
+
+
+State 27
+
+    9 stmt: declaration "stmt_sep" .
+
+    $default  reduce using rule 9 (stmt)
+
+
+State 28
+
+   12 stmt: exp "stmt_sep" .
+
+    $default  reduce using rule 12 (stmt)
+
+
+State 29
+
+   25 exp: exp "+" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 41
+
+
+State 30
+
+   26 exp: exp "-" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 42
+
+
+State 31
+
+   28 exp: exp "/" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 43
+
+
+State 32
+
+   27 exp: exp "*" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 44
+
+
+State 33
+
+   30 exp: exp "^" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 45
+
+
+State 34
+
+   19 assignment: "let" "identifier" "assign" . exp
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 46
+
+
+State 35
+
+   15 function_def: "def" "identifier" @1 . '(' arg_list ')' $@2 '{' stmt_list optional_ret_stmt '}'
+
+    '('  shift, and go to state 47
+
+
+State 36
+
+   18 assignment: "identifier" "assign" exp .
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+
+    "+"  shift, and go to state 29
+    "-"  shift, and go to state 30
+    "/"  shift, and go to state 31
+    "*"  shift, and go to state 32
+    "^"  shift, and go to state 33
+
+    $default  reduce using rule 18 (assignment)
+
+
+State 37
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+   43 exp_list: exp . "stmt_sep"
+   45 ne_exp_list: exp . "stmt_sep"
+
+    "stmt_sep"  shift, and go to state 48
+    "+"         shift, and go to state 29
+    "-"         shift, and go to state 30
+    "/"         shift, and go to state 31
+    "*"         shift, and go to state 32
+    "^"         shift, and go to state 33
+
+
+State 38
+
+   32 exp: "identifier" '(' exp_list . ')'
+
+    ')'  shift, and go to state 49
+
+
+State 39
+
+   44 exp_list: ne_exp_list . exp "stmt_sep"
+   46 ne_exp_list: ne_exp_list . exp "stmt_sep"
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 50
+
+
+State 40
+
+   31 exp: '(' exp ')' .
+
+    $default  reduce using rule 31 (exp)
+
+
+State 41
+
+   25 exp: exp . "+" exp
+   25    | exp "+" exp .
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+
+    "/"  shift, and go to state 31
+    "*"  shift, and go to state 32
+    "^"  shift, and go to state 33
+
+    $default  reduce using rule 25 (exp)
+
+
+State 42
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   26    | exp "-" exp .
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+
+    "/"  shift, and go to state 31
+    "*"  shift, and go to state 32
+    "^"  shift, and go to state 33
+
+    $default  reduce using rule 26 (exp)
+
+
+State 43
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   28    | exp "/" exp .
+   30    | exp . "^" exp
+
+    "^"  shift, and go to state 33
+
+    $default  reduce using rule 28 (exp)
+
+
+State 44
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   27    | exp "*" exp .
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+
+    "^"  shift, and go to state 33
+
+    $default  reduce using rule 27 (exp)
+
+
+State 45
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+   30    | exp "^" exp .
+
+    "^"  shift, and go to state 33
+
+    $default  reduce using rule 30 (exp)
+
+
+State 46
+
+   19 assignment: "let" "identifier" "assign" exp .
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+
+    "+"  shift, and go to state 29
+    "-"  shift, and go to state 30
+    "/"  shift, and go to state 31
+    "*"  shift, and go to state 32
+    "^"  shift, and go to state 33
+
+    $default  reduce using rule 19 (assignment)
+
+
+State 47
+
+   15 function_def: "def" "identifier" @1 '(' . arg_list ')' $@2 '{' stmt_list optional_ret_stmt '}'
+
+    "identifier"  shift, and go to state 51
+
+    $default  reduce using rule 33 (arg_list)
+
+    arg_list     go to state 52
+    ne_arg_list  go to state 53
+    arg          go to state 54
+
+
+State 48
+
+   43 exp_list: exp "stmt_sep" .
+   45 ne_exp_list: exp "stmt_sep" .
+
+    ')'       reduce using rule 43 (exp_list)
+    $default  reduce using rule 45 (ne_exp_list)
+
+
+State 49
+
+   32 exp: "identifier" '(' exp_list ')' .
+
+    $default  reduce using rule 32 (exp)
+
+
+State 50
+
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+   44 exp_list: ne_exp_list exp . "stmt_sep"
+   46 ne_exp_list: ne_exp_list exp . "stmt_sep"
+
+    "stmt_sep"  shift, and go to state 55
+    "+"         shift, and go to state 29
+    "-"         shift, and go to state 30
+    "/"         shift, and go to state 31
+    "*"         shift, and go to state 32
+    "^"         shift, and go to state 33
+
+
+State 51
+
+   38 arg: "identifier" .
+   39    | "identifier" . "assign" "double"
+   40    | "identifier" . "assign" "long"
+   41    | "identifier" . "assign" "string_constant"
+
+    "assign"  shift, and go to state 56
+
+    $default  reduce using rule 38 (arg)
+
+
+State 52
+
+   15 function_def: "def" "identifier" @1 '(' arg_list . ')' $@2 '{' stmt_list optional_ret_stmt '}'
+
+    ')'  shift, and go to state 57
+
+
+State 53
+
+   35 arg_list: ne_arg_list . ',' arg
+   37 ne_arg_list: ne_arg_list . ',' arg
+
+    ','  shift, and go to state 58
+
+
+State 54
+
+   34 arg_list: arg .
+   36 ne_arg_list: arg .
+
+    ','       reduce using rule 36 (ne_arg_list)
+    $default  reduce using rule 34 (arg_list)
+
+
+State 55
+
+   44 exp_list: ne_exp_list exp "stmt_sep" .
+   46 ne_exp_list: ne_exp_list exp "stmt_sep" .
+
+    ')'       reduce using rule 44 (exp_list)
+    $default  reduce using rule 46 (ne_exp_list)
+
+
+State 56
+
+   39 arg: "identifier" "assign" . "double"
+   40    | "identifier" "assign" . "long"
+   41    | "identifier" "assign" . "string_constant"
+
+    "string_constant"  shift, and go to state 59
+    "double"           shift, and go to state 60
+    "long"             shift, and go to state 61
+
+
+State 57
+
+   15 function_def: "def" "identifier" @1 '(' arg_list ')' . $@2 '{' stmt_list optional_ret_stmt '}'
+
+    $default  reduce using rule 14 ($@2)
+
+    $@2  go to state 62
+
+
+State 58
+
+   35 arg_list: ne_arg_list ',' . arg
+   37 ne_arg_list: ne_arg_list ',' . arg
+
+    "identifier"  shift, and go to state 51
+
+    arg  go to state 63
+
+
+State 59
+
+   41 arg: "identifier" "assign" "string_constant" .
+
+    $default  reduce using rule 41 (arg)
+
+
+State 60
+
+   39 arg: "identifier" "assign" "double" .
+
+    $default  reduce using rule 39 (arg)
+
+
+State 61
+
+   40 arg: "identifier" "assign" "long" .
+
+    $default  reduce using rule 40 (arg)
+
+
+State 62
+
+   15 function_def: "def" "identifier" @1 '(' arg_list ')' $@2 . '{' stmt_list optional_ret_stmt '}'
+
+    '{'  shift, and go to state 64
+
+
+State 63
+
+   35 arg_list: ne_arg_list ',' arg .
+   37 ne_arg_list: ne_arg_list ',' arg .
+
+    ','       reduce using rule 37 (ne_arg_list)
+    $default  reduce using rule 35 (arg_list)
+
+
+State 64
+
+   15 function_def: "def" "identifier" @1 '(' arg_list ')' $@2 '{' . stmt_list optional_ret_stmt '}'
+
+    "let"              shift, and go to state 5
+    "def"              shift, and go to state 6
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 8
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    $default  reduce using rule 4 (stmt_list)
+
+    stmt_list     go to state 65
+    ne_stmt_list  go to state 66
+    stmt          go to state 67
+    function_def  go to state 14
+    assignment    go to state 15
+    declaration   go to state 16
+    exp           go to state 17
+
+
+State 65
+
+   15 function_def: "def" "identifier" @1 '(' arg_list ')' $@2 '{' stmt_list . optional_ret_stmt '}'
+
+    "return"  shift, and go to state 68
+
+    $default  reduce using rule 16 (optional_ret_stmt)
+
+    optional_ret_stmt  go to state 69
+
+
+State 66
+
+    6 stmt_list: ne_stmt_list . stmt
+    8 ne_stmt_list: ne_stmt_list . stmt
+
+    "let"              shift, and go to state 5
+    "def"              shift, and go to state 6
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 8
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    stmt          go to state 70
+    function_def  go to state 14
+    assignment    go to state 15
+    declaration   go to state 16
+    exp           go to state 17
+
+
+State 67
+
+    5 stmt_list: stmt .
+    7 ne_stmt_list: stmt .
+
+    "return"  reduce using rule 5 (stmt_list)
+    '}'       reduce using rule 5 (stmt_list)
+    $default  reduce using rule 7 (ne_stmt_list)
+
+
+State 68
+
+   17 optional_ret_stmt: "return" . exp "stmt_sep"
+
+    "-"                shift, and go to state 7
+    "identifier"       shift, and go to state 20
+    "string_constant"  shift, and go to state 9
+    "double"           shift, and go to state 10
+    "long"             shift, and go to state 11
+    '('                shift, and go to state 12
+
+    exp  go to state 71
+
+
+State 69
+
+   15 function_def: "def" "identifier" @1 '(' arg_list ')' $@2 '{' stmt_list optional_ret_stmt . '}'
+
+    '}'  shift, and go to state 72
+
+
+State 70
+
+    6 stmt_list: ne_stmt_list stmt .
+    8 ne_stmt_list: ne_stmt_list stmt .
+
+    "return"  reduce using rule 6 (stmt_list)
+    '}'       reduce using rule 6 (stmt_list)
+    $default  reduce using rule 8 (ne_stmt_list)
+
+
+State 71
+
+   17 optional_ret_stmt: "return" exp . "stmt_sep"
+   25 exp: exp . "+" exp
+   26    | exp . "-" exp
+   27    | exp . "*" exp
+   28    | exp . "/" exp
+   30    | exp . "^" exp
+
+    "stmt_sep"  shift, and go to state 73
+    "+"         shift, and go to state 29
+    "-"         shift, and go to state 30
+    "/"         shift, and go to state 31
+    "*"         shift, and go to state 32
+    "^"         shift, and go to state 33
+
+
+State 72
+
+   15 function_def: "def" "identifier" @1 '(' arg_list ')' $@2 '{' stmt_list optional_ret_stmt '}' .
+
+    $default  reduce using rule 15 (function_def)
+
+
+State 73
+
+   17 optional_ret_stmt: "return" exp "stmt_sep" .
+
+    $default  reduce using rule 17 (optional_ret_stmt)
