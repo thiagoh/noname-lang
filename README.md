@@ -82,5 +82,40 @@ undef
 undef
 >nha_hu();
 23
->
+
+///////////////////
+// inner functions
+///////////////////
+>def inner_func() {
+
+  def f2() {
+    return 2;
+  }
+  def f7() {
+    return 7;
+  }
+
+  return f2() * f7();
+}
+
+>inner_func();
+14
+
+///////////////////
+// closures
+///////////////////
+def closure_func() {
+  let euler_number = 2.718;
+  def get_euler() {
+    return euler_number;
+  }
+
+  return get_euler() * 10;
+}
+
+>closure_func();
+>27.180000
+
+>euler_number; // euler_number does not exist in global context
+undef
 ```
