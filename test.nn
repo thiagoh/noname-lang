@@ -7,18 +7,18 @@ def foo() {
   let aaaaaaaaa6 = 321;
 };
 
-def baz() {
-  let cd2 = 3;
-  let my_returned_var = 3.14159;
-  return my_returned_var;
-};
-
 def bar() {
   let cd1 = 3;
   foo();
   let cd2 = 3;
 };
+bar();
 
+def baz() {
+  let cd2 = 3;
+  let my_returned_var = 3.14159;
+  return my_returned_var;
+};
 baz();
 
 def qux_int() {
@@ -27,7 +27,6 @@ def qux_int() {
   let my_returned_var = 3 + 2;
   return my_returned_var;
 };
-
 qux_int();
 
 def qux_int_vars() {
@@ -36,9 +35,7 @@ def qux_int_vars() {
   let my_returned_var = var1 + var2;
   return my_returned_var;
 };
-
 qux_int_vars();
-
 
 // function that returns the value two
 def ret_two() {
@@ -58,5 +55,3 @@ def call_func_that_calls_func() {
 call_func_that_calls_func(); 
 def nha_hu() { let ab = 23; return ab; }
 nha_hu();
-
-
