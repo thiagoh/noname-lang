@@ -1,17 +1,3 @@
-# noname language
-
-### build
-
-```
-$ make clean
-$ make noname
-```
-
-### test
-
-```
-$ ./noname
->
 def foo() {
   let aaaaaaaaa1 = 321;
   let aaaaaaaaa2 = 321;
@@ -34,4 +20,3 @@ def bar() {
 };
 
 baz();
-```
