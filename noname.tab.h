@@ -142,7 +142,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 42 "noname.y" /* yacc.c:1915  */
+#line 43 "noname.y" /* yacc.c:1915  */
 
   char* id_v;
   double double_v;

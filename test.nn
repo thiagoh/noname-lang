@@ -65,10 +65,10 @@ def inner_func() {
     return 7;
   }
 
-  return f2() * f3();
+  return f2() * f7();
 }
 
-inner_func(); // 14
+inner_func();
 
 def closure_func() {
   let euler_number = 2.718;

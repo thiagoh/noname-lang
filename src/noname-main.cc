@@ -13,6 +13,48 @@
 using namespace llvm;
 using namespace noname;
 
+// #ifndef YY_INPUT
+// #define YY_INPUT(buf,result,max_size) \
+// 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
+// 		{ \
+// 		int c = '*'; \
+// 		int n; \
+// 		for ( n = 0; n < max_size && \
+// 			     (c = getc( noname_yyin )) != EOF && c != '\n'; ++n ) \
+// 			buf[n] = (char) c; \
+// 		if ( c == '\n' ) \
+// 			buf[n++] = (char) c; \
+// 		if ( c == EOF && ferror( noname_yyin ) ) \
+// 			YY_FATAL_ERROR( "input in flex scanner failed" ); \
+// 		result = n; \
+// 		} \
+// 	else \
+// 		{ \
+// 		errno=0; \
+// 		while ( (result = (int) fread(buf, 1, (yy_size_t) max_size, noname_yyin)) == 0 && ferror(noname_yyin)) \
+// 			{ \
+// 			if( errno != EINTR) \
+// 				{ \
+// 				YY_FATAL_ERROR( "input in flex scanner failed" ); \
+// 				break; \
+// 				} \
+// 			errno=0; \
+// 			clearerr(noname_yyin); \
+// 			} \
+// 		}\
+// \
+
+// #endif
+
+#ifndef YY_EXIT_FAILURE
+#define YY_EXIT_FAILURE 2
+#endif
+
+void fatal_error(const char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(YY_EXIT_FAILURE);
+}
+
 std::map<int, std::string> map;
 ASTContext *context;
 std::stack<ASTContext *> context_stack;
@@ -27,7 +69,26 @@ void yyerror(char const *s);
 //
 int curr_lineno = 1;
 char *curr_filename = "<stdin>";  // this name is arbitrary
-// FILE *fin; // This is the file pointer from which the lexer reads its input.
+
+FILE *fin = stdin; /* we read from this file */
+
+int noname_read(char *buf, int *result, int max_size) {
+  int cur_char = '*';
+  int n = 0;
+  for (; n < max_size && (cur_char = getc(fin)) != EOF && cur_char != '\n'; ++n) {
+    buf[n] = (char)cur_char;
+  }
+  if (cur_char == '\n') {
+    buf[n++] = (char)cur_char;
+  }
+  if (cur_char == EOF && ferror(fin)) {
+    fatal_error("input in flex scanner failed");
+  }
+
+  *result = n;
+  fprintf(stderr, "[%d]", max_size);
+  return 0;
+}
 
 int yylex(void) {
   int token = noname_yylex();
@@ -170,6 +231,11 @@ int main(int argc, char **argv) {
   yydebug = 0;
 
   write_cursor();
+
+  // fprintf(
+  //     stdin,
+  //     "def inner_func() {  def f2() {    return 2;  }  def f7() {    return 7;  }  return f2() * f3();}inner_func();
+  //     ");
 
   return yyparse();
 }

@@ -7,14 +7,29 @@
 
   int num_lines = 0, num_chars = 0;
   extern YYSTYPE yylval;
-  extern void yyerror(char const *s);
+
+  #define YY_NO_UNPUT   /* keep g++ happy */
   
+  extern void yyerror(char const *s);
+  extern int noname_read(char *buf, int *result, int max_size);
+
+  /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
+  * is returned in "result".
+  */
+  // #undef YY_INPUT
+  // #define YY_INPUT(buf, result, max_size)                                 \
+  //   if ((result = fread((char *)buf, sizeof(char), max_size, fin)) < 0) { \
+  //     YY_FATAL_ERROR("read() in flex scanner failed");
+  #undef YY_INPUT
+  #define YY_INPUT(buf, result, max_size) noname_read(buf, &result, max_size)
+
   extern int curr_lineno;
   extern int verbose_flag;
 
   #define YY_NO_UNPUT   /* keep g++ happy */
 
   unsigned int comment = 0;
+  extern FILE *fin; /* we read from this file */
 
   extern char string_buf[MAX_STR_CONST]; /* to assemble string constants */
   extern char *string_buf_ptr;

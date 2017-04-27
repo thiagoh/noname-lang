@@ -26,6 +26,7 @@ using namespace noname;
 
 extern ASTContext* context;
 extern std::stack<ASTContext*> context_stack;
+extern int noname_read(char *buf, int *result, int max_size);
 extern int yylex(void);
 extern void write_cursor();
 extern int yydebug;
