@@ -304,14 +304,115 @@ NodeValue* BinaryExpNode::getValue() {
   NodeValue* lhs_node_value = lhs.get()->getValue();
   NodeValue* rhs_node_value = rhs.get()->getValue();
   int result_type = get_adequate_result_type(lhs_node_value, rhs_node_value);
-  void* lhs_value = lhs_node_value->getRawValue();
-  void* rhs_value = rhs_node_value->getRawValue();
+  void* lhs_value = lhs_node_value->getValue(result_type);
+  void* rhs_value = rhs_node_value->getValue(result_type);
   NodeValue* result = nullptr;
-  if (op == '+') {
-    if (result_type == TYPE_INT) {
-      // int int_res= *(int*)
-      // result = new NodeValue();
+  if (result_type == TYPE_DOUBLE) {
+    double typed_lhs_value = *(double*)lhs_value;
+    double typed_rhs_value = *(double*)rhs_value;
+
+    if (op == '+') {
+      result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    } else if (op == '-') {
+      result = new NodeValue(typed_lhs_value - typed_rhs_value);
+    } else if (op == '*') {
+      result = new NodeValue(typed_lhs_value * typed_rhs_value);
+    } else if (op == '/') {
+      result = new NodeValue(typed_lhs_value / typed_rhs_value);
+    } else if (op == '^') {
+      result = new NodeValue(pow(typed_lhs_value, typed_rhs_value));
     }
+  } else if (result_type == TYPE_FLOAT) {
+    float typed_lhs_value = *(float*)lhs_value;
+    float typed_rhs_value = *(float*)rhs_value;
+
+    if (op == '+') {
+      result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    } else if (op == '-') {
+      result = new NodeValue(typed_lhs_value - typed_rhs_value);
+    } else if (op == '*') {
+      result = new NodeValue(typed_lhs_value * typed_rhs_value);
+    } else if (op == '/') {
+      result = new NodeValue(typed_lhs_value / typed_rhs_value);
+    } else if (op == '^') {
+      result = new NodeValue(pow(typed_lhs_value, typed_rhs_value));
+    }
+  } else if (result_type == TYPE_LONG) {
+    long typed_lhs_value = *(long*)lhs_value;
+    long typed_rhs_value = *(long*)rhs_value;
+
+    if (op == '+') {
+      result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    } else if (op == '-') {
+      result = new NodeValue(typed_lhs_value - typed_rhs_value);
+    } else if (op == '*') {
+      result = new NodeValue(typed_lhs_value * typed_rhs_value);
+    } else if (op == '/') {
+      result = new NodeValue(typed_lhs_value / typed_rhs_value);
+    } else if (op == '^') {
+      result = new NodeValue((long)pow(typed_lhs_value, typed_rhs_value));
+    }
+
+  } else if (result_type == TYPE_INT) {
+    int typed_lhs_value = *(int*)lhs_value;
+    int typed_rhs_value = *(int*)rhs_value;
+
+    if (op == '+') {
+      result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    } else if (op == '-') {
+      result = new NodeValue(typed_lhs_value - typed_rhs_value);
+    } else if (op == '*') {
+      result = new NodeValue(typed_lhs_value * typed_rhs_value);
+    } else if (op == '/') {
+      result = new NodeValue(typed_lhs_value / typed_rhs_value);
+    } else if (op == '^') {
+      result = new NodeValue((int)pow(typed_lhs_value, typed_rhs_value));
+    }
+
+  } else if (result_type == TYPE_SHORT) {
+    short typed_lhs_value = *(short*)lhs_value;
+    short typed_rhs_value = *(short*)rhs_value;
+
+    if (op == '+') {
+      result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    } else if (op == '-') {
+      result = new NodeValue(typed_lhs_value - typed_rhs_value);
+    } else if (op == '*') {
+      result = new NodeValue(typed_lhs_value * typed_rhs_value);
+    } else if (op == '/') {
+      result = new NodeValue(typed_lhs_value / typed_rhs_value);
+    } else if (op == '^') {
+      result = new NodeValue((short)pow(typed_lhs_value, typed_rhs_value));
+    }
+
+  } else if (result_type == TYPE_CHAR) {
+    char typed_lhs_value = *(char*)lhs_value;
+    char typed_rhs_value = *(char*)rhs_value;
+
+    if (op == '+') {
+      result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    } else if (op == '-') {
+      result = new NodeValue(typed_lhs_value - typed_rhs_value);
+    } else if (op == '*') {
+      result = new NodeValue(typed_lhs_value * typed_rhs_value);
+    } else if (op == '/') {
+      result = new NodeValue(typed_lhs_value / typed_rhs_value);
+    } else if (op == '^') {
+      result = new NodeValue((char)pow(typed_lhs_value, typed_rhs_value));
+    }
+
+  } else if (result_type == TYPE_STRING) {
+    std::string typed_lhs_value = *(std::string*)lhs_value;
+    std::string typed_rhs_value = *(std::string*)rhs_value;
+
+    if (op == '+') {
+      result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    } else {
+      result = nullptr;
+    }
+
+  } else {
+    return nullptr;
   }
 
   return result;
