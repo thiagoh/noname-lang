@@ -1541,9 +1541,9 @@ yyreduce:
   case 3:
 #line 146 "noname.y" /* yacc.c:1661  */
     {
-    eval((yyvsp[0].ast_node));
-    write_cursor();
-  }
+      eval((yyvsp[0].ast_node));
+      write_cursor();
+    }
 #line 1548 "noname.tab.c" /* yacc.c:1661  */
     break;
 

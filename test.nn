@@ -56,8 +56,7 @@ def call_func_that_calls_func() {
 }
 
 call_func_that_calls_func(); 
-
-
-
+def nha_hu() { let ab = 23; return ab; }
+nha_hu();
 
 

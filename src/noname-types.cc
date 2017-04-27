@@ -36,35 +36,39 @@ AssignmentNode* logErrorV(const char* str) {
   return nullptr;
 }
 
-void print_node_value(FILE* file, NodeValue& node_value) {
+void print_node_value(FILE* file, NodeValue* node_value) {
   if (yydebug >= 1) {
-    if (node_value.getType() == TYPE_INT) {
-      fprintf(file, "\n##########[print_node_value] %d", *(int*)node_value.getRawValue());
-    } else if (node_value.getType() == TYPE_LONG) {
-      fprintf(file, "\n##########[print_node_value] %ld", *(long*)node_value.getRawValue());
-    } else if (node_value.getType() == TYPE_DOUBLE) {
-      fprintf(file, "\n##########[print_node_value] %lf", *(double*)node_value.getRawValue());
-    } else if (node_value.getType() == TYPE_STRING) {
-      fprintf(file, "\n##########[print_node_value] %s", (*(std::string*)node_value.getRawValue()).c_str());
+    if (!node_value) {
+      fprintf(file, "\n##########[print_node_value] undef");
+    } else if (node_value->getType() == TYPE_INT) {
+      fprintf(file, "\n##########[print_node_value] %d", *(int*)node_value->getRawValue());
+    } else if (node_value->getType() == TYPE_LONG) {
+      fprintf(file, "\n##########[print_node_value] %ld", *(long*)node_value->getRawValue());
+    } else if (node_value->getType() == TYPE_DOUBLE) {
+      fprintf(file, "\n##########[print_node_value] %lf", *(double*)node_value->getRawValue());
+    } else if (node_value->getType() == TYPE_STRING) {
+      fprintf(file, "\n##########[print_node_value] %s", (*(std::string*)node_value->getRawValue()).c_str());
     } else {
       fprintf(file == stdout ? stderr : file, "\n##########[print_node_value] [WARN] could not print type %d",
-              node_value.getType());
+              node_value->getType());
     }
   } else {
-    if (node_value.getType() == TYPE_INT) {
-      fprintf(file, "\n%d", *(int*)node_value.getRawValue());
-    } else if (node_value.getType() == TYPE_LONG) {
-      fprintf(file, "\n%ld", *(long*)node_value.getRawValue());
-    } else if (node_value.getType() == TYPE_DOUBLE) {
-      fprintf(file, "\n%lf", *(double*)node_value.getRawValue());
-    } else if (node_value.getType() == TYPE_STRING) {
-      fprintf(file, "\n%s", (*(std::string*)node_value.getRawValue()).c_str());
+    if (!node_value) {
+      fprintf(file, "undef");
+    } else if (node_value->getType() == TYPE_INT) {
+      fprintf(file, "%d", *(int*)node_value->getRawValue());
+    } else if (node_value->getType() == TYPE_LONG) {
+      fprintf(file, "%ld", *(long*)node_value->getRawValue());
+    } else if (node_value->getType() == TYPE_DOUBLE) {
+      fprintf(file, "%lf", *(double*)node_value->getRawValue());
+    } else if (node_value->getType() == TYPE_STRING) {
+      fprintf(file, "%s", (*(std::string*)node_value->getRawValue()).c_str());
     } else {
-      fprintf(file == stdout ? stderr : file, "\n[WARN] could not print type %d", node_value.getType());
+      fprintf(file == stdout ? stderr : file, "[WARN] could not print type %d", node_value->getType());
     }
   }
 }
-void print_node_value(NodeValue& node_value) { print_node_value(stdout, node_value); }
+void print_node_value(NodeValue* node_value) { print_node_value(stdout, node_value); }
 
 // ReturnNode* new_return(ASTContext* context, ExpNode* exp_node) {
 //   ReturnNode* new_node = new ReturnNode(context, exp_node);

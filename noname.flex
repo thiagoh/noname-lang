@@ -79,10 +79,10 @@ QUOTES          \"
 
 %%
 
-{LINE_BREAK}                    {
-                                  ++num_chars;
-                                  ++num_lines;
-                                }
+{LINE_BREAK}       {
+                        ++num_chars;
+                        ++num_lines;
+                      }
 
 {START_COMMENT} {
   comment++;

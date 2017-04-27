@@ -71,9 +71,7 @@ void eval(ASTNode *node) {
     AssignmentNode *assignment = (AssignmentNode *)node;
     NodeValue *return_value = (NodeValue *)assignment->eval();
 
-    if (return_value) {
-      print_node_value(stderr, *return_value);
-    }
+    print_node_value(stdout, return_value);
 
   } else if (is_of_type<CallExprNode>(*node)) {
     CallExprNode *callExp = (CallExprNode *)node;
@@ -86,9 +84,7 @@ void eval(ASTNode *node) {
       }
       NodeValue *return_value = (NodeValue *)callExp->eval();
 
-      if (return_value) {
-        print_node_value(stderr, *return_value);
-      }
+      print_node_value(stdout, return_value);
 
     } else {
       if (yydebug >= 2) {
@@ -101,9 +97,7 @@ void eval(ASTNode *node) {
     ExpNode *exp = (ExpNode *)node;
 
     NodeValue *return_value = (NodeValue *)exp->eval();
-    if (return_value) {
-      print_node_value(stderr, *return_value);
-    }
+    print_node_value(stdout, return_value);
   }
 }
 

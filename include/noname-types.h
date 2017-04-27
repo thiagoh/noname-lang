@@ -150,8 +150,8 @@ typedef struct stmtlist stmtlist;
 typedef struct stmtlist_node stmtlist_node;
 typedef struct arg arg;
 
-void print_node_value(NodeValue& nodeValue);
-void print_node_value(FILE* file, NodeValue& nodeValue);
+void print_node_value(NodeValue* nodeValue);
+void print_node_value(FILE* file, NodeValue* nodeValue);
 stmtlist* new_stmt_list(ASTContext* context);
 stmtlist* new_stmt_list(ASTContext* context, ASTNode* node);
 stmtlist* new_stmt_list(ASTContext* context, stmtlist* head_exp_list, ASTNode* node);

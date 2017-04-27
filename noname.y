@@ -144,9 +144,9 @@ prog:
     write_cursor();
   }
   | prog stmt {
-    eval($2);
-    write_cursor();
-  } 
+      eval($2);
+      write_cursor();
+    }
   | error STMT_SEP { 
     yyerrok; 
     fprintf(stderr, "Error at %d:%d", @1.first_column, @1.last_column); 

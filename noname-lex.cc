@@ -913,9 +913,9 @@ case 1:
 YY_RULE_SETUP
 #line 83 "noname.flex"
 {
-                                  ++num_chars;
-                                  ++num_lines;
-                                }
+                        ++num_chars;
+                        ++num_lines;
+                      }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
