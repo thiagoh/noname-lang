@@ -1,0 +1,8 @@
+def foo() {
+  let aaaaaaaaa1 = 321;
+  let aaaaaaaaa2 = 321;
+  let aaaaaaaaa3 = 321;
+  let aaaaaaaaa4 = 321;
+  let aaaaaaaaa5 = 321;
+  let aaaaaaaaa6 = 321;
+};

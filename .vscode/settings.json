@@ -62,5 +62,13 @@
         "istream": "cpp",
         "utility": "cpp",
         "propagate_const": "cpp"
+    },
+    "[cpp]": {
+        "editor.quickSuggestions": false,
+        "editor.snippetSuggestions": "top"
+    },
+    "[c]": {
+        "editor.quickSuggestions": false,
+        "editor.snippetSuggestions": "top"
     }
 }

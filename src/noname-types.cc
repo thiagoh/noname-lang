@@ -262,13 +262,14 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string name
 }
 
 ImportNode* new_import(ASTContext* context, std::string filename) {
+  fprintf(stderr, "\n[new_import %s]", filename.c_str());
   ImportNode* new_node = new ImportNode(context, filename);
 
   return new_node;
 }
 
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist* arg_list, stmtlist* stmt_list,
-                                  ExpNode* returnNode) {
+                          ExpNode* returnNode) {
   FunctionDefNode* new_node = new FunctionDefNode(context, name, arg_list, stmt_list, returnNode);
 
   ASTNode* check_result = new_node->check();

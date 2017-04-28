@@ -503,7 +503,7 @@ class StringNode : public ExpNode {
   std::string value;
 
  public:
-  StringNode(ASTContext* context, std::string& value) : ExpNode(context), value(value){};
+  StringNode(ASTContext* context, const std::string& value) : ExpNode(context), value(value){};
   StringNode(ASTContext* context, const char* value) : ExpNode(context), value(std::string(value)){};
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_STRING; };

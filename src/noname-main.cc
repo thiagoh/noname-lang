@@ -4,6 +4,10 @@
 #include "noname-utils.h"
 #include "noname-parse.h"
 #include "noname-types.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
 #include <map>
 #include <stack>
 #include <stdio.h>
@@ -12,6 +16,63 @@
 
 using namespace llvm;
 using namespace noname;
+
+char *get_current_dir() {
+  size_t size;
+  char *buf;
+  char *ptr;
+
+  long path_max = pathconf(".", _PC_PATH_MAX);
+  if (path_max == -1) {
+    size = 1024;
+  } else if (path_max > 10240) {
+    size = 10240;
+  } else {
+    size = path_max;
+  }
+
+  for (buf = ptr = NULL; ptr == NULL; size *= 2) {
+    if ((buf = (char *)realloc(buf, size * sizeof(char))) == NULL) {
+      fprintf(stderr, "\n[out of space]");
+      // yyerror("out of space");
+      // exit(0);
+    }
+
+    ptr = getcwd(buf, size);
+    if (ptr == NULL && errno != ERANGE) {
+      fprintf(stderr, "\n[out of range]");
+      // yyerror("out of space");
+      // exit(0);
+    }
+  }
+  return buf;
+}
+
+char *concat_strs(const char *format, const char *s1, const char *s2, int size) {
+  char *buf = new char[size];
+  int bytes_pottentially_written = snprintf(buf, size, format, s1, s2);
+
+  if (bytes_pottentially_written > size) {
+    free(buf);
+    return concat_strs(format, s1, s2, bytes_pottentially_written);
+  }
+
+  return buf;
+}
+
+char *get_file_path(const char *filename) {
+  char *dirname = get_current_dir();
+
+  if (dirname == NULL) {
+    logError("Error when trying to get the directory name");  // TODO inform the filename to the user
+    return nullptr;
+  }
+
+  int buf_size = strlen(filename) + strlen(dirname) + 2;
+  char *file_path = concat_strs("%s/%s", dirname, filename, buf_size);
+  free(dirname);
+  return file_path;
+}
 
 // #ifndef YY_INPUT
 // #define YY_INPUT(buf,result,max_size) \
@@ -71,24 +132,55 @@ int curr_lineno = 1;
 char *curr_filename = "<stdin>";  // this name is arbitrary
 
 FILE *fin = stdin; /* we read from this file */
-
+bool read_from_file_import = false;
 void read_file(char *buf, int *result, int max_size, char *filename) {}
 
 int noname_read(char *buf, int *result, int max_size) {
+  // fscanf(fp, "%s", buff);
+  // printf("1 : %s\n", buff);
+
+  // fgets(buff, 255, (FILE *)fp);
+  // printf("2: %s\n", buff);
+
+  // fgets(buff, 255, (FILE *)fp);
+  // printf("3: %s\n", buff);
+  // fclose(fp);
+  //////////////////
+  //////////////////
+  //////////////////
+  //////////////////
+  //////////////////
+
   int cur_char = '*';
   int n = 0;
-  for (; n < max_size && (cur_char = getc(fin)) != EOF && cur_char != '\n'; ++n) {
+  for (; n < max_size && (cur_char = getc(fin)) != EOF; ++n) {
     buf[n] = (char)cur_char;
+    if (read_from_file_import) {
+      // NOP
+    } else {
+      if (cur_char == '\n') {
+        ++n;
+        break;
+      }
+    }
   }
-  if (cur_char == '\n') {
-    buf[n++] = (char)cur_char;
-  }
-  if (cur_char == EOF && ferror(fin)) {
-    fatal_error("input in flex scanner failed");
+  // if (cur_char == '\n') {
+  //   buf[n++] = (char)cur_char;
+  // }
+  if (cur_char == EOF) {
+    // fprintf(stderr, "\n[EOF] %s", buf);
+    if (feof(fin) && read_from_file_import) {
+      // fprintf(stderr, "\n[read_from_file_import %d]", *result);
+      // #import "import_1.nn";
+      read_from_file_import = false;
+      fin = stdin;
+    } else if (ferror(fin)) {
+      fatal_error("input in flex scanner failed");
+    }
   }
 
   *result = n;
-  fprintf(stderr, "[%d]", max_size);
+  // fprintf(stderr, "\n[noname_read %d]", max_size);
   return 0;
 }
 
@@ -131,7 +223,17 @@ void eval(ASTNode *node) {
     fprintf(stdout, "\n[is_of_type<ExpNode>(*node) -> %s]\n", is_of_type<ExpNode>(*node) ? "true" : "false");
   }
 
-  if (is_of_type<AssignmentNode>(*node)) {
+  if (is_of_type<ImportNode>(*node)) {
+    ImportNode *import_node = (ImportNode *)node;
+
+    char *file_path = get_file_path(import_node->getFilename().c_str());
+    char *const_file_path[] = {file_path};
+    // const char *const_file_path = file_path;
+    fin = fopen(*const_file_path, "r");
+    read_from_file_import = true;
+    free(file_path);
+
+  } else if (is_of_type<AssignmentNode>(*node)) {
     AssignmentNode *assignment = (AssignmentNode *)node;
     NodeValue *return_value = (NodeValue *)assignment->eval();
 

@@ -146,10 +146,6 @@ prog:
   %empty {
     write_cursor();
   }
-  | prog import {
-      eval($2);
-      write_cursor();
-    }
   | prog stmt {
       eval($2);
       write_cursor();
@@ -252,7 +248,7 @@ optional_ret_stmt:
 ;
 
 import:
-  IMPORT ID                { $$ = new_import(context, std::string($ID)); }
+  IMPORT STR_CONST          { $$ = new_import(context, std::string($STR_CONST)); }
 ;
 
 assignment:
@@ -276,7 +272,7 @@ exp:
     $$ = new VarNode(context, std::string($ID));
   }
   | STR_CONST {
-    $$ = new StringNode(context, $STR_CONST);
+    $$ = new StringNode(context, std::string($STR_CONST));
   }
   | LONG {
     $$ = new NumberNode(context, $1);

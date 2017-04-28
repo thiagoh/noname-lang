@@ -1,4 +1,4 @@
-def foo() {
+def func_foo() {
   let aaaaaaaaa1 = 321;
   let aaaaaaaaa2 = 321;
   let aaaaaaaaa3 = 321;
@@ -7,9 +7,9 @@ def foo() {
   let aaaaaaaaa6 = 321;
 };
 
-def bar() {
+def func_bar() {
   let cd1 = 3;
-  foo();
+  func_foo();
   let cd2 = 3;
 };
 bar();
@@ -81,7 +81,7 @@ def closure_func() {
 
 closure_func(); // 27.18
 
-#import nha;
+#import "import_1.nn";
 
 def regular_func() {
 
