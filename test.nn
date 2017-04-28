@@ -81,3 +81,13 @@ def closure_func() {
 
 closure_func(); // 27.18
 
+#import nha;
+
+def regular_func() {
+
+  let ab = 3;
+  #import nha2; // this generates error
+  let cd = 4;
+};
+
+regular_func(); // function not found

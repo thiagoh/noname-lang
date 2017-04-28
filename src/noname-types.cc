@@ -23,7 +23,7 @@ ASTNode* logError(const char* str) {
   yyerror(msg);
   // abort();
   // fprintf(stdout, "Error: %s\n", str);
-  return NULL;
+  return nullptr;
 }
 
 FunctionDefNode* logErrorF(const char* str) {
@@ -33,6 +33,16 @@ FunctionDefNode* logErrorF(const char* str) {
 
 AssignmentNode* logErrorV(const char* str) {
   logError(str);
+  return nullptr;
+}
+
+ASTNode* logError(ErrorNode* error_node) {
+  logError(error_node->what().c_str());
+  return nullptr;
+}
+
+NodeValue* logErrorNV(ErrorNode* error_node) {
+  logError(error_node->what().c_str());
   return nullptr;
 }
 
@@ -223,19 +233,19 @@ arg* new_arg(ASTContext* context, char* arg_name, char* defaultValue) {
   return new_arg;
 }
 
-VarNode* new_var_node(ASTContext* context, const std::string& name) {
+VarNode* new_var_node(ASTContext* context, const std::string name) {
   VarNode* new_node = new VarNode(context, name);
   return new_node;
 }
-AssignmentNode* new_assignment_node(ASTContext* context, const std::string& name, ExpNode* exp) {
+AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* exp) {
   AssignmentNode* new_node = new AssignmentNode(context, name, exp);
   return new_node;
 }
-CallExprNode* new_call_node(ASTContext* context, const std::string& name, explist* exp_list) {
+CallExprNode* new_call_node(ASTContext* context, const std::string name, explist* exp_list) {
   CallExprNode* new_node = new CallExprNode(context, name, exp_list);
   return new_node;
 }
-AssignmentNode* new_declaration_node(ASTContext* context, const std::string& name) {
+AssignmentNode* new_declaration_node(ASTContext* context, const std::string name) {
   AssignmentNode* new_node = new AssignmentNode(context, name, NULL);
 
   NodeValue* temp_node = context->getVariable(name);
@@ -243,7 +253,7 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string& nam
     return logErrorV("\nVariable already exists in this context!");
   }
 
-  context->store(name, temp_node);  // temp_node is null. It doesn't matter
+  context->store(name, temp_node);  // temp_node is null. It doesn't matter, it's only a declaration
 
   if (yydebug >= 1) {
     fprintf(stdout, "\n[new_assignment %s]", context->getName().c_str());
@@ -251,21 +261,29 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string& nam
   return new_node;
 }
 
-FunctionDefNode* new_function_def(ASTContext* context, const std::string& name, arglist* arg_list, stmtlist* stmt_list,
+ImportNode* new_import(ASTContext* context, std::string filename) {
+  ImportNode* new_node = new ImportNode(context, filename);
+
+  return new_node;
+}
+
+ASTNode* new_function_def(ASTContext* context, const std::string name, arglist* arg_list, stmtlist* stmt_list,
                                   ExpNode* returnNode) {
   FunctionDefNode* new_node = new FunctionDefNode(context, name, arg_list, stmt_list, returnNode);
 
-  ASTContext* parent = context->getParent();
+  ASTNode* check_result = new_node->check();
 
-  FunctionDefNode* functionNode = parent->getFunction(name);
-  if (functionNode) {
-    return logErrorF("\nFunction already exists in this context!");
+  if (check_result && is_of_type<ErrorNode>(*check_result)) {
+    // logError((ErrorNode*)check_result);
+    return check_result;
   }
 
+  ASTContext* parent = context->getParent();
   parent->store(name, new_node);
   if (yydebug >= 1) {
     fprintf(stdout, "\n[new_function_def %s]", parent->getName().c_str());
   }
+
   return new_node;
 }
 
@@ -489,19 +507,19 @@ NodeValue* AssignmentNode::getValue() { return rhs.get()->getValue(); }
 // void* CallExprNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* CallExprNode::getValue() {
   ASTContext* context = getContext();
-  FunctionDefNode* functionNode = context->getFunction(getCallee());
+  FunctionDefNode* function_node = context->getFunction(getCallee());
 
-  if (!functionNode) {
+  if (!function_node) {
     fprintf(stdout, "\n\nThe called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
     return 0;
   }
 
-  ExpNode* returnNode = functionNode->getReturnNode();
+  ExpNode* returnNode = function_node->getReturnNode();
   std::vector<std::unique_ptr<ExpNode>>* valueArgs = &getArgs();
   std::vector<std::unique_ptr<ExpNode>>::iterator itValueArg = valueArgs->begin();
-  std::vector<std::unique_ptr<arg>>* signatureArgs = &functionNode->getArgs();
+  std::vector<std::unique_ptr<arg>>* signatureArgs = &function_node->getArgs();
   std::vector<std::unique_ptr<arg>>::iterator itSignatureArg = signatureArgs->begin();
-  std::vector<std::unique_ptr<ASTNode>>* bodyNodes = &functionNode->getBodyNodes();
+  std::vector<std::unique_ptr<ASTNode>>* bodyNodes = &function_node->getBodyNodes();
   std::vector<std::unique_ptr<ASTNode>>::iterator itBodyNodes = bodyNodes->begin();
 
   for (; itSignatureArg != signatureArgs->end() || itValueArg != valueArgs->end();) {

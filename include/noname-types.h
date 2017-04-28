@@ -77,6 +77,7 @@ enum ast_node_type {
   AST_NODE_TYPE_DEF_FUNCTION = 40,
   AST_NODE_TYPE_ASSIGNMENT = 41,
   AST_NODE_TYPE_DECLARATION = 42,
+  AST_NODE_TYPE_IMPORT = 43,
 };
 #endif
 
@@ -91,17 +92,21 @@ enum ast_node_type {
 #define AST_NODE_TYPE_DEF_FUNCTION 40
 #define AST_NODE_TYPE_ASSIGNMENT 41
 #define AST_NODE_TYPE_DECLARATION 42
+#define AST_NODE_TYPE_IMPORT 43
 
 class ASTNode;
+class ASTContext;
+class ErrorNode;
+class LogicErrorNode;
 class ExpNode;
 class BinaryExpNode;
 class NodeValue;
+class ImportNode;
 class VarNode;
 class CallExprNode;
 class FunctionDefNode;
 class AssignmentNode;
 class DeclarationNode;
-class ASTContext;
 
 /* list of statements */
 struct stmtlist_node {
@@ -150,6 +155,12 @@ typedef struct stmtlist stmtlist;
 typedef struct stmtlist_node stmtlist_node;
 typedef struct arg arg;
 
+ASTNode* logError(const char* str);
+FunctionDefNode* logErrorF(const char* str);
+AssignmentNode* logErrorV(const char* str);
+ASTNode* logError(ErrorNode* error_node);
+NodeValue* logErrorNV(ErrorNode* error_node);
+
 void print_node_value(NodeValue* nodeValue);
 void print_node_value(FILE* file, NodeValue* nodeValue);
 stmtlist* new_stmt_list(ASTContext* context);
@@ -166,12 +177,13 @@ arglist* new_arg_list(ASTContext* context);
 arglist* new_arg_list(ASTContext* context, arglist* head_arg_list);
 arglist* new_arg_list(ASTContext* context, arglist* head_arg_list, arg* arg);
 
-VarNode* new_var_node(ASTContext* context, const std::string& name);
-AssignmentNode* new_assignment_node(ASTContext* context, const std::string& name, ExpNode* node);
-AssignmentNode* new_declaration_node(ASTContext* context, const std::string& name);
-CallExprNode* new_call_node(ASTContext* context, const std::string& name, explist* exp_list);
-FunctionDefNode* new_function_def(ASTContext* context, const std::string& name, arglist* arg_list, stmtlist* stmt_list,
-                                  ExpNode* returnNode);
+ImportNode* new_import(ASTContext* context, std::string filename);
+VarNode* new_var_node(ASTContext* context, const std::string name);
+AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
+AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
+CallExprNode* new_call_node(ASTContext* context, const std::string name, explist* exp_list);
+ASTNode* new_function_def(ASTContext* context, const std::string name, arglist* arg_list, stmtlist* stmt_list,
+                          ExpNode* returnNode);
 
 class ASTNode {
  private:
@@ -180,10 +192,31 @@ class ASTNode {
  public:
   ASTNode(ASTContext* context) : context(context) {}
   virtual ~ASTNode() = default;
+  virtual ASTNode* check() { return this; };
   virtual void* eval() { return nullptr; };
   virtual int getType() const { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_AST_NODE; };
   ASTContext* getContext() const { return context; };
+};
+
+class ErrorNode : public ASTNode {
+ private:
+  std::string _what;
+
+ public:
+  ErrorNode(ASTContext* context, const std::string& what) : ASTNode(context), _what(what) {}
+  std::string what() { return _what; }
+};
+
+class LogicErrorNode : public ErrorNode {
+ public:
+  LogicErrorNode(ASTContext* context, const std::string& what) : ErrorNode(context, what) {}
+};
+
+class InvalidStatement : public LogicErrorNode {
+ public:
+  InvalidStatement(ASTContext* context) : LogicErrorNode(context, "Invalid statement inside current scope") {}
+  InvalidStatement(ASTContext* context, const std::string& what) : LogicErrorNode(context, what) {}
 };
 
 class ASTContext {
@@ -569,6 +602,21 @@ class CallExprNode : public ExpNode {
   static int getClassType() { return AST_NODE_TYPE_CALL_EXP; };
 };
 
+// ImportNode - Node class for file import
+class ImportNode : public ASTNode {
+ private:
+  std::string filename;
+
+ public:
+  ImportNode(ASTContext* context, const std::string& filename) : ASTNode(context), filename(filename) {}
+
+  // void* eval() override;
+  const std::string& getFilename() const { return filename; }
+
+  int getType() const override { return getClassType(); };
+  static int getClassType() { return AST_NODE_TYPE_IMPORT; };
+};
+
 // FunctionDefNode - Node class for function definition.
 class FunctionDefNode : public ASTNode {
  private:
@@ -615,6 +663,37 @@ class FunctionDefNode : public ASTNode {
   }
 
   // void* eval() override;
+
+  ASTNode* check() override {
+    ASTContext* context = getContext();
+    ASTContext* parent = context->getParent();
+
+    FunctionDefNode* function_node = parent->getFunction(name);
+    if (function_node) {
+      return new LogicErrorNode(context, "Function already exists in this context");
+    }
+
+    std::vector<std::unique_ptr<ASTNode>>::iterator itBodyNodes = bodyNodes.begin();
+
+    for (; itBodyNodes != bodyNodes.end();) {
+      std::unique_ptr<ASTNode>& bodyNode = *itBodyNodes;
+
+      if (is_of_type<ImportNode>(*bodyNode.get())) {
+        return new InvalidStatement(context, "Cannot import inside function definition");
+      }
+
+      if (yydebug >= 1) {
+        fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
+      }
+      ++itBodyNodes;
+    }
+
+    if (returnNode && is_of_type<ImportNode>(*returnNode)) {
+      return new InvalidStatement(context, "Cannot import inside function definition");
+    }
+
+    return this;
+  }
 
   const std::string& getName() const { return name; }
   std::vector<std::unique_ptr<arg>>& getArgs() { return args; }

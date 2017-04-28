@@ -72,6 +72,8 @@ char *curr_filename = "<stdin>";  // this name is arbitrary
 
 FILE *fin = stdin; /* we read from this file */
 
+void read_file(char *buf, int *result, int max_size, char *filename) {}
+
 int noname_read(char *buf, int *result, int max_size) {
   int cur_char = '*';
   int n = 0;
@@ -116,7 +118,8 @@ void division_by_zero(YYLTYPE &yylloc) {
 void yyerror(char const *s) { fprintf(stdout, "\nERROR: %s\n", s); }
 
 void eval(ASTNode *node) {
-  if (!node) {
+  if (!node || is_of_type<ErrorNode>(*node)) {
+    logError((ErrorNode *)node);
     return;
   }
 
@@ -148,10 +151,7 @@ void eval(ASTNode *node) {
       print_node_value(stdout, return_value);
 
     } else {
-      if (yydebug >= 2) {
-        fprintf(stdout, "\nThe called function was: '%s' BUT it wan not found on the context\n",
-                callExp->getCallee().c_str());
-      }
+      fprintf(stderr, "\nThe function %s was not found int the context\n", callExp->getCallee().c_str());
     }
 
   } else if (is_of_type<ExpNode>(*node)) {

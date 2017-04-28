@@ -54,6 +54,7 @@ LONG            {DIGIT}+
 DOUBLE          {DIGIT}+(\.{DIGIT}+)?
 ID              {ALPHA}({ALPHA}|{DIGIT})*
 
+IMPORT          #import
 ELSE            else
 FALSE           false
 IF              if
@@ -207,6 +208,7 @@ QUOTES          \"
 
 
 <*>{WHITESPACE}                  { ++num_chars; }
+<INITIAL>{IMPORT}                { return (IMPORT); }
 <INITIAL>{ASSIGN}                { return (ASSIGN); }
 <INITIAL>{ELSE}                  { return (ELSE); }
 <INITIAL>{IF}                    { return (IF); }

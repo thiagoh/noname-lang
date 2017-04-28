@@ -65,6 +65,7 @@ extern void eval(ASTNode* ast_node);
 %}
 
 %token LINE_BREAK            "line_break"             
+%token IMPORT                "#import"
 %token STMT_SEP              "stmt_sep"           
 %token LETTER                "letter"         
 %token DIGIT                 "digit"         
@@ -125,6 +126,7 @@ extern void eval(ASTNode* ast_node);
 %type  <arg_list> arg_list          "arg_list"
 %type  <arg_list> ne_arg_list       "ne_arg_list"
 %type  <arg> arg                    "arg"
+%type  <ast_node> import            "import"
 %type  <ast_node> stmt              "statement"
 
 %left '-' '+'
@@ -144,6 +146,10 @@ prog:
   %empty {
     write_cursor();
   }
+  | prog import {
+      eval($2);
+      write_cursor();
+    }
   | prog stmt {
       eval($2);
       write_cursor();
@@ -176,6 +182,12 @@ stmt:
   | assignment STMT_SEP           { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - assignment]: ");
+      }
+      $$ = $1;
+    }
+  | import STMT_SEP           { 
+      if (yydebug) {
+        fprintf(stderr, "\n[stmt - import]: ");
       }
       $$ = $1;
     }
@@ -228,7 +240,7 @@ function_def:
       } 
 
       // $$ = new_function_def(*$<context>function_context, $ID, $arg_list, $stmt_list);
-      $$ = new_function_def(context, $ID, $arg_list, $stmt_list, $optional_ret_stmt);
+      $$ = new_function_def(context, std::string($ID), $arg_list, $stmt_list, $optional_ret_stmt);
       context_stack.pop();
       context = context_stack.top();
     }
@@ -239,25 +251,29 @@ optional_ret_stmt:
   | RETURN exp STMT_SEP     { $$ = $exp; }
 ;
 
+import:
+  IMPORT ID                { $$ = new_import(context, std::string($ID)); }
+;
+
 assignment:
   ID ASSIGN exp {
     // $$ = new AssignmentNode($1, $3);
-    $$ = new AssignmentNode(context, $ID, std::move((ExpNode*) $exp));
+    $$ = new AssignmentNode(context, std::string($ID), std::move((ExpNode*) $exp));
   }
   | LET ID ASSIGN exp {
-    $$ = new AssignmentNode(context, $ID, std::move((ExpNode*) $exp));
+    $$ = new AssignmentNode(context, std::string($ID), std::move((ExpNode*) $exp));
   }
 ;
 
 declaration:
   LET ID {
-    $$ = new DeclarationNode(context, $ID);
+    $$ = new DeclarationNode(context, std::string($ID));
   }
 ;
 
 exp:
   ID {
-    $$ = new VarNode(context, $1);
+    $$ = new VarNode(context, std::string($ID));
   }
   | STR_CONST {
     $$ = new StringNode(context, $STR_CONST);
