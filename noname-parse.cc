@@ -89,18 +89,23 @@ using namespace noname;
 
 //# define YY_SYMBOL_PRINT(Title, Type, Value, Location) 
 
-extern ASTContext* context;
-extern std::stack<ASTContext*> context_stack;
-extern int noname_read(char *buf, int *result, int max_size);
 extern int yylex(void);
-extern void write_cursor();
 extern int yydebug;
 extern void yyerror(const char *error_msg);
-extern void division_by_zero(YYLTYPE &yylloc);
-extern void eval(ASTNode* ast_node);
+
+namespace noname {
+
+  extern ASTContext* context;
+  extern std::stack<ASTContext*> context_stack;
+
+  extern int noname_read(char *buf, int *result, int max_size);
+  extern void write_cursor();
+  extern void division_by_zero(YYLTYPE &yylloc);
+  extern void eval(ASTNode* ast_node);
+}
 
 
-#line 104 "noname.tab.c" /* yacc.c:339  */
+#line 109 "noname.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -234,7 +239,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 43 "noname.y" /* yacc.c:355  */
+#line 48 "noname.y" /* yacc.c:355  */
 
   char* id_v;
   double double_v;
@@ -249,7 +254,7 @@ union YYSTYPE
   noname::arg* arg;
   char* error_msg;
 
-#line 253 "noname.tab.c" /* yacc.c:355  */
+#line 258 "noname.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -279,7 +284,7 @@ int yyparse (void);
 #endif /* !YY_YY_NONAME_TAB_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
-#line 58 "noname.y" /* yacc.c:358  */
+#line 63 "noname.y" /* yacc.c:358  */
 
 
   template<class Ret, class In>
@@ -288,7 +293,7 @@ int yyparse (void);
   }
 
 
-#line 292 "noname.tab.c" /* yacc.c:358  */
+#line 297 "noname.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -593,12 +598,12 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   146,   146,   149,   153,   161,   162,   163,   167,   168,
-     172,   178,   184,   190,   196,   205,   206,   214,   223,   214,
-     246,   247,   251,   255,   259,   265,   271,   274,   277,   280,
-     283,   286,   289,   292,   295,   298,   301,   304,   314,   315,
-     317,   322,   324,   329,   330,   331,   332,   336,   337,   338,
-     342,   343
+       0,   151,   151,   154,   158,   166,   167,   168,   172,   173,
+     177,   183,   189,   195,   201,   210,   211,   219,   228,   219,
+     251,   252,   256,   260,   264,   270,   276,   279,   282,   285,
+     288,   291,   294,   297,   300,   303,   306,   309,   319,   320,
+     322,   327,   329,   334,   335,   336,   337,   341,   342,   343,
+     347,   348
 };
 #endif
 
@@ -1538,119 +1543,119 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 146 "noname.y" /* yacc.c:1661  */
+#line 151 "noname.y" /* yacc.c:1661  */
     {
     write_cursor();
   }
-#line 1546 "noname.tab.c" /* yacc.c:1661  */
+#line 1551 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 3:
-#line 149 "noname.y" /* yacc.c:1661  */
+#line 154 "noname.y" /* yacc.c:1661  */
     {
       eval((yyvsp[0].ast_node));
       write_cursor();
     }
-#line 1555 "noname.tab.c" /* yacc.c:1661  */
+#line 1560 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 4:
-#line 153 "noname.y" /* yacc.c:1661  */
+#line 158 "noname.y" /* yacc.c:1661  */
     { 
     yyerrok; 
     fprintf(stderr, "Error at %d:%d", (yylsp[-1]).first_column, (yylsp[-1]).last_column); 
     write_cursor();
   }
-#line 1565 "noname.tab.c" /* yacc.c:1661  */
+#line 1570 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 5:
-#line 161 "noname.y" /* yacc.c:1661  */
+#line 166 "noname.y" /* yacc.c:1661  */
     { (yyval.stmt_list) = NULL; }
-#line 1571 "noname.tab.c" /* yacc.c:1661  */
+#line 1576 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 6:
-#line 162 "noname.y" /* yacc.c:1661  */
+#line 167 "noname.y" /* yacc.c:1661  */
     { (yyval.stmt_list) = new_stmt_list(context, (yyvsp[0].ast_node)); }
-#line 1577 "noname.tab.c" /* yacc.c:1661  */
+#line 1582 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 7:
-#line 163 "noname.y" /* yacc.c:1661  */
+#line 168 "noname.y" /* yacc.c:1661  */
     { (yyval.stmt_list) = new_stmt_list(context, (yyvsp[-1].stmt_list), (yyvsp[0].ast_node)); }
-#line 1583 "noname.tab.c" /* yacc.c:1661  */
+#line 1588 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 8:
-#line 167 "noname.y" /* yacc.c:1661  */
+#line 172 "noname.y" /* yacc.c:1661  */
     { (yyval.stmt_list) = new_stmt_list(context, (yyvsp[0].ast_node)); }
-#line 1589 "noname.tab.c" /* yacc.c:1661  */
+#line 1594 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 9:
-#line 168 "noname.y" /* yacc.c:1661  */
+#line 173 "noname.y" /* yacc.c:1661  */
     { (yyval.stmt_list) = new_stmt_list(context, (yyvsp[-1].stmt_list), (yyvsp[0].ast_node)); }
-#line 1595 "noname.tab.c" /* yacc.c:1661  */
+#line 1600 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 10:
-#line 172 "noname.y" /* yacc.c:1661  */
+#line 177 "noname.y" /* yacc.c:1661  */
     { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - declaration]: ");
       }
       (yyval.ast_node) = (yyvsp[-1].ast_node);
     }
-#line 1606 "noname.tab.c" /* yacc.c:1661  */
+#line 1611 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 11:
-#line 178 "noname.y" /* yacc.c:1661  */
+#line 183 "noname.y" /* yacc.c:1661  */
     { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - assignment]: ");
       }
       (yyval.ast_node) = (yyvsp[-1].exp_node);
     }
-#line 1617 "noname.tab.c" /* yacc.c:1661  */
+#line 1622 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 12:
-#line 184 "noname.y" /* yacc.c:1661  */
+#line 189 "noname.y" /* yacc.c:1661  */
     { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - import]: ");
       }
       (yyval.ast_node) = (yyvsp[-1].ast_node);
     }
-#line 1628 "noname.tab.c" /* yacc.c:1661  */
+#line 1633 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 13:
-#line 190 "noname.y" /* yacc.c:1661  */
+#line 195 "noname.y" /* yacc.c:1661  */
     { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - function_def]: ");
       }
       // $$ = $1;
     }
-#line 1639 "noname.tab.c" /* yacc.c:1661  */
+#line 1644 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 14:
-#line 196 "noname.y" /* yacc.c:1661  */
+#line 201 "noname.y" /* yacc.c:1661  */
     { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt exp]: ");
       }
       (yyval.ast_node) = (yyvsp[-1].exp_node);
     }
-#line 1650 "noname.tab.c" /* yacc.c:1661  */
+#line 1655 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 17:
-#line 214 "noname.y" /* yacc.c:1661  */
+#line 219 "noname.y" /* yacc.c:1661  */
     {
 
         if (yydebug >= 1) {
@@ -1661,21 +1666,21 @@ yyreduce:
         context = (yyval.context);
         
       }
-#line 1665 "noname.tab.c" /* yacc.c:1661  */
+#line 1670 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 18:
-#line 223 "noname.y" /* yacc.c:1661  */
+#line 228 "noname.y" /* yacc.c:1661  */
     {
         if (yydebug >= 1) {
           fprintf(stdout, "\n[############## processing function_def BEFORE exp_list ##############]");
         }
       }
-#line 1675 "noname.tab.c" /* yacc.c:1661  */
+#line 1680 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 19:
-#line 227 "noname.y" /* yacc.c:1661  */
+#line 232 "noname.y" /* yacc.c:1661  */
     {
       // ASTContext newContext(context);
 
@@ -1692,142 +1697,142 @@ yyreduce:
       context_stack.pop();
       context = context_stack.top();
     }
-#line 1696 "noname.tab.c" /* yacc.c:1661  */
+#line 1701 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 20:
-#line 246 "noname.y" /* yacc.c:1661  */
+#line 251 "noname.y" /* yacc.c:1661  */
     { (yyval.exp_node) = NULL; }
-#line 1702 "noname.tab.c" /* yacc.c:1661  */
+#line 1707 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 21:
-#line 247 "noname.y" /* yacc.c:1661  */
+#line 252 "noname.y" /* yacc.c:1661  */
     { (yyval.exp_node) = (yyvsp[-1].exp_node); }
-#line 1708 "noname.tab.c" /* yacc.c:1661  */
+#line 1713 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 22:
-#line 251 "noname.y" /* yacc.c:1661  */
+#line 256 "noname.y" /* yacc.c:1661  */
     { (yyval.ast_node) = new_import(context, std::string((yyvsp[0].id_v))); }
-#line 1714 "noname.tab.c" /* yacc.c:1661  */
+#line 1719 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 23:
-#line 255 "noname.y" /* yacc.c:1661  */
+#line 260 "noname.y" /* yacc.c:1661  */
     {
     // $$ = new AssignmentNode($1, $3);
     (yyval.exp_node) = new AssignmentNode(context, std::string((yyvsp[-2].id_v)), std::move((ExpNode*) (yyvsp[0].exp_node)));
   }
-#line 1723 "noname.tab.c" /* yacc.c:1661  */
+#line 1728 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 24:
-#line 259 "noname.y" /* yacc.c:1661  */
+#line 264 "noname.y" /* yacc.c:1661  */
     {
     (yyval.exp_node) = new AssignmentNode(context, std::string((yyvsp[-2].id_v)), std::move((ExpNode*) (yyvsp[0].exp_node)));
   }
-#line 1731 "noname.tab.c" /* yacc.c:1661  */
+#line 1736 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 25:
-#line 265 "noname.y" /* yacc.c:1661  */
+#line 270 "noname.y" /* yacc.c:1661  */
     {
     (yyval.ast_node) = new DeclarationNode(context, std::string((yyvsp[0].id_v)));
   }
-#line 1739 "noname.tab.c" /* yacc.c:1661  */
+#line 1744 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 26:
-#line 271 "noname.y" /* yacc.c:1661  */
+#line 276 "noname.y" /* yacc.c:1661  */
     {
     (yyval.exp_node) = new VarNode(context, std::string((yyvsp[0].id_v)));
   }
-#line 1747 "noname.tab.c" /* yacc.c:1661  */
+#line 1752 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 27:
-#line 274 "noname.y" /* yacc.c:1661  */
+#line 279 "noname.y" /* yacc.c:1661  */
     {
     (yyval.exp_node) = new StringNode(context, std::string((yyvsp[0].id_v)));
   }
-#line 1755 "noname.tab.c" /* yacc.c:1661  */
+#line 1760 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 28:
-#line 277 "noname.y" /* yacc.c:1661  */
+#line 282 "noname.y" /* yacc.c:1661  */
     {
     (yyval.exp_node) = new NumberNode(context, (yyvsp[0].long_v));
   }
-#line 1763 "noname.tab.c" /* yacc.c:1661  */
+#line 1768 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 29:
-#line 280 "noname.y" /* yacc.c:1661  */
+#line 285 "noname.y" /* yacc.c:1661  */
     {
     (yyval.exp_node) = new NumberNode(context, (yyvsp[0].double_v));
   }
-#line 1771 "noname.tab.c" /* yacc.c:1661  */
+#line 1776 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 30:
-#line 283 "noname.y" /* yacc.c:1661  */
+#line 288 "noname.y" /* yacc.c:1661  */
     {
       (yyval.exp_node) = new BinaryExpNode(context, '+', (yyvsp[-2].exp_node), (yyvsp[0].exp_node));
     }
-#line 1779 "noname.tab.c" /* yacc.c:1661  */
+#line 1784 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 31:
-#line 286 "noname.y" /* yacc.c:1661  */
+#line 291 "noname.y" /* yacc.c:1661  */
     {
       (yyval.exp_node) = new BinaryExpNode(context, '-', (yyvsp[-2].exp_node), (yyvsp[0].exp_node));
     }
-#line 1787 "noname.tab.c" /* yacc.c:1661  */
+#line 1792 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 32:
-#line 289 "noname.y" /* yacc.c:1661  */
+#line 294 "noname.y" /* yacc.c:1661  */
     {
       (yyval.exp_node) = new BinaryExpNode(context, '*', (yyvsp[-2].exp_node), (yyvsp[0].exp_node));
     }
-#line 1795 "noname.tab.c" /* yacc.c:1661  */
+#line 1800 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 33:
-#line 292 "noname.y" /* yacc.c:1661  */
+#line 297 "noname.y" /* yacc.c:1661  */
     {
       (yyval.exp_node) = new BinaryExpNode(context, '/', (yyvsp[-2].exp_node), (yyvsp[0].exp_node));
     }
-#line 1803 "noname.tab.c" /* yacc.c:1661  */
+#line 1808 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 34:
-#line 295 "noname.y" /* yacc.c:1661  */
+#line 300 "noname.y" /* yacc.c:1661  */
     {
       (yyval.exp_node) = new UnaryExpNode(context, '-', (yyvsp[0].exp_node));
     }
-#line 1811 "noname.tab.c" /* yacc.c:1661  */
+#line 1816 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 35:
-#line 298 "noname.y" /* yacc.c:1661  */
+#line 303 "noname.y" /* yacc.c:1661  */
     {
       (yyval.exp_node) = new BinaryExpNode(context, '^', (yyvsp[-2].exp_node), (yyvsp[0].exp_node));
     }
-#line 1819 "noname.tab.c" /* yacc.c:1661  */
+#line 1824 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 36:
-#line 301 "noname.y" /* yacc.c:1661  */
+#line 306 "noname.y" /* yacc.c:1661  */
     {
       (yyval.exp_node) = new BinaryExpNode(context, 0, (yyvsp[-1].exp_node), NULL);
     }
-#line 1827 "noname.tab.c" /* yacc.c:1661  */
+#line 1832 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 37:
-#line 304 "noname.y" /* yacc.c:1661  */
+#line 309 "noname.y" /* yacc.c:1661  */
     {
 
       if ((yyvsp[-1].exp_list) == NULL) {
@@ -1835,99 +1840,99 @@ yyreduce:
       } 
       (yyval.exp_node) = new_call_node(context, (yyvsp[-3].id_v), (yyvsp[-1].exp_list));
     }
-#line 1839 "noname.tab.c" /* yacc.c:1661  */
+#line 1844 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 38:
-#line 314 "noname.y" /* yacc.c:1661  */
+#line 319 "noname.y" /* yacc.c:1661  */
     { (yyval.arg_list) = NULL; }
-#line 1845 "noname.tab.c" /* yacc.c:1661  */
+#line 1850 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 39:
-#line 315 "noname.y" /* yacc.c:1661  */
+#line 320 "noname.y" /* yacc.c:1661  */
     {  //fprintf(stderr, "\n[arglist processing]"); 
                               (yyval.arg_list) = new_arg_list(context, NULL, (yyvsp[0].arg)); }
-#line 1852 "noname.tab.c" /* yacc.c:1661  */
+#line 1857 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 40:
-#line 317 "noname.y" /* yacc.c:1661  */
+#line 322 "noname.y" /* yacc.c:1661  */
     {  //fprintf(stderr, "\n[arglist processing]"); 
                               (yyval.arg_list) = new_arg_list(context, (yyvsp[-2].arg_list), (yyvsp[0].arg)); }
-#line 1859 "noname.tab.c" /* yacc.c:1661  */
+#line 1864 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 41:
-#line 322 "noname.y" /* yacc.c:1661  */
+#line 327 "noname.y" /* yacc.c:1661  */
     {  //fprintf(stderr, "\n[ne_arg_list processing]"); 
                               (yyval.arg_list) = new_arg_list(context, NULL, (yyvsp[0].arg)); }
-#line 1866 "noname.tab.c" /* yacc.c:1661  */
+#line 1871 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 42:
-#line 324 "noname.y" /* yacc.c:1661  */
+#line 329 "noname.y" /* yacc.c:1661  */
     {  //fprintf(stderr, "\n[ne_arg_list processing]"); 
                               (yyval.arg_list) = new_arg_list(context, (yyvsp[-2].arg_list), (yyvsp[0].arg)); }
-#line 1873 "noname.tab.c" /* yacc.c:1661  */
+#line 1878 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 43:
-#line 329 "noname.y" /* yacc.c:1661  */
+#line 334 "noname.y" /* yacc.c:1661  */
     { (yyval.arg) = new_arg(context, (yyvsp[0].id_v), NULL); }
-#line 1879 "noname.tab.c" /* yacc.c:1661  */
+#line 1884 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 44:
-#line 330 "noname.y" /* yacc.c:1661  */
+#line 335 "noname.y" /* yacc.c:1661  */
     { (yyval.arg) = new_arg(context, (yyvsp[-2].id_v), (yyvsp[0].double_v)); }
-#line 1885 "noname.tab.c" /* yacc.c:1661  */
+#line 1890 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 45:
-#line 331 "noname.y" /* yacc.c:1661  */
+#line 336 "noname.y" /* yacc.c:1661  */
     { (yyval.arg) = new_arg(context, (yyvsp[-2].id_v), (yyvsp[0].long_v)); }
-#line 1891 "noname.tab.c" /* yacc.c:1661  */
+#line 1896 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 46:
-#line 332 "noname.y" /* yacc.c:1661  */
+#line 337 "noname.y" /* yacc.c:1661  */
     { (yyval.arg) = new_arg(context, (yyvsp[-2].id_v), (yyvsp[0].id_v)); }
-#line 1897 "noname.tab.c" /* yacc.c:1661  */
+#line 1902 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 47:
-#line 336 "noname.y" /* yacc.c:1661  */
+#line 341 "noname.y" /* yacc.c:1661  */
     { (yyval.exp_list) = NULL; }
-#line 1903 "noname.tab.c" /* yacc.c:1661  */
+#line 1908 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 48:
-#line 337 "noname.y" /* yacc.c:1661  */
+#line 342 "noname.y" /* yacc.c:1661  */
     { (yyval.exp_list) = new_exp_list(context, (yyvsp[-1].exp_node)); }
-#line 1909 "noname.tab.c" /* yacc.c:1661  */
+#line 1914 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 49:
-#line 338 "noname.y" /* yacc.c:1661  */
+#line 343 "noname.y" /* yacc.c:1661  */
     { (yyval.exp_list) = new_exp_list(context, (yyvsp[-2].exp_list), (yyvsp[-1].exp_node)); }
-#line 1915 "noname.tab.c" /* yacc.c:1661  */
+#line 1920 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 50:
-#line 342 "noname.y" /* yacc.c:1661  */
+#line 347 "noname.y" /* yacc.c:1661  */
     { (yyval.exp_list) = new_exp_list(context, (yyvsp[-1].exp_node)); }
-#line 1921 "noname.tab.c" /* yacc.c:1661  */
+#line 1926 "noname.tab.c" /* yacc.c:1661  */
     break;
 
   case 51:
-#line 343 "noname.y" /* yacc.c:1661  */
+#line 348 "noname.y" /* yacc.c:1661  */
     { (yyval.exp_list) = new_exp_list(context, (yyvsp[-2].exp_list), (yyvsp[-1].exp_node)); }
-#line 1927 "noname.tab.c" /* yacc.c:1661  */
+#line 1932 "noname.tab.c" /* yacc.c:1661  */
     break;
 
 
-#line 1931 "noname.tab.c" /* yacc.c:1661  */
+#line 1936 "noname.tab.c" /* yacc.c:1661  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2162,4 +2167,4 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 346 "noname.y" /* yacc.c:1906  */
+#line 351 "noname.y" /* yacc.c:1906  */

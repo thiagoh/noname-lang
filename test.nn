@@ -71,17 +71,15 @@ def inner_func() {
 inner_func();
 
 def closure_func() {
-  let euler_number = 2.718;
-  def get_euler() {
-    return euler_number;
+  let phi = 1.6180339887;
+  def get_phi() {
+    return phi;
   }
 
-  return get_euler() * 10;
+  return get_phi() * 10;
 }
 
 closure_func(); // 27.18
-
-#import "import_1.nn";
 
 def regular_func() {
 
@@ -91,3 +89,9 @@ def regular_func() {
 };
 
 regular_func(); // function not found
+
+#import "import_1.nn";
+#import "math.nn";
+
+// function defined inside math.nn
+euler();

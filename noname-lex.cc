@@ -616,9 +616,15 @@ char *noname_yytext;
   extern YYSTYPE yylval;
 
   #define YY_NO_UNPUT   /* keep g++ happy */
+
+  using namespace llvm;
+  using namespace noname;
   
   extern void yyerror(char const *s);
-  extern int noname_read(char *buf, int *result, int max_size);
+  
+  namespace noname {
+    extern int noname_read(char *buf, int *result, int max_size);
+  }
 
   /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
   * is returned in "result".
@@ -642,13 +648,13 @@ char *noname_yytext;
   extern char *string_buf_ptr;
   extern unsigned int string_buf_left;
   extern bool string_error;
-#line 645 "noname-lex.cc"
-#line 42 "noname.flex"
+#line 651 "noname-lex.cc"
+#line 48 "noname.flex"
   // %option noyywrap nounput batch debug yylineno
   // %option warn noyywrap nodefault yylineno reentrant bison-bridge 
 
 
-#line 651 "noname-lex.cc"
+#line 657 "noname-lex.cc"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -867,10 +873,10 @@ YY_DECL
 		}
 
 	{
-#line 97 "noname.flex"
+#line 103 "noname.flex"
 
 
-#line 873 "noname-lex.cc"
+#line 879 "noname-lex.cc"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -930,7 +936,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 99 "noname.flex"
+#line 105 "noname.flex"
 {
                         ++num_chars;
                         ++num_lines;
@@ -938,14 +944,14 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 104 "noname.flex"
+#line 110 "noname.flex"
 {
   comment++;
   BEGIN(COMMENT);
 }
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 109 "noname.flex"
+#line 115 "noname.flex"
 {
   yylval.error_msg = "EOF in comment";
   BEGIN(INITIAL);
@@ -955,26 +961,26 @@ case YY_STATE_EOF(COMMENT):
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 115 "noname.flex"
+#line 121 "noname.flex"
 {
   backslash_common();
 };
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 119 "noname.flex"
+#line 125 "noname.flex"
 ;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 121 "noname.flex"
+#line 127 "noname.flex"
 {
   comment++;
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 125 "noname.flex"
+#line 131 "noname.flex"
 {
   comment--;
   if (comment == 0) {
@@ -984,12 +990,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 132 "noname.flex"
+#line 138 "noname.flex"
 { ++num_chars; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 134 "noname.flex"
+#line 140 "noname.flex"
 {
   yylval.error_msg = "Unmatched */";
   return (ERROR);
@@ -997,12 +1003,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 139 "noname.flex"
+#line 145 "noname.flex"
 ;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 141 "noname.flex"
+#line 147 "noname.flex"
 {
   BEGIN(STRING);
   string_buf_ptr = string_buf;
@@ -1011,7 +1017,7 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 case YY_STATE_EOF(STRING):
-#line 148 "noname.flex"
+#line 154 "noname.flex"
 {
   yylval.error_msg = "EOF in string constant";
   BEGIN(INITIAL);
@@ -1020,7 +1026,7 @@ case YY_STATE_EOF(STRING):
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 154 "noname.flex"
+#line 160 "noname.flex"
 {
   int rc = str_write(yytext, strlen(yytext));
   if (rc != 0) {
@@ -1030,7 +1036,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 160 "noname.flex"
+#line 166 "noname.flex"
 {
   null_character_err();
   return (ERROR);
@@ -1039,7 +1045,7 @@ YY_RULE_SETUP
 case 13:
 /* rule 13 can match eol */
 YY_RULE_SETUP
-#line 165 "noname.flex"
+#line 171 "noname.flex"
 {
   BEGIN(INITIAL);
   curr_lineno++;
@@ -1052,7 +1058,7 @@ YY_RULE_SETUP
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 173 "noname.flex"
+#line 179 "noname.flex"
 {
   char *c = backslash_common();
   int rc;
@@ -1083,12 +1089,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 200 "noname.flex"
+#line 206 "noname.flex"
 ;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 202 "noname.flex"
+#line 208 "noname.flex"
 {
   BEGIN(INITIAL);
   if (!string_error) {
@@ -1099,178 +1105,178 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 211 "noname.flex"
+#line 217 "noname.flex"
 { ++num_chars; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 212 "noname.flex"
+#line 218 "noname.flex"
 { return (IMPORT); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 213 "noname.flex"
+#line 219 "noname.flex"
 { return (ASSIGN); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 214 "noname.flex"
+#line 220 "noname.flex"
 { return (ELSE); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 215 "noname.flex"
+#line 221 "noname.flex"
 { return (IF); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 216 "noname.flex"
+#line 222 "noname.flex"
 { return (IN); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 217 "noname.flex"
+#line 223 "noname.flex"
 { return (LET); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 218 "noname.flex"
+#line 224 "noname.flex"
 { return (RETURN); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 219 "noname.flex"
+#line 225 "noname.flex"
 { return (DEF); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 220 "noname.flex"
+#line 226 "noname.flex"
 { return (THEN); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 221 "noname.flex"
+#line 227 "noname.flex"
 { return (WHILE); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 222 "noname.flex"
+#line 228 "noname.flex"
 { return (CASE); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 223 "noname.flex"
+#line 229 "noname.flex"
 { return (NEW); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 224 "noname.flex"
+#line 230 "noname.flex"
 { return (NOT); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 225 "noname.flex"
+#line 231 "noname.flex"
 {
   yylval.id_v = strdup(yytext);
   return (ID); }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 228 "noname.flex"
+#line 234 "noname.flex"
 {
   yylval.long_v = atoi(strdup(yytext));
   return (LONG); }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 231 "noname.flex"
+#line 237 "noname.flex"
 {
   yylval.double_v = atof(strdup(yytext));
   return (DOUBLE); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 235 "noname.flex"
+#line 241 "noname.flex"
 { return int(','); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 236 "noname.flex"
+#line 242 "noname.flex"
 { return int(':'); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 237 "noname.flex"
+#line 243 "noname.flex"
 { return int('{'); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 238 "noname.flex"
+#line 244 "noname.flex"
 { return int('}'); }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 239 "noname.flex"
+#line 245 "noname.flex"
 { return int('+'); }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 240 "noname.flex"
+#line 246 "noname.flex"
 { return int('-'); }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 241 "noname.flex"
+#line 247 "noname.flex"
 { return int('*'); }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 242 "noname.flex"
+#line 248 "noname.flex"
 { return int('/'); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 243 "noname.flex"
+#line 249 "noname.flex"
 { return int('<'); }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 244 "noname.flex"
+#line 250 "noname.flex"
 { return int('~'); }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 245 "noname.flex"
+#line 251 "noname.flex"
 { return int('.'); }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 246 "noname.flex"
+#line 252 "noname.flex"
 { return int('@'); }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 247 "noname.flex"
+#line 253 "noname.flex"
 { return int('('); }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 248 "noname.flex"
+#line 254 "noname.flex"
 { return int(')'); }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 249 "noname.flex"
+#line 255 "noname.flex"
 { return int('&'); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 250 "noname.flex"
+#line 256 "noname.flex"
 { return int(STMT_SEP); }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 252 "noname.flex"
+#line 258 "noname.flex"
 {
     printf("lexer error '%s'", yytext);
     yylval.error_msg = yytext; return 0; 
@@ -1278,10 +1284,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 257 "noname.flex"
+#line 263 "noname.flex"
 ECHO;
 	YY_BREAK
-#line 1284 "noname-lex.cc"
+#line 1290 "noname-lex.cc"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2282,5 +2288,5 @@ void noname_yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 257 "noname.flex"
+#line 263 "noname.flex"
 

@@ -24,15 +24,20 @@ using namespace noname;
 
 //# define YY_SYMBOL_PRINT(Title, Type, Value, Location) 
 
-extern ASTContext* context;
-extern std::stack<ASTContext*> context_stack;
-extern int noname_read(char *buf, int *result, int max_size);
 extern int yylex(void);
-extern void write_cursor();
 extern int yydebug;
 extern void yyerror(const char *error_msg);
-extern void division_by_zero(YYLTYPE &yylloc);
-extern void eval(ASTNode* ast_node);
+
+namespace noname {
+
+  extern ASTContext* context;
+  extern std::stack<ASTContext*> context_stack;
+
+  extern int noname_read(char *buf, int *result, int max_size);
+  extern void write_cursor();
+  extern void division_by_zero(YYLTYPE &yylloc);
+  extern void eval(ASTNode* ast_node);
+}
 
 %}
 

@@ -1,0 +1,7 @@
+def PI() {
+  return 3.14159;
+};
+let euler = 2.718;
+def euler() {
+  return euler;
+}

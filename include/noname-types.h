@@ -161,6 +161,9 @@ AssignmentNode* logErrorV(const char* str);
 ASTNode* logError(ErrorNode* error_node);
 NodeValue* logErrorNV(ErrorNode* error_node);
 
+bool is_file_already_imported(const std::string& file_path);
+bool is_file_already_imported(const char* file_path);
+
 void print_node_value(NodeValue* nodeValue);
 void print_node_value(FILE* file, NodeValue* nodeValue);
 stmtlist* new_stmt_list(ASTContext* context);

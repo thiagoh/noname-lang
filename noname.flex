@@ -9,9 +9,15 @@
   extern YYSTYPE yylval;
 
   #define YY_NO_UNPUT   /* keep g++ happy */
+
+  using namespace llvm;
+  using namespace noname;
   
   extern void yyerror(char const *s);
-  extern int noname_read(char *buf, int *result, int max_size);
+  
+  namespace noname {
+    extern int noname_read(char *buf, int *result, int max_size);
+  }
 
   /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
   * is returned in "result".
