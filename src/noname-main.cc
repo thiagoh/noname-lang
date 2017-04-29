@@ -146,7 +146,7 @@ int noname_read(char *buf, int *result, int max_size) {
   return 0;
 }
 
-void *ExpNodeProcessorStrategy::process_node(ASTNode *node) {
+void *ExpNodeProcessorStrategy::process(ASTNode *node) {
   ;
   fprintf(stderr, "\n[############# ExpNodeProcessorStrategy]");
 
@@ -154,7 +154,7 @@ void *ExpNodeProcessorStrategy::process_node(ASTNode *node) {
   print_node_value(stdout, return_value);
   return nullptr;
 }
-void *AssignmentNodeProcessorStrategy::process_node(ASTNode *node) {
+void *AssignmentNodeProcessorStrategy::process(ASTNode *node) {
   ;
   fprintf(stderr, "\n[############# AssignmentNodeProcessorStrategy]");
 
@@ -162,7 +162,7 @@ void *AssignmentNodeProcessorStrategy::process_node(ASTNode *node) {
   print_node_value(stdout, return_value);
   return nullptr;
 }
-void *CallExpNodeProcessorStrategy::process_node(ASTNode *node) {
+void *CallExpNodeProcessorStrategy::process(ASTNode *node) {
   ;
   fprintf(stderr, "\n[############# CallExpNodeProcessorStrategy]");
   CallExpNode *call_exp_node = (CallExpNode *)node;
@@ -181,7 +181,7 @@ void *CallExpNodeProcessorStrategy::process_node(ASTNode *node) {
   }
   return nullptr;
 }
-void *ImportNodeProcessorStrategy::process_node(ASTNode *node) {
+void *ImportNodeProcessorStrategy::process(ASTNode *node) {
   ;
   fprintf(stderr, "\n[############# ImportNodeProcessorStrategy]");
 
@@ -211,10 +211,10 @@ void *ImportNodeProcessorStrategy::process_node(ASTNode *node) {
   return nullptr;
 }
 
-ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
-ProcessorStrategy* assignmentNodeProcessorStrategy = new AssignmentNodeProcessorStrategy();
-ProcessorStrategy* callNodeProcessorStrategy = new CallExpNodeProcessorStrategy();
-ProcessorStrategy* importNodeProcessorStrategy = new ImportNodeProcessorStrategy();
+ProcessorStrategy *expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
+ProcessorStrategy *assignmentNodeProcessorStrategy = new AssignmentNodeProcessorStrategy();
+ProcessorStrategy *callNodeProcessorStrategy = new CallExpNodeProcessorStrategy();
+ProcessorStrategy *importNodeProcessorStrategy = new ImportNodeProcessorStrategy();
 
 // void process_node(ExpNode &exp_node) {
 //   NodeValue *return_value = (NodeValue *)exp_node->eval();
@@ -279,6 +279,8 @@ void eval(ASTNode *node) {
             is_of_type<AssignmentNode>(*node) ? "true" : "false",
             is_of_type<DeclarationAssignmentNode>(*node) ? "true" : "false");
   }
+
+  node->getProcessorStrategy()->process(node);
 
   // if (is_of_type<ImportNode>(*node)) {
   //   ImportNode *import_node = (ImportNode *)node;

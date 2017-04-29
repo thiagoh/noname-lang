@@ -211,7 +211,7 @@ class ASTNode {
   virtual ~ASTNode() = default;
   virtual ASTNode* check() { return this; };
   virtual void* eval() { return nullptr; };
-  virtual ProcessorStrategy* getStrategy() { return nullptr; };
+  virtual ProcessorStrategy* getProcessorStrategy() { return nullptr; };
 
   ASTContext* getContext() const { return context; };
 
@@ -521,7 +521,7 @@ class ExpNode : public ASTNode {
     return node_value;
   };
   virtual NodeValue* getValue() = 0;
-  ProcessorStrategy* getStrategy() override { return expNodeProcessorStrategy; };
+  ProcessorStrategy* getProcessorStrategy() override { return expNodeProcessorStrategy; };
 
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_EXP_NODE; };
@@ -650,7 +650,7 @@ class CallExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
-  ProcessorStrategy* getStrategy() override { return callNodeProcessorStrategy; };
+  ProcessorStrategy* getProcessorStrategy() override { return callNodeProcessorStrategy; };
 
   const std::string& getCallee() const { return callee; }
   std::vector<std::unique_ptr<ExpNode>>& getArgs() { return args; }
@@ -668,7 +668,7 @@ class ImportNode : public ASTNode {
   ImportNode(ASTContext* context, const std::string& filename) : ASTNode(context), filename(filename) {}
 
   // void* eval() override;
-  ProcessorStrategy* getStrategy() override { return importNodeProcessorStrategy; };
+  ProcessorStrategy* getProcessorStrategy() override { return importNodeProcessorStrategy; };
   const std::string& getFilename() const { return filename; }
 
   int getType() const override { return getClassType(); };
@@ -775,7 +775,7 @@ class AssignmentNode : public ExpNode {
 
   void* eval() override;
   NodeValue* getValue() override;
-  ProcessorStrategy* getStrategy() override { return assignmentNodeProcessorStrategy; };
+  ProcessorStrategy* getProcessorStrategy() override { return assignmentNodeProcessorStrategy; };
 
   const std::string& getName() const { return name; }
 
@@ -812,24 +812,24 @@ class DeclarationNode : public ASTNode {
 class ProcessorStrategy {
  public:
   virtual ~ProcessorStrategy() = default;
-  virtual void* process_node(ASTNode* node) = 0;
+  virtual void* process(ASTNode* node) = 0;
 };
 
 class ExpNodeProcessorStrategy : public ProcessorStrategy {
  public:
-  void* process_node(ASTNode* node) override;
+  void* process(ASTNode* node) override;
 };
 class AssignmentNodeProcessorStrategy : public ProcessorStrategy {
  public:
-  void* process_node(ASTNode* node) override;
+  void* process(ASTNode* node) override;
 };
 class CallExpNodeProcessorStrategy : public ProcessorStrategy {
  public:
-  void* process_node(ASTNode* node) override;
+  void* process(ASTNode* node) override;
 };
 class ImportNodeProcessorStrategy : public ProcessorStrategy {
  public:
-  void* process_node(ASTNode* node) override;
+  void* process(ASTNode* node) override;
 };
 
 // class ReturnNode : public ExpNode {
