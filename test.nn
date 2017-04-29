@@ -95,3 +95,9 @@ regular_func(); // function not found
 
 // function defined inside math.nn
 euler();
+
+def sum(a, b) {
+  return a + b;
+};
+
+sum(321, 123);

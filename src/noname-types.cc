@@ -241,8 +241,8 @@ AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
   AssignmentNode* new_node = new AssignmentNode(context, name, exp);
   return new_node;
 }
-CallExprNode* new_call_node(ASTContext* context, const std::string name, explist* exp_list) {
-  CallExprNode* new_node = new CallExprNode(context, name, exp_list);
+CallExpNode* new_call_node(ASTContext* context, const std::string name, explist* exp_list) {
+  CallExpNode* new_node = new CallExpNode(context, name, exp_list);
   return new_node;
 }
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name) {
@@ -505,15 +505,19 @@ void* AssignmentNode::eval() {
 NodeValue* AssignmentNode::getValue() { return rhs.get()->getValue(); }
 
 // UNNECESSARY
-// void* CallExprNode::eval() { NodeValue* node_value = getValue(); }
-NodeValue* CallExprNode::getValue() {
-  ASTContext* context = getContext();
-  FunctionDefNode* function_node = context->getFunction(getCallee());
+// void* CallExpNode::eval() { NodeValue* node_value = getValue(); }
+NodeValue* CallExpNode::getValue() {
+  ASTContext* call_exp_context = getContext();
+  FunctionDefNode* function_node = call_exp_context->getFunction(getCallee());
 
   if (!function_node) {
     fprintf(stdout, "\n\nThe called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
     return 0;
   }
+
+  // ASTContext* function_context = function_node->getContext();
+  // ASTContext* temp_context = new ASTContext("temp_context", call_exp_context, function_context);
+  // function_node->setContext(temp_context);
 
   ExpNode* returnNode = function_node->getReturnNode();
   std::vector<std::unique_ptr<ExpNode>>* valueArgs = &getArgs();
@@ -527,7 +531,8 @@ NodeValue* CallExprNode::getValue() {
     std::unique_ptr<ExpNode>& valueArg = *itValueArg;
     std::unique_ptr<arg>& signatureArg = *itSignatureArg;
 
-    context->store(signatureArg.get()->name, valueArg.get()->getValue());
+    call_exp_context->store(signatureArg.get()->name, valueArg.get()->getValue());
+    // temp_context->store(signatureArg.get()->name, valueArg.get()->getValue());
 
     ++itSignatureArg;
     ++itValueArg;
@@ -552,6 +557,9 @@ NodeValue* CallExprNode::getValue() {
       fprintf(stdout, "\n[## no return given]\n");
     }
   }
+
+  // delete temp_context;
+  // function_node->setContext(function_context);
 
   return nullptr;
 }

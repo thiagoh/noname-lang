@@ -103,7 +103,7 @@ class BinaryExpNode;
 class NodeValue;
 class ImportNode;
 class VarNode;
-class CallExprNode;
+class CallExpNode;
 class FunctionDefNode;
 class AssignmentNode;
 class DeclarationNode;
@@ -177,14 +177,14 @@ arg* new_arg(ASTContext* context, char* arg, double defaultValue);
 arg* new_arg(ASTContext* context, char* arg, long defaultValue);
 arg* new_arg(ASTContext* context, char* arg, char* defaultValue);
 arglist* new_arg_list(ASTContext* context);
-arglist* new_arg_list(ASTContext* context, arglist* head_arg_list);
+arglist* new_arg_list(ASTContext* context, arg* arg);
 arglist* new_arg_list(ASTContext* context, arglist* head_arg_list, arg* arg);
 
 ImportNode* new_import(ASTContext* context, std::string filename);
 VarNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
-CallExprNode* new_call_node(ASTContext* context, const std::string name, explist* exp_list);
+CallExpNode* new_call_node(ASTContext* context, const std::string name, explist* exp_list);
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist* arg_list, stmtlist* stmt_list,
                           ExpNode* returnNode);
 
@@ -234,7 +234,20 @@ class ASTContext {
  public:
   ASTContext(const std::string& name) : name(name), parent(NULL) {}
   ASTContext(const std::string& name, ASTContext* parent) : name(name), parent(parent) {}
+  ASTContext(const ASTContext& copy)
+      : name(copy.name), parent(copy.parent), mFunctions(copy.mFunctions), mVariables(copy.mVariables) {}
+  ASTContext(const ASTContext& copy, ASTContext* parent)
+      : name(copy.name), parent(parent), mFunctions(copy.mFunctions), mVariables(copy.mVariables) {}
+  ASTContext(const std::string& name, const ASTContext& copy, ASTContext* parent)
+      : name(name), parent(parent), mFunctions(copy.mFunctions), mVariables(copy.mVariables) {}
   virtual ~ASTContext() = default;
+  ASTContext& operator=(const ASTContext& copy) {
+    name = copy.name;
+    parent = copy.parent;
+    mFunctions = copy.mFunctions;
+    mVariables = copy.mVariables;
+    return *this;
+  }
   std::string& getName() { return name; }
   ASTContext* getParent() { return parent; }
   // Functions
@@ -570,16 +583,16 @@ class BinaryExpNode : public ExpNode {
   static int getClassType() { return AST_NODE_TYPE_BINARY; };
 };
 
-/// CallExprNode - Expression class for function calls.
-class CallExprNode : public ExpNode {
+/// CallExpNode - Expression class for function calls.
+class CallExpNode : public ExpNode {
  private:
   std::string callee;
   std::vector<std::unique_ptr<ExpNode>> args;
 
  public:
-  CallExprNode(ASTContext* context, const std::string& callee, std::vector<std::unique_ptr<ExpNode>>& args)
+  CallExpNode(ASTContext* context, const std::string& callee, std::vector<std::unique_ptr<ExpNode>>& args)
       : ExpNode(context), callee(callee), args(std::move(args)) {}
-  CallExprNode(ASTContext* context, const std::string& callee, explist* head_exp_list)
+  CallExpNode(ASTContext* context, const std::string& callee, explist* head_exp_list)
       : ExpNode(context), callee(callee), args(std::vector<std::unique_ptr<ExpNode>>()) {
     if (head_exp_list) {
       explist_node* explist_node = head_exp_list->first;

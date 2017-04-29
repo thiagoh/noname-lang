@@ -126,8 +126,10 @@ namespace noname {
 %type  <ast_node> function_def      "function_def"
 %type  <stmt_list> stmt_list        "stmt_list"
 %type  <stmt_list> ne_stmt_list     "ne_stmt_list"
-%type  <exp_list> exp_list          "exp_list"
-%type  <exp_list> ne_exp_list       "ne_exp_list"
+// %type  <exp_list> exp_list          "exp_list"
+// %type  <exp_list> ne_exp_list       "ne_exp_list"
+%type  <exp_list> arg_exp_list      "arg_exp_list"
+%type  <exp_list> ne_arg_exp_list   "ne_arg_exp_list"
 %type  <arg_list> arg_list          "arg_list"
 %type  <arg_list> ne_arg_list       "ne_arg_list"
 %type  <arg> arg                    "arg"
@@ -227,7 +229,7 @@ function_def:
         
       }[function_context] '(' arg_list ')' {
         if (yydebug >= 1) {
-          fprintf(stdout, "\n[############## processing function_def BEFORE exp_list ##############]");
+          fprintf(stdout, "\n[############## processing function_def BEFORE stmt_list ##############]");
         }
       } '{' stmt_list optional_ret_stmt '}' {
       // ASTContext newContext(context);
@@ -306,28 +308,28 @@ exp:
   | '(' exp ')'        {
       $$ = new BinaryExpNode(context, 0, $2, NULL);
     }
-  | ID '(' exp_list ')'        {
+  | ID '(' arg_exp_list ')'        {
 
-      if ($exp_list == NULL) {
-        $exp_list = new_exp_list(context);
+      fprintf(stderr, "\n[ID(arg_exp_list)]"); 
+
+      if ($arg_exp_list == NULL) {
+        fprintf(stderr, "\n[$arg_exp_list is NULL]"); 
+        $arg_exp_list = new_exp_list(context);
       } 
-      $$ = new_call_node(context, $ID, $exp_list);
+      fprintf(stderr, "\n[new_call_node() %s]", $ID); 
+      $$ = new_call_node(context, $ID, $arg_exp_list);
     }
   ;
 
 arg_list:
   %empty                   { $$ = NULL; } 
-  | arg                    {  //fprintf(stderr, "\n[arglist processing]"); 
-                              $$ = new_arg_list(context, NULL, $1); }
-  | ne_arg_list ',' arg    {  //fprintf(stderr, "\n[arglist processing]"); 
-                              $$ = new_arg_list(context, $1, $3); }
+  | arg                    {  $$ = new_arg_list(context, $1); }
+  | ne_arg_list ',' arg    {  $$ = new_arg_list(context, $1, $3); }
 ;
 
 ne_arg_list:
-  arg                      {  //fprintf(stderr, "\n[ne_arg_list processing]"); 
-                              $$ = new_arg_list(context, NULL, $1); }
-  | ne_arg_list ',' arg    {  //fprintf(stderr, "\n[ne_arg_list processing]"); 
-                              $$ = new_arg_list(context, $1, $3); }
+  arg                      {  $$ = new_arg_list(context, $1); }
+  | ne_arg_list ',' arg    {  $$ = new_arg_list(context, $1, $3); }
 ;
 
 arg:
@@ -337,15 +339,26 @@ arg:
   | ID ASSIGN STR_CONST   { $$ = new_arg(context, $1, $3); }
 ;
 
-exp_list:
-  %empty                     { $$ = NULL; }
-  | exp STMT_SEP             { $$ = new_exp_list(context, $1); }
-  | ne_exp_list exp STMT_SEP { $$ = new_exp_list(context, $1, $2); }
+arg_exp_list:
+  %empty                         { $$ = NULL; }
+  | exp                          { $$ = new_exp_list(context, $1); }
+  | ne_arg_exp_list ',' exp      { $$ = new_exp_list(context, $1, $3); }
 ;
 
-ne_exp_list:
-  exp STMT_SEP               { $$ = new_exp_list(context, $1); }
-  | ne_exp_list exp STMT_SEP { $$ = new_exp_list(context, $1, $2); }
+ne_arg_exp_list:
+  exp                             { $$ = new_exp_list(context, $1); }
+  | ne_arg_exp_list ',' exp       { $$ = new_exp_list(context, $1, $3); }
 ;
+
+// exp_list:
+//   %empty                     { $$ = NULL; }
+//   | exp STMT_SEP             { $$ = new_exp_list(context, $1); }
+//   | ne_exp_list exp STMT_SEP { $$ = new_exp_list(context, $1, $2); }
+// ;
+
+// ne_exp_list:
+//   exp STMT_SEP               { $$ = new_exp_list(context, $1); }
+//   | ne_exp_list exp STMT_SEP { $$ = new_exp_list(context, $1, $2); }
+// ;
 
 %%
