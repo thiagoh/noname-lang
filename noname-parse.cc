@@ -1837,13 +1837,13 @@ yyreduce:
 #line 311 "noname.y" /* yacc.c:1661  */
     {
 
-      fprintf(stderr, "\n[ID(arg_exp_list)]"); 
+      // fprintf(stderr, "\n[ID(arg_exp_list)]"); 
 
       if ((yyvsp[-1].exp_list) == NULL) {
-        fprintf(stderr, "\n[$arg_exp_list is NULL]"); 
+        // fprintf(stderr, "\n[$arg_exp_list is NULL]"); 
         (yyvsp[-1].exp_list) = new_exp_list(context);
       } 
-      fprintf(stderr, "\n[new_call_node() %s]", (yyvsp[-3].id_v)); 
+      // fprintf(stderr, "\n[new_call_node() %s]", $ID); 
       (yyval.exp_node) = new_call_node(context, (yyvsp[-3].id_v), (yyvsp[-1].exp_list));
     }
 #line 1850 "noname.tab.c" /* yacc.c:1661  */

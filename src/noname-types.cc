@@ -14,6 +14,8 @@
 
 using namespace llvm;
 
+extern FILE* fin;
+
 namespace noname {
 
 /// LogError* - These are little helper functions for error handling.
@@ -617,6 +619,33 @@ void* CallExpNodeProcessorStrategy::process(ASTNode* node) {
   } else {
     fprintf(stderr, "\nError: The function %s was not found int the context\n", call_exp_node->getCallee().c_str());
   }
+  return nullptr;
+}
+
+void* ImportNodeProcessorStrategy::process(ASTNode* node) {
+  ImportNode* import_node = (ImportNode*)node;
+
+  char* file_path = get_file_path(import_node->getFilename().c_str());
+  char* const_file_path[] = {file_path};
+  // const char *const_file_path = file_path;
+  FILE* opened_file = fopen(*const_file_path, "r");
+
+  if (opened_file != NULL) {
+    if (is_file_already_imported(*const_file_path)) {
+      if (yydebug >= 3) {
+        fprintf(stdout, "\nNOTICE: File '%s' already imported\n", file_path);
+      }
+    } else {
+      imported_files.push_back(file_path);
+      read_from_file_import = true;
+      fin = opened_file;
+    }
+
+  } else {
+    fprintf(stderr, "\nError: File '%s' could not be opened.\n", file_path);
+  }
+
+  free(file_path);
   return nullptr;
 }
 

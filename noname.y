@@ -310,13 +310,13 @@ exp:
     }
   | ID '(' arg_exp_list ')'        {
 
-      fprintf(stderr, "\n[ID(arg_exp_list)]"); 
+      // fprintf(stderr, "\n[ID(arg_exp_list)]"); 
 
       if ($arg_exp_list == NULL) {
-        fprintf(stderr, "\n[$arg_exp_list is NULL]"); 
+        // fprintf(stderr, "\n[$arg_exp_list is NULL]"); 
         $arg_exp_list = new_exp_list(context);
       } 
-      fprintf(stderr, "\n[new_call_node() %s]", $ID); 
+      // fprintf(stderr, "\n[new_call_node() %s]", $ID); 
       $$ = new_call_node(context, $ID, $arg_exp_list);
     }
   ;

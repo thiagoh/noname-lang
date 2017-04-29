@@ -31,6 +31,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <stack>
 #include <vector>
 
 extern int yydebug;
@@ -124,6 +125,12 @@ extern ProcessorStrategy* assignmentNodeProcessorStrategy;
 extern ProcessorStrategy* callNodeProcessorStrategy;
 extern ProcessorStrategy* importNodeProcessorStrategy;
 
+extern ASTContext* context;
+extern std::vector<std::string> imported_files;
+extern std::stack<ASTContext*> context_stack;
+extern std::map<int, std::string> map;
+extern bool read_from_file_import;
+
 /* list of statements */
 struct stmtlist_node {
   ASTNode* node;
@@ -179,6 +186,10 @@ NodeValue* logErrorNV(ErrorNode* error_node);
 
 bool is_file_already_imported(const std::string& file_path);
 bool is_file_already_imported(const char* file_path);
+char* get_current_dir();
+char* concat_strs(const char* format, const char* s1, const char* s2, int size);
+char* get_file_path(const char* filename);
+int noname_read(char* buf, int* result, int max_size);
 
 void print_node_value(NodeValue* nodeValue);
 void print_node_value(FILE* file, NodeValue* nodeValue);

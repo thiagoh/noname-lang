@@ -146,33 +146,6 @@ int noname_read(char *buf, int *result, int max_size) {
   return 0;
 }
 
-void *ImportNodeProcessorStrategy::process(ASTNode *node) {
-  ImportNode *import_node = (ImportNode *)node;
-
-  char *file_path = get_file_path(import_node->getFilename().c_str());
-  char *const_file_path[] = {file_path};
-  // const char *const_file_path = file_path;
-  FILE *opened_file = fopen(*const_file_path, "r");
-
-  if (opened_file != NULL) {
-    if (is_file_already_imported(*const_file_path)) {
-      if (yydebug >= 3) {
-        fprintf(stdout, "\nNOTICE: File '%s' already imported\n", file_path);
-      }
-    } else {
-      imported_files.push_back(file_path);
-      read_from_file_import = true;
-      fin = opened_file;
-    }
-
-  } else {
-    fprintf(stderr, "\nError: File '%s' could not be opened.\n", file_path);
-  }
-
-  free(file_path);
-  return nullptr;
-}
-
 // void process_node(ExpNode &exp_node) {
 //   NodeValue *return_value = (NodeValue *)exp_node->eval();
 //   print_node_value(stdout, return_value);
@@ -256,39 +229,6 @@ void division_by_zero(YYLTYPE &yylloc) {
 }
 }
 
-// #ifndef YY_INPUT
-// #define YY_INPUT(buf,result,max_size) \
-// 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
-// 		{ \
-// 		int c = '*'; \
-// 		int n; \
-// 		for ( n = 0; n < max_size && \
-// 			     (c = getc( noname_yyin )) != EOF && c != '\n'; ++n ) \
-// 			buf[n] = (char) c; \
-// 		if ( c == '\n' ) \
-// 			buf[n++] = (char) c; \
-// 		if ( c == EOF && ferror( noname_yyin ) ) \
-// 			YY_FATAL_ERROR( "input in flex scanner failed" ); \
-// 		result = n; \
-// 		} \
-// 	else \
-// 		{ \
-// 		errno=0; \
-// 		while ( (result = (int) fread(buf, 1, (yy_size_t) max_size, noname_yyin)) == 0 && ferror(noname_yyin)) \
-// 			{ \
-// 			if( errno != EINTR) \
-// 				{ \
-// 				YY_FATAL_ERROR( "input in flex scanner failed" ); \
-// 				break; \
-// 				} \
-// 			errno=0; \
-// 			clearerr(noname_yyin); \
-// 			} \
-// 		}\
-// \
-
-// #endif
-
 int yylex(void) {
   int token = noname_yylex();
 
@@ -370,11 +310,6 @@ int main(int argc, char **argv) {
   write_cursor();
 
   fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]");
-
-  // fprintf(
-  //     stdin,
-  //     "def inner_func() {  def f2() {    return 2;  }  def f7() {    return 7;  }  return f2() * f3();}inner_func();
-  //     ");
 
   return yyparse();
 }
