@@ -77,7 +77,8 @@ enum ast_node_type {
   AST_NODE_TYPE_DEF_FUNCTION = 40,
   AST_NODE_TYPE_ASSIGNMENT = 41,
   AST_NODE_TYPE_DECLARATION = 42,
-  AST_NODE_TYPE_IMPORT = 43,
+  AST_NODE_TYPE_DECLARATION_ASSIGNMENT = 43,
+  AST_NODE_TYPE_IMPORT = 44,
 };
 #endif
 
@@ -92,21 +93,34 @@ enum ast_node_type {
 #define AST_NODE_TYPE_DEF_FUNCTION 40
 #define AST_NODE_TYPE_ASSIGNMENT 41
 #define AST_NODE_TYPE_DECLARATION 42
-#define AST_NODE_TYPE_IMPORT 43
+#define AST_NODE_TYPE_DECLARATION_ASSIGNMENT 43
+#define AST_NODE_TYPE_IMPORT 44
 
 class ASTNode;
 class ASTContext;
 class ErrorNode;
 class LogicErrorNode;
 class ExpNode;
-class BinaryExpNode;
 class NodeValue;
 class ImportNode;
+class BinaryExpNode;
 class VarNode;
 class CallExpNode;
 class FunctionDefNode;
-class AssignmentNode;
 class DeclarationNode;
+class AssignmentNode;
+class DeclarationAssignmentNode;
+
+class ProcessorStrategy;
+class ExpNodeProcessorStrategy;
+class AssignmentNodeProcessorStrategy;
+class CallExpNodeProcessorStrategy;
+class ImportNodeProcessorStrategy;
+
+extern ProcessorStrategy* expNodeProcessorStrategy;
+extern ProcessorStrategy* assignmentNodeProcessorStrategy;
+extern ProcessorStrategy* callNodeProcessorStrategy;
+extern ProcessorStrategy* importNodeProcessorStrategy;
 
 /* list of statements */
 struct stmtlist_node {
@@ -197,9 +211,12 @@ class ASTNode {
   virtual ~ASTNode() = default;
   virtual ASTNode* check() { return this; };
   virtual void* eval() { return nullptr; };
+  virtual ProcessorStrategy* getStrategy() { return nullptr; };
+
+  ASTContext* getContext() const { return context; };
+
   virtual int getType() const { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_AST_NODE; };
-  ASTContext* getContext() const { return context; };
 };
 
 class ErrorNode : public ASTNode {
@@ -294,6 +311,27 @@ class ASTContext {
   };
 
   void store(const std::string name, NodeValue* node_value) { mVariables[name] = node_value; }
+  NodeValue* update(const std::string name, NodeValue* node_value) {
+    if (yydebug >= 2) {
+      fprintf(stdout, "\n############ looking '%s' on context %s \n", name.c_str(), this->getName().c_str());
+    }
+
+    itVariables = mVariables.find(name);
+
+    if (itVariables != mVariables.end()) {
+      mVariables[name] = node_value;
+      return node_value;
+    }
+
+    ASTContext* parent = this->getParent();
+
+    if (parent) {
+      return parent->update(name, node_value);
+    }
+
+    std::string error_msg("Variable '" + name + "' is not defined");
+    return logErrorNV(new LogicErrorNode(this, error_msg));
+  }
 };
 
 class NodeValue {
@@ -483,8 +521,9 @@ class ExpNode : public ASTNode {
     return node_value;
   };
   virtual NodeValue* getValue() = 0;
+  ProcessorStrategy* getStrategy() override { return expNodeProcessorStrategy; };
 
-  virtual int getType() const override { return getClassType(); };
+  int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_EXP_NODE; };
 };
 
@@ -521,11 +560,12 @@ class StringNode : public ExpNode {
  public:
   StringNode(ASTContext* context, const std::string& value) : ExpNode(context), value(value){};
   StringNode(ASTContext* context, const char* value) : ExpNode(context), value(std::string(value)){};
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_STRING; };
 
   // void* eval() override;
   NodeValue* getValue() override;
+
+  int getType() const override { return getClassType(); };
+  static int getClassType() { return AST_NODE_TYPE_STRING; };
 };
 
 class VarNode : public ExpNode {
@@ -610,6 +650,7 @@ class CallExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
+  ProcessorStrategy* getStrategy() override { return callNodeProcessorStrategy; };
 
   const std::string& getCallee() const { return callee; }
   std::vector<std::unique_ptr<ExpNode>>& getArgs() { return args; }
@@ -627,6 +668,7 @@ class ImportNode : public ASTNode {
   ImportNode(ASTContext* context, const std::string& filename) : ASTNode(context), filename(filename) {}
 
   // void* eval() override;
+  ProcessorStrategy* getStrategy() override { return importNodeProcessorStrategy; };
   const std::string& getFilename() const { return filename; }
 
   int getType() const override { return getClassType(); };
@@ -698,7 +740,7 @@ class FunctionDefNode : public ASTNode {
         return new InvalidStatement(context, "Cannot import inside function definition");
       }
 
-      if (yydebug >= 1) {
+      if (yydebug >= 2) {
         fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
       }
       ++itBodyNodes;
@@ -721,7 +763,7 @@ class FunctionDefNode : public ASTNode {
 };
 
 class AssignmentNode : public ExpNode {
- private:
+ protected:
   std::string name;
   std::unique_ptr<ExpNode> rhs;
 
@@ -733,11 +775,27 @@ class AssignmentNode : public ExpNode {
 
   void* eval() override;
   NodeValue* getValue() override;
+  ProcessorStrategy* getStrategy() override { return assignmentNodeProcessorStrategy; };
 
   const std::string& getName() const { return name; }
+
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_ASSIGNMENT; };
 };
+
+class DeclarationAssignmentNode : public AssignmentNode {
+ public:
+  DeclarationAssignmentNode(ASTContext* context, const std::string& name, std::unique_ptr<ExpNode> rhs)
+      : AssignmentNode(context, name, std::move(rhs)) {}
+  DeclarationAssignmentNode(ASTContext* context, const std::string& name, ExpNode* rhs)
+      : AssignmentNode(context, name, std::move(rhs)) {}
+
+  void* eval() override;
+
+  int getType() const override { return getClassType(); };
+  static int getClassType() { return AST_NODE_TYPE_DECLARATION_ASSIGNMENT; };
+};
+
 class DeclarationNode : public ASTNode {
  private:
   std::string name;
@@ -745,8 +803,33 @@ class DeclarationNode : public ASTNode {
  public:
   DeclarationNode(ASTContext* context, const std::string& name) : ASTNode(context), name(name) {}
 
+  void* eval() override;
+
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_DECLARATION; };
+};
+
+class ProcessorStrategy {
+ public:
+  virtual ~ProcessorStrategy() = default;
+  virtual void* process_node(ASTNode* node) = 0;
+};
+
+class ExpNodeProcessorStrategy : public ProcessorStrategy {
+ public:
+  void* process_node(ASTNode* node) override;
+};
+class AssignmentNodeProcessorStrategy : public ProcessorStrategy {
+ public:
+  void* process_node(ASTNode* node) override;
+};
+class CallExpNodeProcessorStrategy : public ProcessorStrategy {
+ public:
+  void* process_node(ASTNode* node) override;
+};
+class ImportNodeProcessorStrategy : public ProcessorStrategy {
+ public:
+  void* process_node(ASTNode* node) override;
 };
 
 // class ReturnNode : public ExpNode {

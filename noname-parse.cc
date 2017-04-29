@@ -1732,7 +1732,7 @@ yyreduce:
   case 24:
 #line 266 "noname.y" /* yacc.c:1661  */
     {
-    (yyval.exp_node) = new AssignmentNode(context, std::string((yyvsp[-2].id_v)), std::move((ExpNode*) (yyvsp[0].exp_node)));
+    (yyval.exp_node) = new DeclarationAssignmentNode(context, std::string((yyvsp[-2].id_v)), std::move((ExpNode*) (yyvsp[0].exp_node)));
   }
 #line 1738 "noname.tab.c" /* yacc.c:1661  */
     break;

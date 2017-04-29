@@ -264,7 +264,7 @@ assignment:
     $$ = new AssignmentNode(context, std::string($ID), std::move((ExpNode*) $exp));
   }
   | LET ID ASSIGN exp {
-    $$ = new AssignmentNode(context, std::string($ID), std::move((ExpNode*) $exp));
+    $$ = new DeclarationAssignmentNode(context, std::string($ID), std::move((ExpNode*) $exp));
   }
 ;
 

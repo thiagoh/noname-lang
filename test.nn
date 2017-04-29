@@ -96,8 +96,16 @@ regular_func(); // function not found
 // function defined inside math.nn
 euler();
 
+let c = 100;
 def sum(a, b) {
-  return a + b;
+  c = 100000;
+  return a + b + c;
 };
 
-sum(321, 123);
+sum(3, 1);
+
+def nha() {
+  return c;
+}
+
+nha();

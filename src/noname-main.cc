@@ -145,15 +145,27 @@ int noname_read(char *buf, int *result, int max_size) {
   // fprintf(stderr, "\n[noname_read %d]", max_size);
   return 0;
 }
-void process_exp_node(ExpNode *exp_node) {
-  NodeValue *return_value = (NodeValue *)exp_node->eval();
+
+void *ExpNodeProcessorStrategy::process_node(ASTNode *node) {
+  ;
+  fprintf(stderr, "\n[############# ExpNodeProcessorStrategy]");
+
+  NodeValue *return_value = (NodeValue *)node->eval();
   print_node_value(stdout, return_value);
+  return nullptr;
 }
-void process_assignment_node(AssignmentNode *assignment_node) {
-  NodeValue *return_value = (NodeValue *)assignment_node->eval();
+void *AssignmentNodeProcessorStrategy::process_node(ASTNode *node) {
+  ;
+  fprintf(stderr, "\n[############# AssignmentNodeProcessorStrategy]");
+
+  NodeValue *return_value = (NodeValue *)node->eval();
   print_node_value(stdout, return_value);
+  return nullptr;
 }
-void process_call_exp_node(CallExpNode *call_exp_node) {
+void *CallExpNodeProcessorStrategy::process_node(ASTNode *node) {
+  ;
+  fprintf(stderr, "\n[############# CallExpNodeProcessorStrategy]");
+  CallExpNode *call_exp_node = (CallExpNode *)node;
   FunctionDefNode *function_def_node = context->getFunction(call_exp_node->getCallee());
 
   if (function_def_node) {
@@ -167,8 +179,14 @@ void process_call_exp_node(CallExpNode *call_exp_node) {
   } else {
     fprintf(stderr, "\nError: The function %s was not found int the context\n", call_exp_node->getCallee().c_str());
   }
+  return nullptr;
 }
-void process_import_node(ImportNode *import_node) {
+void *ImportNodeProcessorStrategy::process_node(ASTNode *node) {
+  ;
+  fprintf(stderr, "\n[############# ImportNodeProcessorStrategy]");
+
+  ImportNode *import_node = (ImportNode *)node;
+
   char *file_path = get_file_path(import_node->getFilename().c_str());
   char *const_file_path[] = {file_path};
   // const char *const_file_path = file_path;
@@ -190,7 +208,60 @@ void process_import_node(ImportNode *import_node) {
   }
 
   free(file_path);
+  return nullptr;
 }
+
+ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
+ProcessorStrategy* assignmentNodeProcessorStrategy = new AssignmentNodeProcessorStrategy();
+ProcessorStrategy* callNodeProcessorStrategy = new CallExpNodeProcessorStrategy();
+ProcessorStrategy* importNodeProcessorStrategy = new ImportNodeProcessorStrategy();
+
+// void process_node(ExpNode &exp_node) {
+//   NodeValue *return_value = (NodeValue *)exp_node->eval();
+//   print_node_value(stdout, return_value);
+// }
+// void process_node(AssignmentNode &assignment_node) {
+//   NodeValue *return_value = (NodeValue *)assignment_node->eval();
+//   print_node_value(stdout, return_value);
+// }
+// void process_node(CallExpNode &call_exp_node) {
+//   FunctionDefNode *function_def_node = context->getFunction(call_exp_node->getCallee());
+
+//   if (function_def_node) {
+//     if (yydebug >= 2) {
+//       fprintf(stdout, "\nThe called function was: '%s'\n", function_def_node->getName().c_str());
+//     }
+
+//     NodeValue *return_value = (NodeValue *)call_exp_node->eval();
+//     print_node_value(stdout, return_value);
+
+//   } else {
+//     fprintf(stderr, "\nError: The function %s was not found int the context\n", call_exp_node->getCallee().c_str());
+//   }
+// }
+// void process_node(ImportNode &import_node) {
+//   char *file_path = get_file_path(import_node->getFilename().c_str());
+//   char *const_file_path[] = {file_path};
+//   // const char *const_file_path = file_path;
+//   FILE *opened_file = fopen(*const_file_path, "r");
+
+//   if (opened_file != NULL) {
+//     if (is_file_already_imported(*const_file_path)) {
+//       if (yydebug >= 3) {
+//         fprintf(stdout, "\nNOTICE: File '%s' already imported\n", file_path);
+//       }
+//     } else {
+//       imported_files.push_back(file_path);
+//       read_from_file_import = true;
+//       fin = opened_file;
+//     }
+
+//   } else {
+//     fprintf(stderr, "\nError: File '%s' could not be opened.\n", file_path);
+//   }
+
+//   free(file_path);
+// }
 
 void eval(ASTNode *node) {
   if (!node || is_of_type<ErrorNode>(*node)) {
@@ -203,25 +274,28 @@ void eval(ASTNode *node) {
   }
 
   if (yydebug >= 2) {
-    fprintf(stdout, "\n[is_of_type<ExpNode>(*node) -> %s]\n", is_of_type<ExpNode>(*node) ? "true" : "false");
+    // fprintf(stderr, "\n[is_of_type<ExpNode>(*node) -> %s]\n", is_of_type<ExpNode>(*node) ? "true" : "false");
+    fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n",
+            is_of_type<AssignmentNode>(*node) ? "true" : "false",
+            is_of_type<DeclarationAssignmentNode>(*node) ? "true" : "false");
   }
 
-  if (is_of_type<ImportNode>(*node)) {
-    ImportNode *import_node = (ImportNode *)node;
-    process_import_node(import_node);
+  // if (is_of_type<ImportNode>(*node)) {
+  //   ImportNode *import_node = (ImportNode *)node;
+  //   process_import_node(import_node);
 
-  } else if (is_of_type<AssignmentNode>(*node)) {
-    AssignmentNode *assignment_node = (AssignmentNode *)node;
-    process_assignment_node(assignment_node);
+  // } else if (is_of_type<AssignmentNode>(*node)) {
+  //   AssignmentNode *assignment_node = (AssignmentNode *)node;
+  //   process_assignment_node(assignment_node);
 
-  } else if (is_of_type<CallExpNode>(*node)) {
-    CallExpNode *call_exp_node = (CallExpNode *)node;
-    process_call_exp_node(call_exp_node);
+  // } else if (is_of_type<CallExpNode>(*node)) {
+  //   CallExpNode *call_exp_node = (CallExpNode *)node;
+  //   process_call_exp_node(call_exp_node);
 
-  } else if (is_of_type<ExpNode>(*node)) {
-    ExpNode *exp_node = (ExpNode *)node;
-    process_exp_node(exp_node);
-  }
+  // } else if (is_of_type<ExpNode>(*node)) {  // this has some bug. it's returning false when node is a VarNode
+  //   ExpNode *exp_node = (ExpNode *)node;
+  //   process_exp_node(exp_node);
+  // }
 }
 
 // void assert_equals(int i1, int i2) {

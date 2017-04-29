@@ -490,7 +490,27 @@ NodeValue* BinaryExpNode::getValue() {
   return result;
 }
 
+void* DeclarationNode::eval() {
+  NodeValue* node_value = nullptr;
+
+  getContext()->store(name, node_value);
+
+  return node_value;
+}
+
 void* AssignmentNode::eval() {
+  NodeValue* node_value = getValue();
+
+  getContext()->update(name, node_value);
+
+  if (yydebug >= 2) {
+    fprintf(stdout, "\n\n############ updated %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
+  }
+
+  return node_value;
+}
+
+void* DeclarationAssignmentNode::eval() {
   NodeValue* node_value = getValue();
 
   getContext()->store(name, node_value);
@@ -540,7 +560,9 @@ NodeValue* CallExpNode::getValue() {
 
   for (; itBodyNodes != bodyNodes->end();) {
     std::unique_ptr<ASTNode>& bodyNode = *itBodyNodes;
+
     bodyNode.get()->eval();
+
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
     }
