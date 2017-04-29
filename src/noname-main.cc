@@ -146,45 +146,7 @@ int noname_read(char *buf, int *result, int max_size) {
   return 0;
 }
 
-void *ExpNodeProcessorStrategy::process(ASTNode *node) {
-  ;
-  fprintf(stderr, "\n[############# ExpNodeProcessorStrategy]");
-
-  NodeValue *return_value = (NodeValue *)node->eval();
-  print_node_value(stdout, return_value);
-  return nullptr;
-}
-void *AssignmentNodeProcessorStrategy::process(ASTNode *node) {
-  ;
-  fprintf(stderr, "\n[############# AssignmentNodeProcessorStrategy]");
-
-  NodeValue *return_value = (NodeValue *)node->eval();
-  print_node_value(stdout, return_value);
-  return nullptr;
-}
-void *CallExpNodeProcessorStrategy::process(ASTNode *node) {
-  ;
-  fprintf(stderr, "\n[############# CallExpNodeProcessorStrategy]");
-  CallExpNode *call_exp_node = (CallExpNode *)node;
-  FunctionDefNode *function_def_node = context->getFunction(call_exp_node->getCallee());
-
-  if (function_def_node) {
-    if (yydebug >= 2) {
-      fprintf(stdout, "\nThe called function was: '%s'\n", function_def_node->getName().c_str());
-    }
-
-    NodeValue *return_value = (NodeValue *)call_exp_node->eval();
-    print_node_value(stdout, return_value);
-
-  } else {
-    fprintf(stderr, "\nError: The function %s was not found int the context\n", call_exp_node->getCallee().c_str());
-  }
-  return nullptr;
-}
 void *ImportNodeProcessorStrategy::process(ASTNode *node) {
-  ;
-  fprintf(stderr, "\n[############# ImportNodeProcessorStrategy]");
-
   ImportNode *import_node = (ImportNode *)node;
 
   char *file_path = get_file_path(import_node->getFilename().c_str());
@@ -210,11 +172,6 @@ void *ImportNodeProcessorStrategy::process(ASTNode *node) {
   free(file_path);
   return nullptr;
 }
-
-ProcessorStrategy *expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
-ProcessorStrategy *assignmentNodeProcessorStrategy = new AssignmentNodeProcessorStrategy();
-ProcessorStrategy *callNodeProcessorStrategy = new CallExpNodeProcessorStrategy();
-ProcessorStrategy *importNodeProcessorStrategy = new ImportNodeProcessorStrategy();
 
 // void process_node(ExpNode &exp_node) {
 //   NodeValue *return_value = (NodeValue *)exp_node->eval();
@@ -281,23 +238,6 @@ void eval(ASTNode *node) {
   }
 
   node->getProcessorStrategy()->process(node);
-
-  // if (is_of_type<ImportNode>(*node)) {
-  //   ImportNode *import_node = (ImportNode *)node;
-  //   process_import_node(import_node);
-
-  // } else if (is_of_type<AssignmentNode>(*node)) {
-  //   AssignmentNode *assignment_node = (AssignmentNode *)node;
-  //   process_assignment_node(assignment_node);
-
-  // } else if (is_of_type<CallExpNode>(*node)) {
-  //   CallExpNode *call_exp_node = (CallExpNode *)node;
-  //   process_call_exp_node(call_exp_node);
-
-  // } else if (is_of_type<ExpNode>(*node)) {  // this has some bug. it's returning false when node is a VarNode
-  //   ExpNode *exp_node = (ExpNode *)node;
-  //   process_exp_node(exp_node);
-  // }
 }
 
 // void assert_equals(int i1, int i2) {
@@ -425,9 +365,11 @@ int main(int argc, char **argv) {
   map[300] = "LONG";
   map[314] = "NEG";
 
-  yydebug = 2;
+  yydebug = 0;
 
   write_cursor();
+
+  fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]");
 
   // fprintf(
   //     stdin,

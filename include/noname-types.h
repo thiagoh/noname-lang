@@ -112,11 +112,13 @@ class AssignmentNode;
 class DeclarationAssignmentNode;
 
 class ProcessorStrategy;
+class ASTNodeProcessorStrategy;
 class ExpNodeProcessorStrategy;
 class AssignmentNodeProcessorStrategy;
 class CallExpNodeProcessorStrategy;
 class ImportNodeProcessorStrategy;
 
+extern ProcessorStrategy* astNodeProcessorStrategy;
 extern ProcessorStrategy* expNodeProcessorStrategy;
 extern ProcessorStrategy* assignmentNodeProcessorStrategy;
 extern ProcessorStrategy* callNodeProcessorStrategy;
@@ -211,7 +213,7 @@ class ASTNode {
   virtual ~ASTNode() = default;
   virtual ASTNode* check() { return this; };
   virtual void* eval() { return nullptr; };
-  virtual ProcessorStrategy* getProcessorStrategy() { return nullptr; };
+  virtual ProcessorStrategy* getProcessorStrategy() { return astNodeProcessorStrategy; };
 
   ASTContext* getContext() const { return context; };
 
@@ -813,6 +815,11 @@ class ProcessorStrategy {
  public:
   virtual ~ProcessorStrategy() = default;
   virtual void* process(ASTNode* node) = 0;
+};
+
+class ASTNodeProcessorStrategy : public ProcessorStrategy {
+ public:
+  void* process(ASTNode* node) override;
 };
 
 class ExpNodeProcessorStrategy : public ProcessorStrategy {
