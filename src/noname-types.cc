@@ -543,32 +543,32 @@ NodeValue* CallExpNode::getValue() {
 
   ExpNode* returnNode = function_node->getReturnNode();
   std::vector<std::unique_ptr<ExpNode>>* valueArgs = &getArgs();
-  std::vector<std::unique_ptr<ExpNode>>::iterator itValueArg = valueArgs->begin();
+  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args = valueArgs->begin();
   std::vector<std::unique_ptr<arg_t>>* signatureArgs = &function_node->getArgs();
-  std::vector<std::unique_ptr<arg_t>>::iterator itSignatureArg = signatureArgs->begin();
+  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args = signatureArgs->begin();
   std::vector<std::unique_ptr<ASTNode>>* bodyNodes = &function_node->getBodyNodes();
-  std::vector<std::unique_ptr<ASTNode>>::iterator itBodyNodes = bodyNodes->begin();
+  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = bodyNodes->begin();
 
-  for (; itSignatureArg != signatureArgs->end() || itValueArg != valueArgs->end();) {
-    std::unique_ptr<ExpNode>& valueArg = *itValueArg;
-    std::unique_ptr<arg_t>& signatureArg = *itSignatureArg;
+  for (; it_signature_args != signatureArgs->end() || it_value_args != valueArgs->end();) {
+    std::unique_ptr<ExpNode>& valueArg = *it_value_args;
+    std::unique_ptr<arg_t>& signatureArg = *it_signature_args;
 
     call_exp_context->store(signatureArg.get()->name, valueArg.get()->getValue());
     // temp_context->store(signatureArg.get()->name, valueArg.get()->getValue());
 
-    ++itSignatureArg;
-    ++itValueArg;
+    ++it_signature_args;
+    ++it_value_args;
   }
 
-  for (; itBodyNodes != bodyNodes->end();) {
-    std::unique_ptr<ASTNode>& bodyNode = *itBodyNodes;
+  for (; it_body_nodes != bodyNodes->end();) {
+    std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
 
     bodyNode.get()->eval();
 
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
     }
-    ++itBodyNodes;
+    ++it_body_nodes;
   }
 
   if (returnNode) {

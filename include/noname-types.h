@@ -203,13 +203,13 @@ stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_exp_list, ASTNod
 explist_t* new_exp_list(ASTContext* context);
 explist_t* new_exp_list(ASTContext* context, ExpNode* node);
 explist_t* new_exp_list(ASTContext* context, explist_t* head_exp_list, ExpNode* node);
-arg_t* new_arg(ASTContext* context, char* arg_t, ASTNode* defaultValue);
-arg_t* new_arg(ASTContext* context, char* arg_t, double defaultValue);
-arg_t* new_arg(ASTContext* context, char* arg_t, long defaultValue);
-arg_t* new_arg(ASTContext* context, char* arg_t, char* defaultValue);
+arg_t* new_arg(ASTContext* context, char* arg, ASTNode* defaultValue);
+arg_t* new_arg(ASTContext* context, char* arg, double defaultValue);
+arg_t* new_arg(ASTContext* context, char* arg, long defaultValue);
+arg_t* new_arg(ASTContext* context, char* arg, char* defaultValue);
 arglist_t* new_arg_list(ASTContext* context);
-arglist_t* new_arg_list(ASTContext* context, arg_t* arg_t);
-arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg_t);
+arglist_t* new_arg_list(ASTContext* context, arg_t* arg);
+arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg);
 
 ImportNode* new_import(ASTContext* context, std::string filename);
 VarNode* new_var_node(ASTContext* context, const std::string name);
@@ -753,10 +753,10 @@ class FunctionDefNode : public ASTNode {
       return new LogicErrorNode(context, "Function already exists in this context");
     }
 
-    std::vector<std::unique_ptr<ASTNode>>::iterator itBodyNodes = bodyNodes.begin();
+    std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = bodyNodes.begin();
 
-    for (; itBodyNodes != bodyNodes.end();) {
-      std::unique_ptr<ASTNode>& bodyNode = *itBodyNodes;
+    for (; it_body_nodes != bodyNodes.end();) {
+      std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
 
       if (is_of_type<ImportNode>(*bodyNode.get())) {
         return new InvalidStatement(context, "Cannot import inside function definition");
@@ -765,7 +765,7 @@ class FunctionDefNode : public ASTNode {
       if (yydebug >= 2) {
         fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
       }
-      ++itBodyNodes;
+      ++it_body_nodes;
     }
 
     if (returnNode && is_of_type<ImportNode>(*returnNode)) {
