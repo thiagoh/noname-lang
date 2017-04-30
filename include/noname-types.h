@@ -136,51 +136,51 @@ extern IRBuilder<> Builder;
 extern std::unique_ptr<Module> TheModule;
 
 /* list of statements */
-struct stmtlist_node {
+struct stmtlist_node_t {
   ASTNode* node;
-  struct stmtlist_node* next;
-  stmtlist_node& operator=(const stmtlist_node&) { return *this; }
+  struct stmtlist_node_t* next;
+  stmtlist_node_t& operator=(const stmtlist_node_t&) { return *this; }
 };
-struct stmtlist {
-  struct stmtlist_node* first;
-  struct stmtlist_node* last;
-  stmtlist& operator=(const stmtlist&) { return *this; }
+struct stmtlist_t {
+  struct stmtlist_node_t* first;
+  struct stmtlist_node_t* last;
+  stmtlist_t& operator=(const stmtlist_t&) { return *this; }
 };
 /* list of expressions */
-struct explist_node {
+struct explist_node_t {
   ExpNode* node;
-  struct explist_node* next;
-  explist_node& operator=(const explist_node&) { return *this; }
+  struct explist_node_t* next;
+  explist_node_t& operator=(const explist_node_t&) { return *this; }
 };
-struct explist {
-  struct explist_node* first;
-  struct explist_node* last;
-  explist& operator=(const explist&) { return *this; }
+struct explist_t {
+  struct explist_node_t* first;
+  struct explist_node_t* last;
+  explist_t& operator=(const explist_t&) { return *this; }
 };
 /* list of args, for an argument list */
-struct arg {
+struct arg_t {
   char* name;
-  ASTNode* defaultValue;
-  arg& operator=(const arg&) { return *this; }
+  ASTNode* default_value;
+  arg_t& operator=(const arg_t&) { return *this; }
 };
-struct arglist_node {
-  struct arg* arg;
-  struct arglist_node* next;
-  arglist_node& operator=(const arglist_node&) { return *this; }
+struct arglist_node_t {
+  struct arg_t* arg;
+  struct arglist_node_t* next;
+  arglist_node_t& operator=(const arglist_node_t&) { return *this; }
 };
-struct arglist {
-  struct arglist_node* first;
-  struct arglist_node* last;
-  arglist& operator=(const arglist&) { return *this; }
+struct arglist_t {
+  struct arglist_node_t* first;
+  struct arglist_node_t* last;
+  arglist_t& operator=(const arglist_t&) { return *this; }
 };
 
-typedef struct explist explist;
-typedef struct explist_node explist_node;
-typedef struct arglist arglist;
-typedef struct arglist_node arglist_node;
-typedef struct stmtlist stmtlist;
-typedef struct stmtlist_node stmtlist_node;
-typedef struct arg arg;
+typedef struct explist_t explist_t;
+typedef struct explist_node_t explist_node_t;
+typedef struct arglist_t arglist_t;
+typedef struct arglist_node_t arglist_node_t;
+typedef struct stmtlist_t stmtlist_t;
+typedef struct stmtlist_node_t stmtlist_node;
+typedef struct arg_t arg_t;
 
 ASTNode* logError(const char* str);
 FunctionDefNode* logErrorF(const char* str);
@@ -197,26 +197,26 @@ int noname_read(char* buf, int* result, int max_size);
 
 void print_node_value(NodeValue* nodeValue);
 void print_node_value(FILE* file, NodeValue* nodeValue);
-stmtlist* new_stmt_list(ASTContext* context);
-stmtlist* new_stmt_list(ASTContext* context, ASTNode* node);
-stmtlist* new_stmt_list(ASTContext* context, stmtlist* head_exp_list, ASTNode* node);
-explist* new_exp_list(ASTContext* context);
-explist* new_exp_list(ASTContext* context, ExpNode* node);
-explist* new_exp_list(ASTContext* context, explist* head_exp_list, ExpNode* node);
-arg* new_arg(ASTContext* context, char* arg, ASTNode* defaultValue);
-arg* new_arg(ASTContext* context, char* arg, double defaultValue);
-arg* new_arg(ASTContext* context, char* arg, long defaultValue);
-arg* new_arg(ASTContext* context, char* arg, char* defaultValue);
-arglist* new_arg_list(ASTContext* context);
-arglist* new_arg_list(ASTContext* context, arg* arg);
-arglist* new_arg_list(ASTContext* context, arglist* head_arg_list, arg* arg);
+stmtlist_t* new_stmt_list(ASTContext* context);
+stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* node);
+stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_exp_list, ASTNode* node);
+explist_t* new_exp_list(ASTContext* context);
+explist_t* new_exp_list(ASTContext* context, ExpNode* node);
+explist_t* new_exp_list(ASTContext* context, explist_t* head_exp_list, ExpNode* node);
+arg_t* new_arg(ASTContext* context, char* arg_t, ASTNode* defaultValue);
+arg_t* new_arg(ASTContext* context, char* arg_t, double defaultValue);
+arg_t* new_arg(ASTContext* context, char* arg_t, long defaultValue);
+arg_t* new_arg(ASTContext* context, char* arg_t, char* defaultValue);
+arglist_t* new_arg_list(ASTContext* context);
+arglist_t* new_arg_list(ASTContext* context, arg_t* arg_t);
+arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg_t);
 
 ImportNode* new_import(ASTContext* context, std::string filename);
 VarNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
-CallExpNode* new_call_node(ASTContext* context, const std::string name, explist* exp_list);
-ASTNode* new_function_def(ASTContext* context, const std::string name, arglist* arg_list, stmtlist* stmt_list,
+CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* exp_list);
+ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* returnNode);
 
 class ASTNode {
@@ -654,16 +654,16 @@ class CallExpNode : public ExpNode {
  public:
   CallExpNode(ASTContext* context, const std::string& callee, std::vector<std::unique_ptr<ExpNode>>& args)
       : ExpNode(context), callee(callee), args(std::move(args)) {}
-  CallExpNode(ASTContext* context, const std::string& callee, explist* head_exp_list)
+  CallExpNode(ASTContext* context, const std::string& callee, explist_t* head_exp_list)
       : ExpNode(context), callee(callee), args(std::vector<std::unique_ptr<ExpNode>>()) {
     if (head_exp_list) {
-      explist_node* explist_node = head_exp_list->first;
+      explist_node_t* explist_node_t = head_exp_list->first;
       do {
-        if (explist_node && explist_node->node) {
-          args.push_back(std::unique_ptr<ExpNode>(std::move(explist_node->node)));
-          explist_node = explist_node->next;
+        if (explist_node_t && explist_node_t->node) {
+          args.push_back(std::unique_ptr<ExpNode>(std::move(explist_node_t->node)));
+          explist_node_t = explist_node_t->next;
         }
-      } while (explist_node);
+      } while (explist_node_t);
 
       // TODO: free all the expressions not just the head_exp_list one
       // free(head_exp_list);
@@ -701,33 +701,33 @@ class ImportNode : public ASTNode {
 class FunctionDefNode : public ASTNode {
  private:
   std::string name;
-  std::vector<std::unique_ptr<arg>> args;
+  std::vector<std::unique_ptr<arg_t>> args;
   std::vector<std::unique_ptr<ASTNode>> bodyNodes;
   ExpNode* returnNode;
 
  public:
-  FunctionDefNode(ASTContext* context, const std::string& name, std::vector<std::unique_ptr<arg>>& args,
+  FunctionDefNode(ASTContext* context, const std::string& name, std::vector<std::unique_ptr<arg_t>>& args,
                   std::vector<std::unique_ptr<ASTNode>>& bodyNodes, ExpNode* returnNode)
       : ASTNode(context),
         name(name),
         args(std::move(args)),
         bodyNodes(std::move(bodyNodes)),
         returnNode(std::move(returnNode)) {}
-  FunctionDefNode(ASTContext* context, const std::string& name, arglist* head_arg_list, stmtlist* head_stmt_list,
+  FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list, stmtlist_t* head_stmt_list,
                   ExpNode* returnNode)
       : ASTNode(context),
         name(name),
-        args(std::vector<std::unique_ptr<arg>>()),
+        args(std::vector<std::unique_ptr<arg_t>>()),
         bodyNodes(std::vector<std::unique_ptr<ASTNode>>()),
         returnNode(std::move(returnNode)) {
-    arglist_node* arglist_node = head_arg_list->first;
+    arglist_node_t* arglist_node_t = head_arg_list->first;
     stmtlist_node* stmtlist_node = head_stmt_list->first;
     do {
-      if (arglist_node && arglist_node->arg) {
-        args.push_back(std::unique_ptr<arg>(std::move(arglist_node->arg)));
-        arglist_node = arglist_node->next;
+      if (arglist_node_t && arglist_node_t->arg) {
+        args.push_back(std::unique_ptr<arg_t>(std::move(arglist_node_t->arg)));
+        arglist_node_t = arglist_node_t->next;
       }
-    } while (arglist_node);
+    } while (arglist_node_t);
 
     do {
       if (stmtlist_node && stmtlist_node->node) {
@@ -776,7 +776,7 @@ class FunctionDefNode : public ASTNode {
   }
 
   const std::string& getName() const { return name; }
-  std::vector<std::unique_ptr<arg>>& getArgs() { return args; }
+  std::vector<std::unique_ptr<arg_t>>& getArgs() { return args; }
   std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() { return bodyNodes; }
   ExpNode* getReturnNode() { return returnNode; }
 

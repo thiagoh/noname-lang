@@ -77,10 +77,10 @@ void dump_bool(ostream&, int, bool);
    version 2.2 of Bison.  */
 
 #ifndef YY_YY_NONAME_TAB_H_INCLUDED
-# define YY_YY_NONAME_TAB_H_INCLUDED
+#define YY_YY_NONAME_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 1
+#define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -88,55 +88,54 @@ extern int yydebug;
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-  enum yytokentype
-  {
-    LINE_BREAK = 258,
-    IMPORT = 259,
-    STMT_SEP = 260,
-    LETTER = 261,
-    DIGIT = 262,
-    DIGITS = 263,
-    DARROW = 264,
-    ELSE = 265,
-    FALSE = 266,
-    IF = 267,
-    IN = 268,
-    LET = 269,
-    DEF = 270,
-    LOOP = 271,
-    THEN = 272,
-    WHILE = 273,
-    BREAK = 274,
-    CASE = 275,
-    NEW = 276,
-    NOT = 277,
-    RETURN = 278,
-    TRUE = 279,
-    NEWLINE = 280,
-    NOTNEWLINE = 281,
-    WHITESPACE = 282,
-    LE = 283,
-    ASSIGN = 284,
-    NULLCH = 285,
-    BACKSLASH = 286,
-    STAR = 287,
-    NOTSTAR = 288,
-    LEFTPAREN = 289,
-    NOTLEFTPAREN = 290,
-    RIGHTPAREN = 291,
-    NOTRIGHTPAREN = 292,
-    LINE_COMMENT = 293,
-    START_COMMENT = 294,
-    END_COMMENT = 295,
-    QUOTES = 296,
-    ERROR = 297,
-    ID = 298,
-    STR_CONST = 299,
-    DOUBLE = 300,
-    LONG = 301,
-    NEG = 316
-  };
+#define YYTOKENTYPE
+enum yytokentype {
+  LINE_BREAK = 258,
+  IMPORT = 259,
+  STMT_SEP = 260,
+  LETTER = 261,
+  DIGIT = 262,
+  DIGITS = 263,
+  DARROW = 264,
+  ELSE = 265,
+  FALSE = 266,
+  IF = 267,
+  IN = 268,
+  LET = 269,
+  DEF = 270,
+  LOOP = 271,
+  THEN = 272,
+  WHILE = 273,
+  BREAK = 274,
+  CASE = 275,
+  NEW = 276,
+  NOT = 277,
+  RETURN = 278,
+  TRUE = 279,
+  NEWLINE = 280,
+  NOTNEWLINE = 281,
+  WHITESPACE = 282,
+  LE = 283,
+  ASSIGN = 284,
+  NULLCH = 285,
+  BACKSLASH = 286,
+  STAR = 287,
+  NOTSTAR = 288,
+  LEFTPAREN = 289,
+  NOTLEFTPAREN = 290,
+  RIGHTPAREN = 291,
+  NOTRIGHTPAREN = 292,
+  LINE_COMMENT = 293,
+  START_COMMENT = 294,
+  END_COMMENT = 295,
+  QUOTES = 296,
+  ERROR = 297,
+  ID = 298,
+  STR_CONST = 299,
+  DOUBLE = 300,
+  LONG = 301,
+  NEG = 316
+};
 #endif
 /* Tokens.  */
 #define LINE_BREAK 258
@@ -186,10 +185,9 @@ extern int yydebug;
 #define NEG 316
 
 /* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+#if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
 
-union YYSTYPE
-{
+union YYSTYPE {
 #line 43 "noname.y" /* yacc.c:1915  */
 
   char* id_v;
@@ -199,37 +197,35 @@ union YYSTYPE
   noname::ASTContext* context;
   noname::ASTNode* ast_node;
   noname::ExpNode* exp_node;
-  noname::stmtlist* stmt_list;
-  noname::explist* exp_list;
-  noname::arglist* arg_list;
-  noname::arg* arg;
+  noname::stmtlist_t* stmtlist;
+  noname::explist_t* explist;
+  noname::arglist_t* arglist;
+  noname::arg_t* arg;
   char* error_msg;
 
 #line 163 "noname.tab.h" /* yacc.c:1915  */
 };
 
 typedef union YYSTYPE YYSTYPE;
-# define YYSTYPE_IS_TRIVIAL 1
-# define YYSTYPE_IS_DECLARED 1
+#define YYSTYPE_IS_TRIVIAL 1
+#define YYSTYPE_IS_DECLARED 1
 #endif
 
 /* Location type.  */
-#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+#if !defined YYLTYPE && !defined YYLTYPE_IS_DECLARED
 typedef struct YYLTYPE YYLTYPE;
-struct YYLTYPE
-{
+struct YYLTYPE {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
 };
-# define YYLTYPE_IS_DECLARED 1
-# define YYLTYPE_IS_TRIVIAL 1
+#define YYLTYPE_IS_DECLARED 1
+#define YYLTYPE_IS_TRIVIAL 1
 #endif
-
 
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
-int yyparse (void);
+int yyparse(void);
 
 #endif /* !YY_YY_NONAME_TAB_H_INCLUDED  */

@@ -53,10 +53,10 @@ namespace noname {
   noname::ASTContext* context;
   noname::ASTNode* ast_node;
   noname::ExpNode* exp_node;
-  noname::stmtlist* stmt_list;
-  noname::explist* exp_list;
-  noname::arglist* arg_list;
-  noname::arg* arg;
+  noname::stmtlist_t* stmtlist;
+  noname::explist_t* explist;
+  noname::arglist_t* arglist;
+  noname::arg_t* arg;
   char* error_msg;
 };
 
@@ -124,14 +124,14 @@ namespace noname {
 %type  <exp_node> optional_ret_stmt "optional_ret_stmt"
 %type  <exp_node> exp               "expression"
 %type  <ast_node> function_def      "function_def"
-%type  <stmt_list> stmt_list        "stmt_list"
-%type  <stmt_list> ne_stmt_list     "ne_stmt_list"
-// %type  <exp_list> exp_list          "exp_list"
-// %type  <exp_list> ne_exp_list       "ne_exp_list"
-%type  <exp_list> arg_exp_list      "arg_exp_list"
-%type  <exp_list> ne_arg_exp_list   "ne_arg_exp_list"
-%type  <arg_list> arg_list          "arg_list"
-%type  <arg_list> ne_arg_list       "ne_arg_list"
+%type  <stmtlist> stmtlist        "stmtlist"
+%type  <stmtlist> ne_stmt_list     "ne_stmt_list"
+// %type  <explist> explist          "explist"
+// %type  <explist> ne_exp_list       "ne_exp_list"
+%type  <explist> arg_exp_list      "arg_exp_list"
+%type  <explist> ne_arg_exp_list   "ne_arg_exp_list"
+%type  <arglist> arglist          "arglist"
+%type  <arglist> ne_arg_list       "ne_arg_list"
 %type  <arg> arg                    "arg"
 %type  <ast_node> import            "import"
 %type  <ast_node> stmt              "statement"
@@ -164,7 +164,7 @@ prog:
   }
 ;
 
-stmt_list:
+stmtlist:
   %empty                   { $$ = NULL; }
   | stmt                   { $$ = new_stmt_list(context, $1); }
   | ne_stmt_list stmt      { $$ = new_stmt_list(context, $1, $2); }
@@ -221,29 +221,29 @@ function_def:
     DEF ID {
 
         if (yydebug >= 1) {
-          fprintf(stdout, "\n[############## processing function_def BEFORE arg_list ##############]");
+          fprintf(stdout, "\n[############## processing function_def BEFORE arglist ##############]");
         }
         $<context>$ = new ASTContext(std::string($ID), context);
         context_stack.push($<context>$);
         context = $<context>$;
         
-      }[function_context] '(' arg_list ')' {
+      }[function_context] '(' arglist ')' {
         if (yydebug >= 1) {
-          fprintf(stdout, "\n[############## processing function_def BEFORE stmt_list ##############]");
+          fprintf(stdout, "\n[############## processing function_def BEFORE stmtlist ##############]");
         }
-      } '{' stmt_list optional_ret_stmt '}' {
+      } '{' stmtlist optional_ret_stmt '}' {
       // ASTContext newContext(context);
 
-      if ($arg_list == NULL) {
-        $arg_list = new_arg_list(context);
+      if ($arglist == NULL) {
+        $arglist = new_arg_list(context);
       } 
 
-      if ($stmt_list == NULL) {
-        $stmt_list = new_stmt_list(context);
+      if ($stmtlist == NULL) {
+        $stmtlist = new_stmt_list(context);
       } 
 
-      // $$ = new_function_def(*$<context>function_context, $ID, $arg_list, $stmt_list);
-      $$ = new_function_def(context, std::string($ID), $arg_list, $stmt_list, $optional_ret_stmt);
+      // $$ = new_function_def(*$<context>function_context, $ID, $arglist, $stmtlist);
+      $$ = new_function_def(context, std::string($ID), $arglist, $stmtlist, $optional_ret_stmt);
       context_stack.pop();
       context = context_stack.top();
     }
@@ -321,7 +321,7 @@ exp:
     }
   ;
 
-arg_list:
+arglist:
   %empty                   { $$ = NULL; } 
   | arg                    {  $$ = new_arg_list(context, $1); }
   | ne_arg_list ',' arg    {  $$ = new_arg_list(context, $1, $3); }
@@ -350,7 +350,7 @@ ne_arg_exp_list:
   | ne_arg_exp_list ',' exp       { $$ = new_exp_list(context, $1, $3); }
 ;
 
-// exp_list:
+// explist:
 //   %empty                     { $$ = NULL; }
 //   | exp STMT_SEP             { $$ = new_exp_list(context, $1); }
 //   | ne_exp_list exp STMT_SEP { $$ = new_exp_list(context, $1, $2); }
