@@ -179,7 +179,7 @@ typedef struct explist_node_t explist_node_t;
 typedef struct arglist_t arglist_t;
 typedef struct arglist_node_t arglist_node_t;
 typedef struct stmtlist_t stmtlist_t;
-typedef struct stmtlist_node_t stmtlist_node;
+typedef struct stmtlist_node_t stmtlist_node_t;
 typedef struct arg_t arg_t;
 
 ASTNode* logError(const char* str);
@@ -720,14 +720,14 @@ class FunctionDefNode : public ASTNode {
         args(std::vector<std::unique_ptr<arg_t>>()),
         bodyNodes(std::vector<std::unique_ptr<ASTNode>>()),
         returnNode(std::move(returnNode)) {
-    arglist_node_t* arglist_node_t = head_arg_list->first;
-    stmtlist_node* stmtlist_node = head_stmt_list->first;
+    arglist_node_t* arglist_node = head_arg_list->first;
+    stmtlist_node_t* stmtlist_node = head_stmt_list->first;
     do {
-      if (arglist_node_t && arglist_node_t->arg) {
-        args.push_back(std::unique_ptr<arg_t>(std::move(arglist_node_t->arg)));
-        arglist_node_t = arglist_node_t->next;
+      if (arglist_node && arglist_node->arg) {
+        args.push_back(std::unique_ptr<arg_t>(std::move(arglist_node->arg)));
+        arglist_node = arglist_node->next;
       }
-    } while (arglist_node_t);
+    } while (arglist_node);
 
     do {
       if (stmtlist_node && stmtlist_node->node) {

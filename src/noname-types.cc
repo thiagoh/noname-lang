@@ -100,7 +100,7 @@ stmtlist_t* new_stmt_list(ASTContext* context) {
 }
 stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* ast_node) {
   stmtlist_t* head_stmt_list = (stmtlist_t*)malloc(sizeof(stmtlist_t));
-  stmtlist_node* new_node = (stmtlist_node*)malloc(sizeof(stmtlist_node));
+  stmtlist_node_t* new_node = (stmtlist_node_t*)malloc(sizeof(stmtlist_node_t));
 
   if (!head_stmt_list || !new_node) {
     yyerror("out of space");
@@ -113,7 +113,7 @@ stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* ast_node) {
 }
 
 stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_stmt_list, ASTNode* ast_node) {
-  stmtlist_node* new_node = (stmtlist_node*)malloc(sizeof(stmtlist_node));
+  stmtlist_node_t* new_node = (stmtlist_node_t*)malloc(sizeof(stmtlist_node_t));
 
   if (!new_node) {
     yyerror("out of space");
