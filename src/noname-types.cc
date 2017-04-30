@@ -542,31 +542,31 @@ NodeValue* CallExpNode::getValue() {
   // function_node->setContext(temp_context);
 
   ExpNode* returnNode = function_node->getReturnNode();
-  std::vector<std::unique_ptr<ExpNode>>* valueArgs = &getArgs();
-  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args = valueArgs->begin();
-  std::vector<std::unique_ptr<arg_t>>* signatureArgs = &function_node->getArgs();
-  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args = signatureArgs->begin();
-  std::vector<std::unique_ptr<ASTNode>>* bodyNodes = &function_node->getBodyNodes();
-  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = bodyNodes->begin();
+  std::vector<std::unique_ptr<ExpNode>>* value_args = &getArgs();
+  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args = value_args->begin();
+  std::vector<std::unique_ptr<arg_t>>* signature_args = &function_node->getArgs();
+  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args = signature_args->begin();
+  std::vector<std::unique_ptr<ASTNode>>* body_nodes = &function_node->getBodyNodes();
+  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes->begin();
 
-  for (; it_signature_args != signatureArgs->end() || it_value_args != valueArgs->end();) {
-    std::unique_ptr<ExpNode>& valueArg = *it_value_args;
-    std::unique_ptr<arg_t>& signatureArg = *it_signature_args;
+  for (; it_signature_args != signature_args->end() || it_value_args != value_args->end();) {
+    std::unique_ptr<ExpNode>& value_arg = *it_value_args;
+    std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
 
-    call_exp_context->store(signatureArg.get()->name, valueArg.get()->getValue());
-    // temp_context->store(signatureArg.get()->name, valueArg.get()->getValue());
+    call_exp_context->store(signature_arg.get()->name, value_arg.get()->getValue());
+    // temp_context->store(signature_arg.get()->name, value_arg.get()->getValue());
 
     ++it_signature_args;
     ++it_value_args;
   }
 
-  for (; it_body_nodes != bodyNodes->end();) {
-    std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
+  for (; it_body_nodes != body_nodes->end();) {
+    std::unique_ptr<ASTNode>& body_node = *it_body_nodes;
 
-    bodyNode.get()->eval();
+    body_node.get()->eval();
 
     if (yydebug >= 1) {
-      fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
+      fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", body_node.get()->getType());
     }
     ++it_body_nodes;
   }
