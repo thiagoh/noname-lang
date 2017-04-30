@@ -65,8 +65,21 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    apt-get update
-    apt-get install -y build-essential libtinfo-dev libz-dev wget subversion git htop vim fish 
-    chsh -s /usr/bin/fish
+
+    #  install general dependencies
+    apt-get -qq update
+    apt-get install -y build-essential libtinfo-dev libz-dev wget subversion git htop vim
+    apt-get install -y zsh 
+
+    #  install cmake
+    wget https://cmake.org/files/v3.7/cmake-3.7.2.tar.gz
+    tar -xzvf cmake-3.7.2.tar.gz
+    cd cmake-3.7.2
+    ./configure
+    make
+    make install
+    
+    # set Zsh to be the default shell interpreter 
+    chsh -s /usr/bin/zsh
   SHELL
 end

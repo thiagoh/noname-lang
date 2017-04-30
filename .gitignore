@@ -1,5 +1,8 @@
 # Custom
 .vagrant/
+noname-lex.cc
+noname-parse.cc
+noname.tab.h
 
 # Prerequisites
 *.d
