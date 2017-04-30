@@ -1,5 +1,6 @@
 # Custom
 .vagrant/
+noname
 noname-lex.cc
 noname-parse.cc
 noname.tab.h
