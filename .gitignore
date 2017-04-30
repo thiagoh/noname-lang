@@ -1,14 +1,5 @@
 # Custom
-bodhi/
-bison/**/*.output
-bison/**/*.tab.h
-bison/**/*.tab.c
-ubuntu-14.04/llvm/
-ubuntu-14.04/lexer
-ubuntu-14.04/grading/
-ubuntu-14.04/vagrant-ssh
-ubuntu-14.04/.vagrant
-ubuntu-14.04/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+.vagrant/
 
 # Prerequisites
 *.d
