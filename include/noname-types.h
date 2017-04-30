@@ -131,6 +131,10 @@ extern std::stack<ASTContext*> context_stack;
 extern std::map<int, std::string> map;
 extern bool read_from_file_import;
 
+extern LLVMContext TheContext;
+extern IRBuilder<> Builder;
+extern std::unique_ptr<Module> TheModule;
+
 /* list of statements */
 struct stmtlist_node {
   ASTNode* node;
@@ -222,6 +226,9 @@ class ASTNode {
  public:
   ASTNode(ASTContext* context) : context(context) {}
   virtual ~ASTNode() = default;
+
+  virtual Value* codegen() { return nullptr; };
+
   virtual ASTNode* check() { return this; };
   virtual void* eval() { return nullptr; };
   virtual ProcessorStrategy* getProcessorStrategy() { return astNodeProcessorStrategy; };
@@ -534,6 +541,7 @@ class ExpNode : public ASTNode {
     return node_value;
   };
   virtual NodeValue* getValue() = 0;
+
   ProcessorStrategy* getProcessorStrategy() override { return expNodeProcessorStrategy; };
 
   int getType() const override { return getClassType(); };
@@ -561,6 +569,7 @@ class NumberNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
+  virtual Value* codegen() override;
 
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_NUMBER; };

@@ -655,4 +655,46 @@ ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
 ProcessorStrategy* assignmentNodeProcessorStrategy = new AssignmentNodeProcessorStrategy();
 ProcessorStrategy* callNodeProcessorStrategy = new CallExpNodeProcessorStrategy();
 ProcessorStrategy* importNodeProcessorStrategy = new ImportNodeProcessorStrategy();
+
+//===----------------------------------------------------------------------===//
+// Code Generation
+//===----------------------------------------------------------------------===//
+
+LLVMContext TheContext;
+IRBuilder<> Builder(TheContext);
+std::unique_ptr<Module> TheModule;
+
+Value* NumberNode::codegen() {
+  Value* value = nullptr;
+
+  if (type == TYPE_DOUBLE) {
+    value = ConstantFP::get(TheContext, APFloat(*(double*)value));
+  } else if (type == TYPE_FLOAT) {
+    value = ConstantFP::get(TheContext, APFloat(*(float*)value));
+  } else if (type == TYPE_LONG) {
+    //APInt (unsigned numBits, uint64_t val, bool isSigned=false)
+    value = ConstantInt::get(TheContext, APInt(
+      CHAR_BIT * sizeof(long),
+      *(long*)value,
+      true));
+  } else if (type == TYPE_INT) {
+    //APInt (unsigned numBits, uint64_t val, bool isSigned=false)
+    value = ConstantInt::get(TheContext, APInt(
+      CHAR_BIT * sizeof(int),
+      *(int*)value,
+      true));
+  } else if (type == TYPE_SHORT) {
+    value = ConstantInt::get(TheContext, APInt(
+      CHAR_BIT * sizeof(short),
+      *(short*)value,
+      true));
+  } else if (type == TYPE_CHAR) {
+    value = ConstantInt::get(TheContext, APInt(
+      CHAR_BIT * sizeof(char),
+      *(char*)value,
+      true));
+  }
+
+  return value;
+}
 }
