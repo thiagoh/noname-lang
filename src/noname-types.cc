@@ -18,6 +18,8 @@ extern FILE* fin;
 
 namespace noname {
 
+std::string pow_function_name("_noname_function_pow");
+
 /// LogError* - These are little helper functions for error handling.
 ASTNode* logError(const char* str) {
   char msg[1024];
@@ -276,7 +278,7 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
 
   ASTNode* check_result = new_node->check();
 
-  if (check_result && is_of_type<ErrorNode>(*check_result)) {
+  if (check_result && isa<ErrorNode>(*check_result)) {
     // logError((ErrorNode*)check_result);
     return check_result;
   }
@@ -566,7 +568,8 @@ NodeValue* CallExpNode::getValue() {
     body_node.get()->eval();
 
     if (yydebug >= 1) {
-      fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", body_node.get()->getType());
+      fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
+              ASTNode::toString(body_node.get()->getKind()).c_str());
     }
     ++it_body_nodes;
   }
@@ -720,26 +723,95 @@ Value* VarExpNode::codegen() {
   return node->codegen();
 }
 
-Value* BinaryExpNode::codegen() {
-  // Value *L = LHS->codegen();
-  // Value *R = RHS->codegen();
-  // if (!L || !R)
-  //   return nullptr;
+Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow_tmp") {
+  Function* pow_function = TheModule->getFunction(pow_function_name);
 
-  // switch (Op) {
-  // case '+':
-  //   return Builder.CreateFAdd(L, R, "addtmp");
-  // case '-':
-  //   return Builder.CreateFSub(L, R, "subtmp");
-  // case '*':
-  //   return Builder.CreateFMul(L, R, "multmp");
-  // case '<':
-  //   L = Builder.CreateFCmpULT(L, R, "cmptmp");
-  //   // Convert bool 0/1 to double 0.0 or 1.0
-  //   return Builder.CreateUIToFP(L, Type::getDoubleTy(TheContext), "booltmp");
-  // default:
-  //   return LogErrorV("invalid binary operator");
+  if (!pow_function) {
+    // result = LogErrorV("Unknown function referenced");
+    return nullptr;
+  }
+
+  std::vector<Value*> args_values;
+  args_values.push_back(L);
+  args_values.push_back(R);
+
+  return Builder.CreateCall(pow_function, args_values, name);
+}
+
+Value* BinaryExpNode::codegen() {
+  NodeValue* lhs_node_value = lhs.get()->getValue();
+  NodeValue* rhs_node_value = rhs.get()->getValue();
+
+  int result_type = get_adequate_result_type(lhs_node_value, rhs_node_value);
+  void* lhs_value = lhs_node_value->getValue(result_type);
+  void* rhs_value = rhs_node_value->getValue(result_type);
+  Value* result = nullptr;
+
+  Value* L = lhs_node_value->codegen();
+  Value* R = rhs_node_value->codegen();
+
+  if (!L || !R) {
+    return result;
+  }
+
+  // switch (op) {
+  //   case '+':
+  //     return Builder.CreateFAdd(L, R, "addtmp");
+  //   case '-':
+  //     return Builder.CreateFSub(L, R, "subtmp");
+  //   case '*':
+  //     return Builder.CreateFMul(L, R, "multmp");
+  //   case '<':
+  //     L = Builder.CreateFCmpULT(L, R, "cmptmp");
+  //     // Convert bool 0/1 to double 0.0 or 1.0
+  //     return Builder.CreateUIToFP(L, Type::getDoubleTy(TheContext), "booltmp");
+  //   default:
+  //     return LogErrorV("invalid binary operator");
   // }
-  return nullptr;
+
+  if (result_type == TYPE_DOUBLE || result_type == TYPE_FLOAT) {
+    if (op == '+') {
+      result = Builder.CreateFAdd(L, R, "addtmp");
+    } else if (op == '-') {
+      result = Builder.CreateFSub(L, R, "addtmp");
+    } else if (op == '*') {
+      result = Builder.CreateFMul(L, R, "multmp");
+    } else if (op == '/') {
+      result = Builder.CreateFDiv(L, R, "divtmp");
+    } else if (op == '^') {
+      result = CreatePow(L, R);
+    }
+
+  } else if (result_type == TYPE_LONG || result_type == TYPE_INT || result_type == TYPE_SHORT ||
+             result_type == TYPE_CHAR) {
+    int typed_lhs_value = *(int*)lhs_value;
+    int typed_rhs_value = *(int*)rhs_value;
+
+    if (op == '+') {
+      result = Builder.CreateAdd(L, R, "addtmp");
+    } else if (op == '-') {
+      result = Builder.CreateSub(L, R, "addtmp");
+    } else if (op == '*') {
+      result = Builder.CreateMul(L, R, "multmp");
+    } else if (op == '/') {
+      result = Builder.CreateSDiv(L, R, "divtmp");
+      
+      // cast from int to double
+      // Builder.CreateSIToFP(result, Type * DestTy, const Twine& Name = "")
+
+    } else if (op == '^') {
+      result = CreatePow(L, R);
+    }
+
+    // } else if (result_type == TYPE_STRING) {
+    //   std::string typed_lhs_value = *(std::string*)lhs_value;
+    //   std::string typed_rhs_value = *(std::string*)rhs_value;
+
+    //   if (op == '+') {
+    //     result = new NodeValue(typed_lhs_value + typed_rhs_value);
+    //   }
+  }
+
+  return result;
 }
 }

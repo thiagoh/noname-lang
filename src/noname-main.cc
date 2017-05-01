@@ -194,20 +194,18 @@ int noname_read(char *buf, int *result, int max_size) {
 // }
 
 void eval(ASTNode *node) {
-  if (!node || is_of_type<ErrorNode>(*node)) {
+  if (!node || isa<ErrorNode>(*node)) {
     logError((ErrorNode *)node);
     return;
   }
 
   if (yydebug >= 1) {
-    fprintf(stdout, "\n[### eval: %d]\n", node->getType());
+    fprintf(stdout, "\n[### eval: %s]\n", ASTNode::toString(node->getKind()).c_str());
   }
 
   if (yydebug >= 2) {
-    // fprintf(stderr, "\n[is_of_type<ExpNode>(*node) -> %s]\n", is_of_type<ExpNode>(*node) ? "true" : "false");
-    fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n",
-            is_of_type<AssignmentNode>(*node) ? "true" : "false",
-            is_of_type<DeclarationAssignmentNode>(*node) ? "true" : "false");
+    fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n", isa<AssignmentNode>(*node) ? "true" : "false",
+            isa<DeclarationAssignmentNode>(*node) ? "true" : "false");
   }
 
   node->getProcessorStrategy()->process(node);

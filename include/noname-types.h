@@ -14,6 +14,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/Casting.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/Scalar.h"
@@ -63,39 +64,6 @@ enum yytokentype {
 #define TYPE_LONG 36
 #define TYPE_DOUBLE 37
 #define TYPE_STRING 38
-
-#ifndef AST_NODE_TYPE
-#define AST_NODE_TYPE
-enum ast_node_type {
-  AST_NODE_TYPE_AST_NODE = 32,
-  AST_NODE_TYPE_EXP_NODE = 33,
-  AST_NODE_TYPE_NUMBER = 34,
-  AST_NODE_TYPE_VARIABLE = 35,
-  AST_NODE_TYPE_STRING = 36,
-  AST_NODE_TYPE_UNARY_EXP = 37,
-  AST_NODE_TYPE_BINARY = 38,
-  AST_NODE_TYPE_CALL_EXP = 39,
-  AST_NODE_TYPE_DEF_FUNCTION = 40,
-  AST_NODE_TYPE_ASSIGNMENT = 41,
-  AST_NODE_TYPE_DECLARATION = 42,
-  AST_NODE_TYPE_DECLARATION_ASSIGNMENT = 43,
-  AST_NODE_TYPE_IMPORT = 44,
-};
-#endif
-
-#define AST_NODE_TYPE_AST_NODE 32
-#define AST_NODE_TYPE_EXP_NODE 33
-#define AST_NODE_TYPE_NUMBER 34
-#define AST_NODE_TYPE_VARIABLE 35
-#define AST_NODE_TYPE_STRING 36
-#define AST_NODE_TYPE_UNARY_EXP 37
-#define AST_NODE_TYPE_BINARY 38
-#define AST_NODE_TYPE_CALL_EXP 39
-#define AST_NODE_TYPE_DEF_FUNCTION 40
-#define AST_NODE_TYPE_ASSIGNMENT 41
-#define AST_NODE_TYPE_DECLARATION 42
-#define AST_NODE_TYPE_DECLARATION_ASSIGNMENT 43
-#define AST_NODE_TYPE_IMPORT 44
 
 class ASTNode;
 class ASTContext;
@@ -220,13 +188,46 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
                           ExpNode* returnNode);
 
 class ASTNode {
+ public:
+#ifndef AST_NODE_TYPE
+#define AST_NODE_TYPE
+  enum ASTNodeKind {
+    AST_NODE_TYPE_AST_NODE,
+
+    AST_NODE_TYPE_ERROR_NODE,
+    AST_NODE_TYPE_ERROR_NODE_LAST,
+
+    AST_NODE_TYPE_EXP_NODE,
+    AST_NODE_TYPE_NUMBER,
+    AST_NODE_TYPE_VARIABLE,
+    AST_NODE_TYPE_STRING,
+    AST_NODE_TYPE_UNARY_EXP,
+    AST_NODE_TYPE_BINARY,
+    AST_NODE_TYPE_CALL_EXP,
+
+    AST_NODE_TYPE_ASSIGNMENT,
+    AST_NODE_TYPE_DECLARATION_ASSIGNMENT,
+    AST_NODE_TYPE_ASSIGNMENT_LAST,
+
+    AST_NODE_TYPE_EXP_NODE_LAST,
+
+    AST_NODE_TYPE_DECLARATION,
+    AST_NODE_TYPE_DEF_FUNCTION,
+    AST_NODE_TYPE_IMPORT,
+
+    AST_NODE_TYPE_AST_NODE_LAST,
+  };
+#endif
+
  private:
   ASTContext* context;
+  const ASTNodeKind kind;
 
  public:
-  ASTNode(ASTContext* context) : context(context) {}
+  ASTNode(ASTContext* context) : context(context), kind(AST_NODE_TYPE_AST_NODE) {}
+  ASTNode(ASTContext* context, ASTNodeKind kind) : context(context), kind(kind) {}
   virtual ~ASTNode() = default;
-
+  ASTNodeKind getKind() const { return kind; }
   virtual Value* codegen() { return nullptr; };
 
   virtual ASTNode* check() { return this; };
@@ -235,8 +236,46 @@ class ASTNode {
 
   ASTContext* getContext() const { return context; };
 
-  virtual int getType() const { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_AST_NODE; };
+  static bool classof(const ASTNode* S) {
+    return S->getKind() >= AST_NODE_TYPE_AST_NODE && S->getKind() <= AST_NODE_TYPE_AST_NODE_LAST;
+  }
+
+  static std::string toString(ASTNode::ASTNodeKind kind) {
+    std::string s;
+
+#define AST_NODE_KIND_PROCESS_VAL(p) \
+  case (p):                          \
+    s = #p;                          \
+    break;
+
+    switch (kind) {
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_AST_NODE)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_AST_NODE_LAST)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_ERROR_NODE)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_ERROR_NODE_LAST)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_EXP_NODE)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_EXP_NODE_LAST)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_NUMBER)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_VARIABLE)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_STRING)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_UNARY_EXP)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_BINARY)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_CALL_EXP)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_DEF_FUNCTION)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_ASSIGNMENT)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_DECLARATION)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_DECLARATION_ASSIGNMENT)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_ASSIGNMENT_LAST)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_IMPORT)
+    }
+
+#undef AST_NODE_KIND_PROCESS_VAL
+
+    return s;
+  };
+
+  // virtual int getType() const { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_AST_NODE; };
 };
 
 class ErrorNode : public ASTNode {
@@ -244,8 +283,12 @@ class ErrorNode : public ASTNode {
   std::string _what;
 
  public:
-  ErrorNode(ASTContext* context, const std::string& what) : ASTNode(context), _what(what) {}
+  ErrorNode(ASTContext* context, const std::string& what) : ASTNode(context, AST_NODE_TYPE_ERROR_NODE), _what(what) {}
   std::string what() { return _what; }
+
+  static bool classof(const ASTNode* S) {
+    return S->getKind() >= AST_NODE_TYPE_ERROR_NODE && S->getKind() <= AST_NODE_TYPE_ERROR_NODE_LAST;
+  }
 };
 
 class LogicErrorNode : public ErrorNode {
@@ -534,7 +577,8 @@ class NodeValue {
 
 class ExpNode : public ASTNode {
  public:
-  ExpNode(ASTContext* context) : ASTNode(context) {}
+  ExpNode(ASTContext* context) : ASTNode(context, AST_NODE_TYPE_EXP_NODE) {}
+  ExpNode(ASTContext* context, ASTNodeKind kind) : ASTNode(context, kind) {}
   virtual ~ExpNode() = default;
 
   void* eval() override {
@@ -545,8 +589,12 @@ class ExpNode : public ASTNode {
 
   ProcessorStrategy* getProcessorStrategy() override { return expNodeProcessorStrategy; };
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_EXP_NODE; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_EXP_NODE; };
+
+  static bool classof(const ASTNode* S) {
+    return S->getKind() >= AST_NODE_TYPE_EXP_NODE && S->getKind() <= AST_NODE_TYPE_EXP_NODE_LAST;
+  }
 };
 
 class NumberExpNode : public ExpNode {
@@ -555,25 +603,39 @@ class NumberExpNode : public ExpNode {
   int type;
 
  public:
-  NumberExpNode(ASTContext* context, double val) : ExpNode(context), type(TYPE_DOUBLE) {
+  NumberExpNode(ASTContext* context, double val) : ExpNode(context, AST_NODE_TYPE_NUMBER), type(TYPE_DOUBLE) {
     value = new double;
     memcpy(value, &val, sizeof(double));
   };
-  NumberExpNode(ASTContext* context, int val) : ExpNode(context), type(TYPE_INT) {
+  NumberExpNode(ASTContext* context, float val) : ExpNode(context, AST_NODE_TYPE_NUMBER), type(TYPE_FLOAT) {
+    value = new float;
+    memcpy(value, &val, sizeof(float));
+  };
+  NumberExpNode(ASTContext* context, long val) : ExpNode(context, AST_NODE_TYPE_NUMBER), type(TYPE_LONG) {
+    value = new long;
+    memcpy(value, &val, sizeof(long));
+  };
+  NumberExpNode(ASTContext* context, int val) : ExpNode(context, AST_NODE_TYPE_NUMBER), type(TYPE_INT) {
     value = new int;
     memcpy(value, &val, sizeof(int));
   };
-  NumberExpNode(ASTContext* context, long val) : ExpNode(context), type(TYPE_LONG) {
-    value = new long;
-    memcpy(value, &val, sizeof(long));
+  NumberExpNode(ASTContext* context, short val) : ExpNode(context, AST_NODE_TYPE_NUMBER), type(TYPE_SHORT) {
+    value = new short;
+    memcpy(value, &val, sizeof(short));
+  };
+  NumberExpNode(ASTContext* context, char val) : ExpNode(context, AST_NODE_TYPE_NUMBER), type(TYPE_CHAR) {
+    value = new char;
+    memcpy(value, &val, sizeof(char));
   };
 
   // void* eval() override;
   NodeValue* getValue() override;
   virtual Value* codegen() override;
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_NUMBER; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_NUMBER; };
+
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_NUMBER; }
 };
 
 class StringExpNode : public ExpNode {
@@ -581,15 +643,18 @@ class StringExpNode : public ExpNode {
   std::string value;
 
  public:
-  StringExpNode(ASTContext* context, const std::string& value) : ExpNode(context), value(value){};
-  StringExpNode(ASTContext* context, const char* value) : ExpNode(context), value(std::string(value)){};
+  StringExpNode(ASTContext* context, const std::string& value) : ExpNode(context, AST_NODE_TYPE_STRING), value(value){};
+  StringExpNode(ASTContext* context, const char* value)
+      : ExpNode(context, AST_NODE_TYPE_STRING), value(std::string(value)){};
 
   // void* eval() override;
   NodeValue* getValue() override;
   virtual Value* codegen() override;
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_STRING; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_STRING; };
+
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_STRING; }
 };
 
 class VarExpNode : public ExpNode {
@@ -597,15 +662,17 @@ class VarExpNode : public ExpNode {
   std::string name;
 
  public:
-  VarExpNode(ASTContext* context, const std::string& name) : ExpNode(context), name(name) {}
+  VarExpNode(ASTContext* context, const std::string& name) : ExpNode(context, AST_NODE_TYPE_VARIABLE), name(name) {}
   const std::string& getName() const { return name; }
 
   // void* eval() override;
   NodeValue* getValue() override;
   virtual Value* codegen() override;
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_VARIABLE; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_VARIABLE; };
+
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_VARIABLE; }
 };
 
 class UnaryExpNode : public ExpNode {
@@ -615,15 +682,16 @@ class UnaryExpNode : public ExpNode {
 
  public:
   UnaryExpNode(ASTContext* context, char op, std::unique_ptr<ExpNode> rhs)
-      : ExpNode(context), op(op), rhs(std::move(rhs)) {}
+      : ExpNode(context, AST_NODE_TYPE_UNARY_EXP), op(op), rhs(std::move(rhs)) {}
   UnaryExpNode(ASTContext* context, char op, ExpNode* rhs)
-      : ExpNode(context), op(op), rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
+      : ExpNode(context, AST_NODE_TYPE_UNARY_EXP), op(op), rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
 
   // void* eval() override;
   NodeValue* getValue() override;
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_UNARY_EXP; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_UNARY_EXP; };
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_UNARY_EXP; }
 };
 
 class BinaryExpNode : public ExpNode {
@@ -634,9 +702,9 @@ class BinaryExpNode : public ExpNode {
 
  public:
   BinaryExpNode(ASTContext* context, char op, std::unique_ptr<ExpNode> lhs, std::unique_ptr<ExpNode> rhs)
-      : ExpNode(context), op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+      : ExpNode(context, AST_NODE_TYPE_BINARY), op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
   BinaryExpNode(ASTContext* context, char op, ExpNode* lhs, ExpNode* rhs)
-      : ExpNode(context),
+      : ExpNode(context, AST_NODE_TYPE_BINARY),
         op(op),
         lhs(std::unique_ptr<ExpNode>(std::move(lhs))),
         rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
@@ -645,8 +713,12 @@ class BinaryExpNode : public ExpNode {
   NodeValue* getValue() override;
   virtual Value* codegen() override;
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_BINARY; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_BINARY; };
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_BINARY; }
+
+ private:
+  Value* CreatePow(Value* L, Value* R, const char* name);
 };
 
 /// CallExpNode - Expression class for function calls.
@@ -657,9 +729,9 @@ class CallExpNode : public ExpNode {
 
  public:
   CallExpNode(ASTContext* context, const std::string& callee, std::vector<std::unique_ptr<ExpNode>>& args)
-      : ExpNode(context), callee(callee), args(std::move(args)) {}
+      : ExpNode(context, AST_NODE_TYPE_CALL_EXP), callee(callee), args(std::move(args)) {}
   CallExpNode(ASTContext* context, const std::string& callee, explist_t* head_exp_list)
-      : ExpNode(context), callee(callee), args(std::vector<std::unique_ptr<ExpNode>>()) {
+      : ExpNode(context, AST_NODE_TYPE_CALL_EXP), callee(callee), args(std::vector<std::unique_ptr<ExpNode>>()) {
     if (head_exp_list) {
       explist_node_t* explist_node_t = head_exp_list->first;
       do {
@@ -681,8 +753,9 @@ class CallExpNode : public ExpNode {
   const std::string& getCallee() const { return callee; }
   std::vector<std::unique_ptr<ExpNode>>& getArgs() { return args; }
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_CALL_EXP; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_CALL_EXP; };
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_CALL_EXP; }
 };
 
 // ImportNode - Node class for file import
@@ -691,14 +764,16 @@ class ImportNode : public ASTNode {
   std::string filename;
 
  public:
-  ImportNode(ASTContext* context, const std::string& filename) : ASTNode(context), filename(filename) {}
+  ImportNode(ASTContext* context, const std::string& filename)
+      : ASTNode(context, AST_NODE_TYPE_IMPORT), filename(filename) {}
 
   // void* eval() override;
   ProcessorStrategy* getProcessorStrategy() override { return importNodeProcessorStrategy; };
   const std::string& getFilename() const { return filename; }
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_IMPORT; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_IMPORT; };
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_IMPORT; }
 };
 
 // FunctionDefNode - Node class for function definition.
@@ -712,14 +787,14 @@ class FunctionDefNode : public ASTNode {
  public:
   FunctionDefNode(ASTContext* context, const std::string& name, std::vector<std::unique_ptr<arg_t>>& args,
                   std::vector<std::unique_ptr<ASTNode>>& bodyNodes, ExpNode* returnNode)
-      : ASTNode(context),
+      : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
         name(name),
         args(std::move(args)),
         bodyNodes(std::move(bodyNodes)),
         returnNode(std::move(returnNode)) {}
   FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list, stmtlist_t* head_stmt_list,
                   ExpNode* returnNode)
-      : ASTNode(context),
+      : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
         name(name),
         args(std::vector<std::unique_ptr<arg_t>>()),
         bodyNodes(std::vector<std::unique_ptr<ASTNode>>()),
@@ -762,17 +837,18 @@ class FunctionDefNode : public ASTNode {
     for (; it_body_nodes != bodyNodes.end();) {
       std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
 
-      if (is_of_type<ImportNode>(*bodyNode.get())) {
+      if (isa<ImportNode>(*bodyNode.get())) {
         return new InvalidStatement(context, "Cannot import inside function definition");
       }
 
       if (yydebug >= 2) {
-        fprintf(stdout, "\n[## evaluating body: ASTNode of type %d]\n", bodyNode.get()->getType());
+        fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
+                ASTNode::toString(bodyNode.get()->getKind()).c_str());
       }
       ++it_body_nodes;
     }
 
-    if (returnNode && is_of_type<ImportNode>(*returnNode)) {
+    if (returnNode && isa<ImportNode>(*returnNode)) {
       return new InvalidStatement(context, "Cannot import inside function definition");
     }
 
@@ -784,8 +860,9 @@ class FunctionDefNode : public ASTNode {
   std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() { return bodyNodes; }
   ExpNode* getReturnNode() { return returnNode; }
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_DEF_FUNCTION; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_DEF_FUNCTION; };
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_DEF_FUNCTION; }
 };
 
 class AssignmentNode : public ExpNode {
@@ -795,9 +872,14 @@ class AssignmentNode : public ExpNode {
 
  public:
   AssignmentNode(ASTContext* context, const std::string& name, std::unique_ptr<ExpNode> rhs)
-      : ExpNode(context), name(name), rhs(std::move(rhs)) {}
+      : ExpNode(context, AST_NODE_TYPE_ASSIGNMENT), name(name), rhs(std::move(rhs)) {}
   AssignmentNode(ASTContext* context, const std::string& name, ExpNode* rhs)
-      : ExpNode(context), name(name), rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
+      : ExpNode(context, AST_NODE_TYPE_ASSIGNMENT), name(name), rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
+
+  AssignmentNode(ASTContext* context, ASTNodeKind kind, const std::string& name, std::unique_ptr<ExpNode> rhs)
+      : ExpNode(context, kind), name(name), rhs(std::move(rhs)) {}
+  AssignmentNode(ASTContext* context, ASTNodeKind kind, const std::string& name, ExpNode* rhs)
+      : ExpNode(context, kind), name(name), rhs(std::unique_ptr<ExpNode>(std::move(rhs))) {}
 
   void* eval() override;
   NodeValue* getValue() override;
@@ -805,21 +887,26 @@ class AssignmentNode : public ExpNode {
 
   const std::string& getName() const { return name; }
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_ASSIGNMENT; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_ASSIGNMENT; };
+  static bool classof(const ASTNode* S) {
+    return S->getKind() >= AST_NODE_TYPE_ASSIGNMENT && S->getKind() <= AST_NODE_TYPE_ASSIGNMENT_LAST;
+  }
 };
 
 class DeclarationAssignmentNode : public AssignmentNode {
  public:
   DeclarationAssignmentNode(ASTContext* context, const std::string& name, std::unique_ptr<ExpNode> rhs)
-      : AssignmentNode(context, name, std::move(rhs)) {}
+      : AssignmentNode(context, AST_NODE_TYPE_DECLARATION_ASSIGNMENT, name, std::move(rhs)) {}
   DeclarationAssignmentNode(ASTContext* context, const std::string& name, ExpNode* rhs)
-      : AssignmentNode(context, name, std::move(rhs)) {}
+      : AssignmentNode(context, AST_NODE_TYPE_DECLARATION_ASSIGNMENT, name, std::move(rhs)) {}
 
   void* eval() override;
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_DECLARATION_ASSIGNMENT; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_DECLARATION_ASSIGNMENT; };
+
+  static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_DECLARATION_ASSIGNMENT; }
 };
 
 class DeclarationNode : public ASTNode {
@@ -827,12 +914,14 @@ class DeclarationNode : public ASTNode {
   std::string name;
 
  public:
-  DeclarationNode(ASTContext* context, const std::string& name) : ASTNode(context), name(name) {}
+  DeclarationNode(ASTContext* context, const std::string& name)
+      : ASTNode(context, AST_NODE_TYPE_DECLARATION), name(name) {}
 
   void* eval() override;
 
-  int getType() const override { return getClassType(); };
-  static int getClassType() { return AST_NODE_TYPE_DECLARATION; };
+  // int getType() const override { return getClassType(); };
+  // static int getClassType() { return AST_NODE_TYPE_DECLARATION; };
+  static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_DECLARATION; }
 };
 
 class ProcessorStrategy {
@@ -872,7 +961,7 @@ class ImportNodeProcessorStrategy : public ProcessorStrategy {
 
 //   NodeValue* getValue() override { return 0; }
 
-//   int getType() const override { return getClassType(); };
+// int getType() const override { return getClassType(); };
 //   static int getClassType() { return AST_NODE_TYPE_ASSIGNMENT; };
 // };
 // class DeclarationNode : public ASTNode {
@@ -882,7 +971,7 @@ class ImportNodeProcessorStrategy : public ProcessorStrategy {
 //  public:
 //   DeclarationNode(ASTContext* context, const std::string& name) : ASTNode(context), name(name) {}
 
-//   int getType() const override { return getClassType(); };
+// int getType() const override { return getClassType(); };
 //   static int getClassType() { return AST_NODE_TYPE_DECLARATION; };
 // };
 }
