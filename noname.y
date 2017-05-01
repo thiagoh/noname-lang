@@ -115,7 +115,7 @@ namespace noname {
 %token '*'                    "*"
 %token '^'                    "^"
 
-%token <id_v> ID                    "identifier"
+%token <id_v> IDENTIFIER                    "identifier"
 %token <id_v> STR_CONST             "string_constant"
 %token <double_v> DOUBLE            "double"
 %token <long_v> LONG                "long"
@@ -218,12 +218,12 @@ optional_stmt_sep:
   // 
 
 function_def:
-    DEF ID {
+    DEF IDENTIFIER {
 
         if (yydebug >= 1) {
           fprintf(stdout, "\n[############## processing function_def BEFORE arglist ##############]");
         }
-        $<context>$ = new ASTContext(std::string($ID), context);
+        $<context>$ = new ASTContext(std::string($IDENTIFIER), context);
         context_stack.push($<context>$);
         context = $<context>$;
         
@@ -242,8 +242,8 @@ function_def:
         $stmtlist = new_stmt_list(context);
       } 
 
-      // $$ = new_function_def(*$<context>function_context, $ID, $arglist, $stmtlist);
-      $$ = new_function_def(context, std::string($ID), $arglist, $stmtlist, $optional_ret_stmt);
+      // $$ = new_function_def(*$<context>function_context, $IDENTIFIER, $arglist, $stmtlist);
+      $$ = new_function_def(context, std::string($IDENTIFIER), $arglist, $stmtlist, $optional_ret_stmt);
       context_stack.pop();
       context = context_stack.top();
     }
@@ -259,24 +259,24 @@ import:
 ;
 
 assignment:
-  ID ASSIGN exp {
+  IDENTIFIER ASSIGN exp {
     // $$ = new AssignmentNode($1, $3);
-    $$ = new AssignmentNode(context, std::string($ID), std::move((ExpNode*) $exp));
+    $$ = new AssignmentNode(context, std::string($IDENTIFIER), std::move((ExpNode*) $exp));
   }
-  | LET ID ASSIGN exp {
-    $$ = new DeclarationAssignmentNode(context, std::string($ID), std::move((ExpNode*) $exp));
+  | LET IDENTIFIER ASSIGN exp {
+    $$ = new DeclarationAssignmentNode(context, std::string($IDENTIFIER), std::move((ExpNode*) $exp));
   }
 ;
 
 declaration:
-  LET ID {
-    $$ = new DeclarationNode(context, std::string($ID));
+  LET IDENTIFIER {
+    $$ = new DeclarationNode(context, std::string($IDENTIFIER));
   }
 ;
 
 exp:
-  ID {
-    $$ = new VarExpNode(context, std::string($ID));
+  IDENTIFIER {
+    $$ = new VarExpNode(context, std::string($IDENTIFIER));
   }
   | STR_CONST {
     $$ = new StringExpNode(context, std::string($STR_CONST));
@@ -308,16 +308,16 @@ exp:
   | '(' exp ')'        {
       $$ = new BinaryExpNode(context, 0, $2, NULL);
     }
-  | ID '(' arg_exp_list ')'        {
+  | IDENTIFIER '(' arg_exp_list ')'        {
 
-      // fprintf(stderr, "\n[ID(arg_exp_list)]"); 
+      // fprintf(stderr, "\n[IDENTIFIER(arg_exp_list)]"); 
 
       if ($arg_exp_list == NULL) {
         // fprintf(stderr, "\n[$arg_exp_list is NULL]"); 
         $arg_exp_list = new_exp_list(context);
       } 
-      // fprintf(stderr, "\n[new_call_node() %s]", $ID); 
-      $$ = new_call_node(context, $ID, $arg_exp_list);
+      // fprintf(stderr, "\n[new_call_node() %s]", $IDENTIFIER); 
+      $$ = new_call_node(context, $IDENTIFIER, $arg_exp_list);
     }
   ;
 
@@ -333,10 +333,10 @@ ne_arg_list:
 ;
 
 arg:
-  ID                      { $$ = new_arg(context, $1, NULL); }
-  | ID ASSIGN DOUBLE      { $$ = new_arg(context, $1, $3); }
-  | ID ASSIGN LONG        { $$ = new_arg(context, $1, $3); }
-  | ID ASSIGN STR_CONST   { $$ = new_arg(context, $1, $3); }
+  IDENTIFIER                      { $$ = new_arg(context, $1, NULL); }
+  | IDENTIFIER ASSIGN DOUBLE      { $$ = new_arg(context, $1, $3); }
+  | IDENTIFIER ASSIGN LONG        { $$ = new_arg(context, $1, $3); }
+  | IDENTIFIER ASSIGN STR_CONST   { $$ = new_arg(context, $1, $3); }
 ;
 
 arg_exp_list:

@@ -4,6 +4,7 @@
 #include "noname-utils.h"
 #include "noname-parse.h"
 #include "noname-types.h"
+#include "noname-jit.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -43,6 +44,12 @@ std::vector<std::string> imported_files;
 std::stack<ASTContext *> context_stack;
 std::map<int, std::string> map;
 bool read_from_file_import = false;
+
+LLVMContext TheContext;
+IRBuilder<> Builder(TheContext);
+std::unique_ptr<Module> TheModule;
+std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+std::unique_ptr<NonameJIT> TheJIT;
 
 void fatal_error(const char *msg) {
   fprintf(stderr, "%s\n", msg);
@@ -193,6 +200,30 @@ int noname_read(char *buf, int *result, int max_size) {
 //   free(file_path);
 // }
 
+//===----------------------------------------------------------------------===//
+// Top-Level parsing and JIT Driver
+//===----------------------------------------------------------------------===//
+
+void InitializeModuleAndPassManager() {
+  // Open a new module.
+  TheModule = llvm::make_unique<Module>("my cool jit", TheContext);
+  TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+
+  // Create a new pass manager attached to it.
+  TheFPM = llvm::make_unique<legacy::FunctionPassManager>(TheModule.get());
+
+  // Do simple "peephole" optimizations and bit-twiddling optzns.
+  TheFPM->add(createInstructionCombiningPass());
+  // Reassociate expressions.
+  TheFPM->add(createReassociatePass());
+  // Eliminate Common SubExpressions.
+  TheFPM->add(createGVNPass());
+  // Simplify the control flow graph (deleting unreachable blocks, etc).
+  TheFPM->add(createCFGSimplificationPass());
+
+  TheFPM->doInitialization();
+}
+
 void eval(ASTNode *node) {
   if (!node || isa<ErrorNode>(*node)) {
     logError((ErrorNode *)node);
@@ -235,7 +266,7 @@ int yylex(void) {
       fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %ld\n", token, map[token].c_str(), yylval.long_v);
     } else if (token == DOUBLE) {
       fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %lf\n", token, map[token].c_str(), yylval.double_v);
-    } else if (token == ID) {
+    } else if (token == IDENTIFIER) {
       fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %s\n", token, map[token].c_str(), yylval.id_v);
     } else {
       fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %c\n", token, map[token].c_str(), (char)token);
@@ -297,7 +328,7 @@ int main(int argc, char **argv) {
   map[294] = "END_COMMENT";
   map[295] = "QUOTES";
   map[296] = "ERROR";
-  map[297] = "ID";
+  map[297] = "IDENTIFIER";
   map[298] = "STR_CONST";
   map[299] = "DOUBLE";
   map[300] = "LONG";
@@ -308,6 +339,15 @@ int main(int argc, char **argv) {
   write_cursor();
 
   fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]");
+
+  // Make the module, which holds all the code.
+  TheModule = llvm::make_unique<Module>("my cool jit", TheContext);
+
+  // Run the main "interpreter loop" now.
+  // MainLoop();
+
+  // Print out all of the generated code.
+  TheModule->print(errs(), nullptr);
 
   return yyparse();
 }

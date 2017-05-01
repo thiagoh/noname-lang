@@ -58,7 +58,7 @@ DIGIT           [0-9]
 DIGITS          {DIGIT}+
 LONG            {DIGIT}+
 DOUBLE          {DIGIT}+(\.{DIGIT}+)?
-ID              {ALPHA}({ALPHA}|{DIGIT})*
+IDENTIFIER              {ALPHA}({ALPHA}|{DIGIT})*
 
 IMPORT          #import
 ELSE            else
@@ -227,9 +227,9 @@ QUOTES          \"
 <INITIAL>{CASE}                  { return (CASE); }
 <INITIAL>{NEW}                   { return (NEW); }
 <INITIAL>{NOT}                   { return (NOT); }
-<INITIAL>{ID}      {
+<INITIAL>{IDENTIFIER}      {
   yylval.id_v = strdup(yytext);
-  return (ID); }
+  return (IDENTIFIER); }
 <INITIAL>{LONG}     {
   yylval.long_v = atoi(strdup(yytext));
   return (LONG); }

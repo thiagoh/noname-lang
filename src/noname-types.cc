@@ -1,5 +1,6 @@
 #include "noname-utils.h"
 #include "noname-types.h"
+#include "noname-jit.h"
 #include <stdio.h>
 #include <algorithm>
 #include <cassert>
@@ -13,10 +14,17 @@
 #include <vector>
 
 using namespace llvm;
+using namespace llvm::orc;
 
 extern FILE* fin;
 
 namespace noname {
+
+extern LLVMContext TheContext;
+extern IRBuilder<> Builder;
+extern std::unique_ptr<Module> TheModule;
+extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+extern std::unique_ptr<NonameJIT> TheJIT;
 
 std::string pow_function_name("_noname_function_pow");
 
@@ -599,6 +607,30 @@ void* ASTNodeProcessorStrategy::process(ASTNode* node) {
 
 void* ExpNodeProcessorStrategy::process(ASTNode* node) {
   NodeValue* return_value = (NodeValue*)node->eval();
+
+  // if (auto* FnIR = FnAST->codegen()) {
+  //   fprintf(stderr, "Read top-level expression:");
+  //   FnIR->print(errs());
+  //   fprintf(stderr, "\n");
+
+  //   // JIT the module containing the anonymous expression, keeping a handle so
+  //   // we can free it later.
+  //   auto H = TheJIT->addModule(std::move(TheModule));
+  //   InitializeModuleAndPassManager();
+
+  //   // Search the JIT for the __anon_expr symbol.
+  //   auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
+  //   assert(ExprSymbol && "Function not found");
+
+  //   // Get the symbol's address and cast it to the right type (takes no
+  //   // arguments, returns a double) so we can call it as a native function.
+  //   double (*FP)() = (double (*)())(intptr_t)ExprSymbol.getAddress();
+  //   fprintf(stderr, "Evaluated to %f\n", FP());
+
+  //   // Delete the anonymous expression module from the JIT.
+  //   TheJIT->removeModule(H);
+  // }
+
   print_node_value(stdout, return_value);
   return nullptr;
 }
@@ -662,10 +694,6 @@ ProcessorStrategy* importNodeProcessorStrategy = new ImportNodeProcessorStrategy
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
-
-LLVMContext TheContext;
-IRBuilder<> Builder(TheContext);
-std::unique_ptr<Module> TheModule;
 
 Value* NodeValue::codegen() {
   Value* value = nullptr;
@@ -754,21 +782,6 @@ Value* BinaryExpNode::codegen() {
     return result;
   }
 
-  // switch (op) {
-  //   case '+':
-  //     return Builder.CreateFAdd(L, R, "addtmp");
-  //   case '-':
-  //     return Builder.CreateFSub(L, R, "subtmp");
-  //   case '*':
-  //     return Builder.CreateFMul(L, R, "multmp");
-  //   case '<':
-  //     L = Builder.CreateFCmpULT(L, R, "cmptmp");
-  //     // Convert bool 0/1 to double 0.0 or 1.0
-  //     return Builder.CreateUIToFP(L, Type::getDoubleTy(TheContext), "booltmp");
-  //   default:
-  //     return LogErrorV("invalid binary operator");
-  // }
-
   if (result_type == TYPE_DOUBLE || result_type == TYPE_FLOAT) {
     if (op == '+') {
       result = Builder.CreateFAdd(L, R, "addtmp");
@@ -795,7 +808,7 @@ Value* BinaryExpNode::codegen() {
       result = Builder.CreateMul(L, R, "multmp");
     } else if (op == '/') {
       result = Builder.CreateSDiv(L, R, "divtmp");
-      
+
       // cast from int to double
       // Builder.CreateSIToFP(result, Type * DestTy, const Twine& Name = "")
 
@@ -813,5 +826,12 @@ Value* BinaryExpNode::codegen() {
   }
 
   return result;
+}
+
+Value* UnaryExpNode::codegen() {
+  NodeValue* rhs_node_value = rhs.get()->getValue();
+  Value* R = rhs_node_value->codegen();
+  fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
+  return R;
 }
 }

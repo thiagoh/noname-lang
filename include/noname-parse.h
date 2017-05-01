@@ -130,7 +130,7 @@ enum yytokentype {
   END_COMMENT = 295,
   QUOTES = 296,
   ERROR = 297,
-  ID = 298,
+  IDENTIFIER = 298,
   STR_CONST = 299,
   DOUBLE = 300,
   LONG = 301,
@@ -178,7 +178,7 @@ enum yytokentype {
 #define END_COMMENT 295
 #define QUOTES 296
 #define ERROR 297
-#define ID 298
+#define IDENTIFIER 298
 #define STR_CONST 299
 #define DOUBLE 300
 #define LONG 301

@@ -99,10 +99,6 @@ extern std::stack<ASTContext*> context_stack;
 extern std::map<int, std::string> map;
 extern bool read_from_file_import;
 
-extern LLVMContext TheContext;
-extern IRBuilder<> Builder;
-extern std::unique_ptr<Module> TheModule;
-
 /* list of statements */
 struct stmtlist_node_t {
   ASTNode* node;
@@ -186,6 +182,8 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string name
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* exp_list);
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* returnNode);
+
+extern void InitializeModuleAndPassManager();
 
 class ASTNode {
  public:
@@ -688,6 +686,7 @@ class UnaryExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
+  virtual Value* codegen() override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_UNARY_EXP; };
