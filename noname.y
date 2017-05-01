@@ -276,16 +276,16 @@ declaration:
 
 exp:
   ID {
-    $$ = new VarNode(context, std::string($ID));
+    $$ = new VarExpNode(context, std::string($ID));
   }
   | STR_CONST {
-    $$ = new StringNode(context, std::string($STR_CONST));
+    $$ = new StringExpNode(context, std::string($STR_CONST));
   }
   | LONG {
-    $$ = new NumberNode(context, $1);
+    $$ = new NumberExpNode(context, $1);
   }
   | DOUBLE {
-    $$ = new NumberNode(context, $1);
+    $$ = new NumberExpNode(context, $1);
   }
   | exp '+' exp        {
       $$ = new BinaryExpNode(context, '+', $1, $3);

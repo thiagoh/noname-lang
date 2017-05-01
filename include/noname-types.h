@@ -105,7 +105,7 @@ class ExpNode;
 class NodeValue;
 class ImportNode;
 class BinaryExpNode;
-class VarNode;
+class VarExpNode;
 class CallExpNode;
 class FunctionDefNode;
 class DeclarationNode;
@@ -212,7 +212,7 @@ arglist_t* new_arg_list(ASTContext* context, arg_t* arg);
 arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg);
 
 ImportNode* new_import(ASTContext* context, std::string filename);
-VarNode* new_var_node(ASTContext* context, const std::string name);
+VarExpNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* exp_list);
@@ -548,21 +548,21 @@ class ExpNode : public ASTNode {
   static int getClassType() { return AST_NODE_TYPE_EXP_NODE; };
 };
 
-class NumberNode : public ExpNode {
+class NumberExpNode : public ExpNode {
  private:
   void* value;
   int type;
 
  public:
-  NumberNode(ASTContext* context, double val) : ExpNode(context), type(TYPE_DOUBLE) {
+  NumberExpNode(ASTContext* context, double val) : ExpNode(context), type(TYPE_DOUBLE) {
     value = new double;
     memcpy(value, &val, sizeof(double));
   };
-  NumberNode(ASTContext* context, int val) : ExpNode(context), type(TYPE_INT) {
+  NumberExpNode(ASTContext* context, int val) : ExpNode(context), type(TYPE_INT) {
     value = new int;
     memcpy(value, &val, sizeof(int));
   };
-  NumberNode(ASTContext* context, long val) : ExpNode(context), type(TYPE_LONG) {
+  NumberExpNode(ASTContext* context, long val) : ExpNode(context), type(TYPE_LONG) {
     value = new long;
     memcpy(value, &val, sizeof(long));
   };
@@ -575,31 +575,33 @@ class NumberNode : public ExpNode {
   static int getClassType() { return AST_NODE_TYPE_NUMBER; };
 };
 
-class StringNode : public ExpNode {
+class StringExpNode : public ExpNode {
  private:
   std::string value;
 
  public:
-  StringNode(ASTContext* context, const std::string& value) : ExpNode(context), value(value){};
-  StringNode(ASTContext* context, const char* value) : ExpNode(context), value(std::string(value)){};
+  StringExpNode(ASTContext* context, const std::string& value) : ExpNode(context), value(value){};
+  StringExpNode(ASTContext* context, const char* value) : ExpNode(context), value(std::string(value)){};
 
   // void* eval() override;
   NodeValue* getValue() override;
+  virtual Value* codegen() override;
 
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_STRING; };
 };
 
-class VarNode : public ExpNode {
+class VarExpNode : public ExpNode {
  private:
   std::string name;
 
  public:
-  VarNode(ASTContext* context, const std::string& name) : ExpNode(context), name(name) {}
+  VarExpNode(ASTContext* context, const std::string& name) : ExpNode(context), name(name) {}
   const std::string& getName() const { return name; }
 
   // void* eval() override;
   NodeValue* getValue() override;
+  virtual Value* codegen() override;
 
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_VARIABLE; };
@@ -640,6 +642,7 @@ class BinaryExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
+  virtual Value* codegen() override;
 
   int getType() const override { return getClassType(); };
   static int getClassType() { return AST_NODE_TYPE_BINARY; };

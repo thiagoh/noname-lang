@@ -221,22 +221,22 @@ arg_t* new_arg(ASTContext* context, char* arg_name, ASTNode* default_value) {
 
 arg_t* new_arg(ASTContext* context, char* arg_name, double default_value) {
   arg_t* new_arg = create_new_arg(context, arg_name);
-  new_arg->default_value = new NumberNode(context, default_value);
+  new_arg->default_value = new NumberExpNode(context, default_value);
   return new_arg;
 }
 arg_t* new_arg(ASTContext* context, char* arg_name, long default_value) {
   arg_t* new_arg = create_new_arg(context, arg_name);
-  new_arg->default_value = new NumberNode(context, default_value);
+  new_arg->default_value = new NumberExpNode(context, default_value);
   return new_arg;
 }
 arg_t* new_arg(ASTContext* context, char* arg_name, char* default_value) {
   arg_t* new_arg = create_new_arg(context, arg_name);
-  new_arg->default_value = new StringNode(context, default_value);
+  new_arg->default_value = new StringExpNode(context, default_value);
   return new_arg;
 }
 
-VarNode* new_var_node(ASTContext* context, const std::string name) {
-  VarNode* new_node = new VarNode(context, name);
+VarExpNode* new_var_node(ASTContext* context, const std::string name) {
+  VarExpNode* new_node = new VarExpNode(context, name);
   return new_node;
 }
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* exp) {
@@ -290,7 +290,7 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
   return new_node;
 }
 
-NodeValue* NumberNode::getValue() {
+NodeValue* NumberExpNode::getValue() {
   NodeValue* node = nullptr;
 
   if (type == TYPE_DOUBLE) {
@@ -310,14 +310,14 @@ NodeValue* NumberNode::getValue() {
   return node;
 }
 
-NodeValue* StringNode::getValue() {
+NodeValue* StringExpNode::getValue() {
   NodeValue* node = new NodeValue(value);
   return node;
 }
 
 // UNNECESSARY
-// void* VarNode::eval() { NodeValue* node_value = getValue(); }
-NodeValue* VarNode::getValue() {
+// void* VarExpNode::eval() { NodeValue* node_value = getValue(); }
+NodeValue* VarExpNode::getValue() {
   NodeValue* node = getContext()->getVariable(name);
 
   if (!node) {
@@ -664,7 +664,12 @@ LLVMContext TheContext;
 IRBuilder<> Builder(TheContext);
 std::unique_ptr<Module> TheModule;
 
-Value* NumberNode::codegen() {
+Value* StringExpNode::codegen() {
+  Value* value = nullptr;
+  return value;
+}
+
+Value* NumberExpNode::codegen() {
   Value* value = nullptr;
 
   if (type == TYPE_DOUBLE) {
@@ -684,5 +689,40 @@ Value* NumberNode::codegen() {
   }
 
   return value;
+}
+
+Value* VarExpNode::codegen() {
+  NodeValue* node = getContext()->getVariable(name);
+
+  if (!node) {
+    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
+            getContext()->getName().c_str());
+    return nullptr;
+  }
+
+  return node->codegen();
+}
+
+Value* BinaryExpNode::codegen() {
+  // Value *L = LHS->codegen();
+  // Value *R = RHS->codegen();
+  // if (!L || !R)
+  //   return nullptr;
+
+  // switch (Op) {
+  // case '+':
+  //   return Builder.CreateFAdd(L, R, "addtmp");
+  // case '-':
+  //   return Builder.CreateFSub(L, R, "subtmp");
+  // case '*':
+  //   return Builder.CreateFMul(L, R, "multmp");
+  // case '<':
+  //   L = Builder.CreateFCmpULT(L, R, "cmptmp");
+  //   // Convert bool 0/1 to double 0.0 or 1.0
+  //   return Builder.CreateUIToFP(L, Type::getDoubleTy(TheContext), "booltmp");
+  // default:
+  //   return LogErrorV("invalid binary operator");
+  // }
+  return nullptr;
 }
 }
