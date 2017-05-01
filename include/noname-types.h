@@ -378,6 +378,7 @@ class NodeValue {
 
   int getType() { return type; }
   void* getRawValue() { return value; }
+  Value* codegen();
   void* getValue(int as_type) {
     // string
     if (as_type == TYPE_STRING && type != TYPE_STRING) {

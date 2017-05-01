@@ -664,12 +664,7 @@ LLVMContext TheContext;
 IRBuilder<> Builder(TheContext);
 std::unique_ptr<Module> TheModule;
 
-Value* StringExpNode::codegen() {
-  Value* value = nullptr;
-  return value;
-}
-
-Value* NumberExpNode::codegen() {
+Value* NodeValue::codegen() {
   Value* value = nullptr;
 
   if (type == TYPE_DOUBLE) {
@@ -689,6 +684,28 @@ Value* NumberExpNode::codegen() {
   }
 
   return value;
+}
+
+Value* NumberExpNode::codegen() {
+  NodeValue* node = this->getValue();
+
+  if (!node) {
+    fprintf(stdout, "\n\n############ could not resolve number expression");
+    return nullptr;
+  }
+
+  return node->codegen();
+}
+
+Value* StringExpNode::codegen() {
+  NodeValue* node = this->getValue();
+
+  if (!node) {
+    fprintf(stdout, "\n\n############ could not resolve string expression");
+    return nullptr;
+  }
+
+  return node->codegen();
 }
 
 Value* VarExpNode::codegen() {
