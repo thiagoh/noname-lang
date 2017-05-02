@@ -70,6 +70,7 @@ class ASTContext;
 class ErrorNode;
 class LogicErrorNode;
 class ExpNode;
+class TopLevelExpNode;
 class NodeValue;
 class ImportNode;
 class BinaryExpNode;
@@ -83,6 +84,7 @@ class DeclarationAssignmentNode;
 class ProcessorStrategy;
 class ASTNodeProcessorStrategy;
 class ExpNodeProcessorStrategy;
+class TopLevelExpNodeProcessorStrategy;
 class FunctionDefNodeProcessorStrategy;
 class AssignmentNodeProcessorStrategy;
 class CallExpNodeProcessorStrategy;
@@ -90,6 +92,7 @@ class ImportNodeProcessorStrategy;
 
 extern ProcessorStrategy* astNodeProcessorStrategy;
 extern ProcessorStrategy* expNodeProcessorStrategy;
+extern ProcessorStrategy* topLevelExpNodeProcessorStrategy;
 extern ProcessorStrategy* functionDefNodeProcessorStrategy;
 extern ProcessorStrategy* assignmentNodeProcessorStrategy;
 extern ProcessorStrategy* callNodeProcessorStrategy;
@@ -181,6 +184,7 @@ arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list,
                         arg_t* arg);
 
 ImportNode* new_import(ASTContext* context, std::string filename);
+TopLevelExpNode* new_top_level_exp_node(ExpNode* node);
 VarExpNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
                                     ExpNode* node);
@@ -206,19 +210,20 @@ class ASTNode {
     AST_NODE_TYPE_ERROR_NODE,
     AST_NODE_TYPE_ERROR_NODE_LAST,
 
-    AST_NODE_TYPE_EXP_NODE,
+    AST_NODE_TYPE_EXP_NODE,  // begin of EXP_NODE
     AST_NODE_TYPE_NUMBER,
     AST_NODE_TYPE_VARIABLE,
     AST_NODE_TYPE_STRING,
     AST_NODE_TYPE_UNARY_EXP,
     AST_NODE_TYPE_BINARY,
     AST_NODE_TYPE_CALL_EXP,
+    AST_NODE_TYPE_TOP_LEVEL_EXP_NODE,
 
-    AST_NODE_TYPE_ASSIGNMENT,
+    AST_NODE_TYPE_ASSIGNMENT,  // begin of ASSIGNMENT
     AST_NODE_TYPE_DECLARATION_ASSIGNMENT,
-    AST_NODE_TYPE_ASSIGNMENT_LAST,
+    AST_NODE_TYPE_ASSIGNMENT_LAST,  // end of ASSIGNMENT
 
-    AST_NODE_TYPE_EXP_NODE_LAST,
+    AST_NODE_TYPE_EXP_NODE_LAST,  // end of EXP_NODE
 
     AST_NODE_TYPE_DECLARATION,
     AST_NODE_TYPE_DEF_FUNCTION,
@@ -268,6 +273,7 @@ class ASTNode {
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_ERROR_NODE)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_ERROR_NODE_LAST)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_EXP_NODE)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_TOP_LEVEL_EXP_NODE)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_EXP_NODE_LAST)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_NUMBER)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_VARIABLE)
@@ -438,7 +444,6 @@ class NodeValue {
 
  public:
   NodeValue(const std::string& value) : type(TYPE_STRING), value(0) {
-    ;
     this->value = new std::string(value);
   }
   NodeValue(int value) : type(TYPE_INT), value(0) {
@@ -632,6 +637,28 @@ class ExpNode : public ASTNode {
   static bool classof(const ASTNode* S) {
     return S->getKind() >= AST_NODE_TYPE_EXP_NODE &&
            S->getKind() <= AST_NODE_TYPE_EXP_NODE_LAST;
+  }
+};
+
+class TopLevelExpNode : public ExpNode {
+ private:
+  ExpNode& exp_node;
+
+ public:
+  TopLevelExpNode(ExpNode& exp_node)
+      : ExpNode(exp_node.getContext(), AST_NODE_TYPE_EXP_NODE),
+        exp_node(exp_node) {}
+  virtual ~TopLevelExpNode() = default;
+
+  void* eval() override { return exp_node.eval(); };
+  virtual NodeValue* getValue() override { return exp_node.getValue(); };
+
+  ProcessorStrategy* getProcessorStrategy() override {
+    return topLevelExpNodeProcessorStrategy;
+  };
+
+  static bool classof(const ASTNode* S) {
+    return S->getKind() >= AST_NODE_TYPE_TOP_LEVEL_EXP_NODE;
   }
 };
 
@@ -1049,6 +1076,10 @@ class ASTNodeProcessorStrategy : public ProcessorStrategy {
   void* process(ASTNode* node) override;
 };
 class ExpNodeProcessorStrategy : public ProcessorStrategy {
+ public:
+  void* process(ASTNode* node) override;
+};
+class TopLevelExpNodeProcessorStrategy : public ProcessorStrategy {
  public:
   void* process(ASTNode* node) override;
 };

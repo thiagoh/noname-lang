@@ -198,13 +198,13 @@ stmt:
       if (yydebug) {
         fprintf(stderr, "\n[stmt - function_def]: ");
       }
-      // $$ = $1;
+      $$ = $1;
     }
   | exp STMT_SEP                  { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt exp]: ");
       }
-      $$ = $1;
+      $$ = new_top_level_exp_node($1);
     }
 ;
 

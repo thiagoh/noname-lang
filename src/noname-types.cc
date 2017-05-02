@@ -283,6 +283,10 @@ VarExpNode* new_var_node(ASTContext* context, const std::string name) {
   VarExpNode* new_node = new VarExpNode(context, name);
   return new_node;
 }
+TopLevelExpNode* new_top_level_exp_node(ExpNode* exp_node) {
+  TopLevelExpNode* new_node = new TopLevelExpNode(*exp_node);
+  return new_node;
+}
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
                                     ExpNode* exp) {
   AssignmentNode* new_node = new AssignmentNode(context, name, exp);
@@ -660,10 +664,43 @@ void* ASTNodeProcessorStrategy::process(ASTNode* node) {
   print_node_value(stdout, return_value);
   return nullptr;
 }
-
 void* ExpNodeProcessorStrategy::process(ASTNode* node) {
-  NodeValue* return_value = (NodeValue*)node->eval();
+  ExpNode* exp_node = (ExpNode*)node;
+  NodeValue* return_value = (NodeValue*)exp_node->eval();
   print_node_value(stdout, return_value);
+  return nullptr;
+}
+void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
+  ExpNode* exp_node = (ExpNode*)node;
+  NodeValue* return_value = (NodeValue*)exp_node->eval();
+  print_node_value(stdout, return_value);
+
+  auto* exp_ir = exp_node->codegen();
+
+  if (!exp_ir) {
+    fprintf(stderr, "\nTop level expression could not be evaluated");
+  } else {
+    fprintf(stderr, "\nRead top level expression:");
+    exp_ir->dump();
+
+    // JIT the module containing the anonymous expression, keeping a handle so
+    // we can free it later.
+    auto module = TheJIT->addModule(std::move(TheModule));
+    InitializeModuleAndPassManager();
+
+    // Search the JIT for the __anon_expr symbol.
+    auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
+    assert(ExprSymbol && "Function not found");
+
+    // Get the symbol's address and cast it to the right type (takes no
+    // arguments, returns a double) so we can call it as a native function.
+    double (*FP)() = (double (*)())(intptr_t)ExprSymbol.getAddress();
+    fprintf(stderr, "Evaluated to %f\n", FP());
+
+    // Delete the anonymous expression module from the JIT.
+    TheJIT->removeModule(module);
+  }
+
   return nullptr;
 }
 Function* FunctionDefNode::getFunctionDefinition() {
@@ -872,6 +909,8 @@ void* ImportNodeProcessorStrategy::process(ASTNode* node) {
 // initialization
 ProcessorStrategy* astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
 ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
+ProcessorStrategy* topLevelExpNodeProcessorStrategy =
+    new TopLevelExpNodeProcessorStrategy();
 ProcessorStrategy* functionDefNodeProcessorStrategy =
     new FunctionDefNodeProcessorStrategy();
 ProcessorStrategy* assignmentNodeProcessorStrategy =
