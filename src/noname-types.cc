@@ -283,8 +283,21 @@ VarExpNode* new_var_node(ASTContext* context, const std::string name) {
   VarExpNode* new_node = new VarExpNode(context, name);
   return new_node;
 }
-TopLevelExpNode* new_top_level_exp_node(ExpNode* exp_node) {
-  TopLevelExpNode* new_node = new TopLevelExpNode(*exp_node);
+static ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
+                                                ExpNode* exp_node);
+ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
+  auto* context = exp_node->getContext();
+
+  ASTNode* anonymous_def_node =
+      createAnnonymousFunctionDefNode(context, exp_node);
+
+  if (anonymous_def_node && isa<ErrorNode>(*anonymous_def_node)) {
+    return anonymous_def_node;
+  }
+
+  TopLevelExpNode* new_node = new TopLevelExpNode(
+      context, exp_node, (FunctionDefNode*)anonymous_def_node);
+
   return new_node;
 }
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
@@ -324,9 +337,9 @@ ImportNode* new_import(ASTContext* context, std::string filename) {
 
 ASTNode* new_function_def(ASTContext* context, const std::string name,
                           arglist_t* arg_list, stmtlist_t* stmt_list,
-                          ExpNode* returnNode) {
+                          ExpNode* return_node) {
   FunctionDefNode* new_node =
-      new FunctionDefNode(context, name, arg_list, stmt_list, returnNode);
+      new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
 
   ASTNode* check_result = new_node->check();
 
@@ -335,10 +348,9 @@ ASTNode* new_function_def(ASTContext* context, const std::string name,
     return check_result;
   }
 
-  ASTContext* parent = context->getParent();
-  parent->store(name, new_node);
+  context->store(name, new_node);
   if (yydebug >= 1) {
-    fprintf(stdout, "\n[new_function_def %s]", parent->getName().c_str());
+    fprintf(stdout, "\n[new_function_def %s]", context->getName().c_str());
   }
 
   return new_node;
@@ -623,8 +635,6 @@ NodeValue* CallExpNode::getValue() {
 
     call_exp_context->store(signature_arg.get()->name,
                             value_arg.get()->getValue());
-    // temp_context->store(signature_arg.get()->name,
-    // value_arg.get()->getValue());
 
     ++it_signature_args;
     ++it_value_args;
@@ -671,17 +681,17 @@ void* ExpNodeProcessorStrategy::process(ASTNode* node) {
   return nullptr;
 }
 void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
-  ExpNode* exp_node = (ExpNode*)node;
-  NodeValue* return_value = (NodeValue*)exp_node->eval();
+  TopLevelExpNode* top_level_exp_node = (TopLevelExpNode*)node;
+  NodeValue* return_value = (NodeValue*)top_level_exp_node->eval();
   print_node_value(stdout, return_value);
 
-  auto* exp_ir = exp_node->codegen();
+  auto* top_level_node_ir = top_level_exp_node->codegen();
 
-  if (!exp_ir) {
+  if (!top_level_node_ir) {
     fprintf(stderr, "\nTop level expression could not be evaluated");
   } else {
     fprintf(stderr, "\nRead top level expression:");
-    exp_ir->dump();
+    top_level_node_ir->dump();
 
     // JIT the module containing the anonymous expression, keeping a handle so
     // we can free it later.
@@ -699,6 +709,23 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
 
     // Delete the anonymous expression module from the JIT.
     TheJIT->removeModule(module);
+  }
+
+  top_level_exp_node->release();
+
+  return nullptr;
+}
+Value* TopLevelExpNode::codegen() {
+  if (!anonymous_def_node) {
+    fprintf(stdout, "\n\n############ could not resolve top level expression");
+    return nullptr;
+  }
+  return anonymous_def_node->codegen();
+}
+void* TopLevelExpNode::release() {
+  if (anonymous_def_node) {
+    getContext()->removeFunction(anonymous_def_node->getName());
+    delete anonymous_def_node;
   }
 
   return nullptr;
@@ -728,6 +755,18 @@ Function* FunctionDefNode::getFunctionDefinition() {
   return function;
 }
 
+ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
+                                         ExpNode* exp_node) {
+  const std::string annon_name = "__anon_expr";
+  arglist_t* arg_list = new_arg_list(context);
+  stmtlist_t* stmt_list = new_stmt_list(context);
+  ExpNode* return_node = exp_node;
+
+  auto* function_def_node =
+      new_function_def(context, annon_name, arg_list, stmt_list, return_node);
+
+  return function_def_node;
+}
 Value* FunctionDefNode::codegen() {
   // FunctionProtos[Proto->getName()] = std::move(Proto);
   Function* function = getFunctionDefinition();
@@ -959,7 +998,16 @@ Value* NumberExpNode::codegen() {
 
   return node->codegen();
 }
+Value* CallExpNode::codegen() {
+  NodeValue* node = this->getValue();
 
+  if (!node) {
+    fprintf(stdout, "\n\n############ could not resolve string expression");
+    return nullptr;
+  }
+
+  return node->codegen();
+}
 Value* StringExpNode::codegen() {
   NodeValue* node = this->getValue();
 

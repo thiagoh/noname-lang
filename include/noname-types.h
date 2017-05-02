@@ -184,7 +184,7 @@ arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list,
                         arg_t* arg);
 
 ImportNode* new_import(ASTContext* context, std::string filename);
-TopLevelExpNode* new_top_level_exp_node(ExpNode* node);
+ASTNode* new_top_level_exp_node(ExpNode* node);
 VarExpNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
                                     ExpNode* node);
@@ -382,10 +382,13 @@ class ASTContext {
     return nullptr;
   };
 
-  void store(const std::string name, FunctionDefNode* functionNode) {
-    mFunctions[name] = functionNode;
+  bool storeFunction(const std::string name, FunctionDefNode* function_nomde) {
+    mFunctions[name] = function_nomde;
+    return true;
   }
-
+  bool store(const std::string name, FunctionDefNode* function_nomde) {
+    return storeFunction(name, function_nomde);
+  }
   // Variables
   NodeValue* getVariableShallow(const std::string& name) {
     itVariables = mVariables.find(name);
@@ -410,11 +413,30 @@ class ASTContext {
 
     return nullptr;
   };
-
-  void store(const std::string name, NodeValue* node_value) {
+  bool storeVariable(const std::string name, NodeValue* node_value) {
     mVariables[name] = node_value;
+    return true;
   }
-  NodeValue* update(const std::string name, NodeValue* node_value) {
+  bool store(const std::string name, NodeValue* node_value) {
+    return storeVariable(name, node_value);
+  }
+  bool removeFunction(const std::string name) {
+    itFunctions = mFunctions.find(name);
+    if (itFunctions != mFunctions.end()) {
+      mFunctions.erase(itFunctions);
+      return true;
+    }
+    return false;
+  }
+  bool removeVariable(const std::string name) {
+    itVariables = mVariables.find(name);
+    if (itVariables != mVariables.end()) {
+      mVariables.erase(itVariables);
+      return true;
+    }
+    return false;
+  }
+  NodeValue* updateVariable(const std::string name, NodeValue* node_value) {
     if (yydebug >= 2) {
       fprintf(stdout, "\n############ looking '%s' on context %s \n",
               name.c_str(), this->getName().c_str());
@@ -435,6 +457,9 @@ class ASTContext {
 
     std::string error_msg("Variable '" + name + "' is not defined");
     return logErrorNV(new LogicErrorNode(this, error_msg));
+  }
+  NodeValue* update(const std::string name, NodeValue* node_value) {
+    return updateVariable(name, node_value);
   }
 };
 
@@ -642,16 +667,21 @@ class ExpNode : public ASTNode {
 
 class TopLevelExpNode : public ExpNode {
  private:
-  ExpNode& exp_node;
+  ExpNode* exp_node;
+  FunctionDefNode* anonymous_def_node;
 
  public:
-  TopLevelExpNode(ExpNode& exp_node)
-      : ExpNode(exp_node.getContext(), AST_NODE_TYPE_EXP_NODE),
-        exp_node(exp_node) {}
+  TopLevelExpNode(ASTContext* context, ExpNode* exp_node,
+                  FunctionDefNode* anonymous_def_node)
+      : ExpNode(context, AST_NODE_TYPE_TOP_LEVEL_EXP_NODE),
+        exp_node(exp_node),
+        anonymous_def_node(anonymous_def_node) {}
   virtual ~TopLevelExpNode() = default;
 
-  void* eval() override { return exp_node.eval(); };
-  virtual NodeValue* getValue() override { return exp_node.getValue(); };
+  void* eval() override { return exp_node->eval(); };
+  virtual NodeValue* getValue() override { return exp_node->getValue(); };
+  virtual Value* codegen() override;
+  void* release();
 
   ProcessorStrategy* getProcessorStrategy() override {
     return topLevelExpNodeProcessorStrategy;
@@ -846,6 +876,7 @@ class CallExpNode : public ExpNode {
   }
 
   // void* eval() override;
+  virtual Value* codegen() override;
   NodeValue* getValue() override;
   ProcessorStrategy* getProcessorStrategy() override {
     return callNodeProcessorStrategy;
@@ -936,12 +967,14 @@ class FunctionDefNode : public ASTNode {
 
   ASTNode* check() override {
     ASTContext* context = getContext();
-    ASTContext* parent = context->getParent();
 
-    FunctionDefNode* function_node = parent->getFunction(name);
+    FunctionDefNode* function_node = context->getFunction(name);
     if (function_node) {
-      return new LogicErrorNode(context,
-                                "Function already exists in this context");
+      char error_message[2048];
+      snprintf(error_message, 2048,
+               "Function '%s' already exists in this context. %s", name.c_str(),
+               context->getName().c_str());
+      return new LogicErrorNode(context, error_message);
     }
 
     std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes =

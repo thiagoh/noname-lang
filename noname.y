@@ -243,7 +243,7 @@ function_def:
       } 
 
       // $$ = new_function_def(*$<context>function_context, $IDENTIFIER, $arglist, $stmtlist);
-      $$ = new_function_def(context, std::string($IDENTIFIER), $arglist, $stmtlist, $optional_ret_stmt);
+      $$ = new_function_def(context->getParent(), std::string($IDENTIFIER), $arglist, $stmtlist, $optional_ret_stmt);
       context_stack.pop();
       context = context_stack.top();
     }
