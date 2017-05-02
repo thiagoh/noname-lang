@@ -56,39 +56,39 @@ LETTER          [a-zA-Z]
 ALPHA           [a-zA-Z$_]
 DIGIT           [0-9]
 DIGITS          {DIGIT}+
-LONG            {DIGIT}+
-DOUBLE          {DIGIT}+(\.{DIGIT}+)?
+LONG_TOK            {DIGIT}+
+DOUBLE_TOK          {DIGIT}+(\.{DIGIT}+)?
 IDENTIFIER              {ALPHA}({ALPHA}|{DIGIT})*
 
 IMPORT          #import
 ELSE_TOK            else
 FALSE           false
 IF_TOK              if
-IN              in
+IN_TOK              in
 LET_TOK             let
-DEF             def
+DEF_TOK             def
 RETURN          return
-LOOP            loop
-THEN            then
+LOOP_TOK            loop
+THEN_TOK            then
 WHILE           while
-BREAK           break
-CASE            case
-NEW             new
-NOT             not
+BREAK_TOK           break
+CASE_TOK            case
+NEW_TOK             new
+NOT_TOK             not
 TRUE            true
 NEWLINE         [\n]
 NOTNEWLINE      [^\n]
 NOTSTRING       [^\n\0\\\"]
 WHITESPACE      [ \t\r\f\v]+
 ASSIGN          =
-LE              <=
+LE_TOK              <=
 DARROW          =>
 NULLCH          [\0]
 BACKSLASH       [\\]
-STAR            [*]
+STAR_TOK            [*]
 NOTSTAR         [^*]
-LEFTPAREN       [(]
-NOTLEFTPAREN    [^(]
+LEFTPAREN_TOK       [(]
+NOTLEFTPAREN_TOK    [^(]
 RIGHTPAREN      [)]
 NOTRIGHTPAREN   [^)]
 
@@ -114,7 +114,7 @@ QUOTES          \"
 <COMMENT><<EOF>> {
   yylval.error_msg = "EOF in comment";
   BEGIN(INITIAL);
-  return (ERROR);
+  return (ERROR_TOK);
 }
 
 <COMMENT>{BACKSLASH}(.|{NEWLINE}) {
@@ -138,7 +138,7 @@ QUOTES          \"
 
 <INITIAL>{END_COMMENT} {
   yylval.error_msg = "Unmatched */";
-  return (ERROR);
+  return (ERROR_TOK);
 }
 
 <INITIAL>{LINE_COMMENT}{NOTNEWLINE}*  ;
@@ -153,18 +153,18 @@ QUOTES          \"
 <STRING><<EOF>> {
   yylval.error_msg = "EOF in string constant";
   BEGIN(INITIAL);
-  return ERROR;
+  return ERROR_TOK;
 }
 
 <STRING>{NOTSTRING}* {
   int rc = str_write(yytext, strlen(yytext));
   if (rc != 0) {
-    return (ERROR);
+    return (ERROR_TOK);
   }
 }
 <STRING>{NULLCH} {
   null_character_err();
-  return (ERROR);
+  return (ERROR_TOK);
 }
 
 <STRING>{NEWLINE} {
@@ -172,7 +172,7 @@ QUOTES          \"
   curr_lineno++;
   if (!string_error) {
     yylval.error_msg = "Unterminated string constant";
-    return (ERROR);
+    return (ERROR_TOK);
   }
 }
 <STRING>{BACKSLASH}(.|{NEWLINE}) {
@@ -199,7 +199,7 @@ QUOTES          \"
       rc = str_write(c, 1);
   }
   if (rc != 0) {
-    return (ERROR);
+    return (ERROR_TOK);
   }
 }
 <STRING>{BACKSLASH}             ;
@@ -218,24 +218,24 @@ QUOTES          \"
 <INITIAL>{ASSIGN}                { return (ASSIGN); }
 <INITIAL>{ELSE_TOK}                  { return (ELSE_TOK); }
 <INITIAL>{IF_TOK}                    { return (IF_TOK); }
-<INITIAL>{IN}                    { return (IN); }
+<INITIAL>{IN_TOK}                    { return (IN_TOK); }
 <INITIAL>{LET_TOK}                   { return (LET_TOK); }
 <INITIAL>{RETURN}                { return (RETURN); }
-<INITIAL>{DEF}                   { return (DEF); }
-<INITIAL>{THEN}                  { return (THEN); }
+<INITIAL>{DEF_TOK}                   { return (DEF_TOK); }
+<INITIAL>{THEN_TOK}                  { return (THEN_TOK); }
 <INITIAL>{WHILE}                 { return (WHILE); }
-<INITIAL>{CASE}                  { return (CASE); }
-<INITIAL>{NEW}                   { return (NEW); }
-<INITIAL>{NOT}                   { return (NOT); }
+<INITIAL>{CASE_TOK}                  { return (CASE_TOK); }
+<INITIAL>{NEW_TOK}                   { return (NEW_TOK); }
+<INITIAL>{NOT_TOK}                   { return (NOT_TOK); }
 <INITIAL>{IDENTIFIER}      {
   yylval.id_v = strdup(yytext);
   return (IDENTIFIER); }
-<INITIAL>{LONG}     {
+<INITIAL>{LONG_TOK}     {
   yylval.long_v = atoi(strdup(yytext));
-  return (LONG); }
-<INITIAL>{DOUBLE}  {
+  return (LONG_TOK); }
+<INITIAL>{DOUBLE_TOK}  {
   yylval.double_v = atof(strdup(yytext));
-  return (DOUBLE); }
+  return (DOUBLE_TOK); }
 
 <INITIAL>","                     { return int(','); }
 <INITIAL>":"                     { return int(':'); }

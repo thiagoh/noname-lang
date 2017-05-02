@@ -81,10 +81,13 @@ void fatal_error(const char *msg) {
 }
 
 bool is_file_already_imported(const std::string &file_path) {
-  return std::find(imported_files.begin(), imported_files.end(), file_path) != imported_files.end();
+  return std::find(imported_files.begin(), imported_files.end(), file_path) !=
+         imported_files.end();
 }
 
-bool is_file_already_imported(const char *file_path) { return is_file_already_imported(std::string(file_path)); }
+bool is_file_already_imported(const char *file_path) {
+  return is_file_already_imported(std::string(file_path));
+}
 char *get_current_dir() {
   size_t size;
   char *buf;
@@ -116,7 +119,8 @@ char *get_current_dir() {
   return buf;
 }
 
-char *concat_strs(const char *format, const char *s1, const char *s2, int size) {
+char *concat_strs(const char *format, const char *s1, const char *s2,
+                  int size) {
   char *buf = new char[size];
   int bytes_pottentially_written = snprintf(buf, size, format, s1, s2);
 
@@ -132,7 +136,9 @@ char *get_file_path(const char *filename) {
   char *dirname = get_current_dir();
 
   if (dirname == NULL) {
-    logError("Error when trying to get the directory name");  // TODO inform the filename to the user
+    logError("Error when trying to get the directory name");  // TODO inform the
+                                                              // filename to the
+                                                              // user
     return nullptr;
   }
 
@@ -186,18 +192,21 @@ int noname_read(char *buf, int *result, int max_size) {
 //   print_node_value(stdout, return_value);
 // }
 // void process_node(CallExpNode &call_exp_node) {
-//   FunctionDefNode *function_def_node = context->getFunction(call_exp_node->getCallee());
+//   FunctionDefNode *function_def_node =
+//   context->getFunction(call_exp_node->getCallee());
 
 //   if (function_def_node) {
 //     if (yydebug >= 2) {
-//       fprintf(stdout, "\nThe called function was: '%s'\n", function_def_node->getName().c_str());
+//       fprintf(stdout, "\nThe called function was: '%s'\n",
+//       function_def_node->getName().c_str());
 //     }
 
 //     NodeValue *return_value = (NodeValue *)call_exp_node->eval();
 //     print_node_value(stdout, return_value);
 
 //   } else {
-//     fprintf(stderr, "\nError: The function %s was not found int the context\n", call_exp_node->getCallee().c_str());
+//     fprintf(stderr, "\nError: The function %s was not found int the
+//     context\n", call_exp_node->getCallee().c_str());
 //   }
 // }
 // void process_node(ImportNode &import_node) {
@@ -255,11 +264,13 @@ void eval(ASTNode *node) {
   }
 
   if (yydebug >= 1) {
-    fprintf(stdout, "\n[### eval: %s]\n", ASTNode::toString(node->getKind()).c_str());
+    fprintf(stdout, "\n[### eval: %s]\n",
+            ASTNode::toString(node->getKind()).c_str());
   }
 
   if (yydebug >= 2) {
-    fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n", isa<AssignmentNode>(*node) ? "true" : "false",
+    fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n",
+            isa<AssignmentNode>(*node) ? "true" : "false",
             isa<DeclarationAssignmentNode>(*node) ? "true" : "false");
   }
 
@@ -267,7 +278,8 @@ void eval(ASTNode *node) {
 }
 
 // void assert_equals(int i1, int i2) {
-//   fprintf(stdout, "v1 '%d' / v2 '%d' %s \n", i1, i2, i1 == i2 ? "equal" : "not equal");
+//   fprintf(stdout, "v1 '%d' / v2 '%d' %s \n", i1, i2, i1 == i2 ? "equal" :
+//   "not equal");
 //   assert(i1 == i2);
 // }
 
@@ -277,8 +289,8 @@ void write_cursor() {
 }
 
 void division_by_zero(YYLTYPE &yylloc) {
-  fprintf(stderr, "Error: %d:%d - %d:%d. Division by zero", yylloc.first_line, yylloc.first_column, yylloc.last_line,
-          yylloc.last_column);
+  fprintf(stderr, "Error: %d:%d - %d:%d. Division by zero", yylloc.first_line,
+          yylloc.first_column, yylloc.last_line, yylloc.last_column);
 }
 }
 
@@ -286,14 +298,18 @@ int yylex(void) {
   int token = noname_yylex();
 
   if (yydebug > 1) {
-    if (token == LONG) {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %ld\n", token, map[token].c_str(), yylval.long_v);
-    } else if (token == DOUBLE) {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %lf\n", token, map[token].c_str(), yylval.double_v);
+    if (token == LONG_TOK) {
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %ld\n", token,
+              map[token].c_str(), yylval.long_v);
+    } else if (token == DOUBLE_TOK) {
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %lf\n", token,
+              map[token].c_str(), yylval.double_v);
     } else if (token == IDENTIFIER) {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %s\n", token, map[token].c_str(), yylval.id_v);
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %s\n", token,
+              map[token].c_str(), yylval.id_v);
     } else {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %c\n", token, map[token].c_str(), (char)token);
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %c\n", token,
+              map[token].c_str(), (char)token);
     }
   }
 
@@ -322,41 +338,41 @@ int main(int argc, char **argv) {
   map[264] = "ELSE_TOK";
   map[265] = "FALSE";
   map[266] = "IF_TOK";
-  map[267] = "IN";
+  map[267] = "IN_TOK";
   map[268] = "LET_TOK";
-  map[269] = "DEF";
-  map[270] = "LOOP";
-  map[271] = "THEN";
+  map[269] = "DEF_TOK";
+  map[270] = "LOOP_TOK";
+  map[271] = "THEN_TOK";
   map[272] = "WHILE";
-  map[273] = "BREAK";
-  map[274] = "CASE";
-  map[275] = "NEW";
-  map[276] = "NOT";
+  map[273] = "BREAK_TOK";
+  map[274] = "CASE_TOK";
+  map[275] = "NEW_TOK";
+  map[276] = "NOT_TOK";
   map[277] = "RETURN";
   map[278] = "TRUE";
   map[279] = "NEWLINE";
   map[280] = "NOTNEWLINE";
   map[281] = "WHITESPACE";
-  map[282] = "LE";
+  map[282] = "LE_TOK";
   map[283] = "ASSIGN";
   map[284] = "NULLCH";
   map[285] = "BACKSLASH";
-  map[286] = "STAR";
+  map[286] = "STAR_TOK";
   map[287] = "NOTSTAR";
-  map[288] = "LEFTPAREN";
-  map[289] = "NOTLEFTPAREN";
+  map[288] = "LEFTPAREN_TOK";
+  map[289] = "NOTLEFTPAREN_TOK";
   map[290] = "RIGHTPAREN";
   map[291] = "NOTRIGHTPAREN";
   map[292] = "LINE_COMMENT";
   map[293] = "START_COMMENT";
   map[294] = "END_COMMENT";
   map[295] = "QUOTES";
-  map[296] = "ERROR";
+  map[296] = "ERROR_TOK";
   map[297] = "IDENTIFIER";
   map[298] = "STR_CONST";
-  map[299] = "DOUBLE";
-  map[300] = "LONG";
-  map[314] = "NEG";
+  map[299] = "DOUBLE_TOK";
+  map[300] = "LONG_TOK";
+  map[314] = "NEG_TOK";
 
   yydebug = 0;
 

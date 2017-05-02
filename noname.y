@@ -79,36 +79,36 @@ namespace noname {
 %token ELSE_TOK                  "else"
 %token FALSE                 "false"
 %token IF_TOK                    "if"
-%token IN                    "in"
+%token IN_TOK                    "in"
 %token LET_TOK                   "let"
-%token DEF                   "def"
-%token LOOP                  "loop"
-%token THEN                  "then"
+%token DEF_TOK                   "def"
+%token LOOP_TOK                  "loop"
+%token THEN_TOK                  "then"
 %token WHILE                 "while"
-%token BREAK                 "break"
-%token CASE                  "case"
-%token NEW                   "new"
-%token NOT                   "not"
+%token BREAK_TOK                 "break"
+%token CASE_TOK                  "case"
+%token NEW_TOK                   "new"
+%token NOT_TOK                   "not"
 %token RETURN                "return"
 %token TRUE                  "true"
 %token NEWLINE               "newline"
 %token NOTNEWLINE            "notnewline"
 %token WHITESPACE            "whitespace"
-%token LE                    "le"
+%token LE_TOK                    "le"
 %token ASSIGN                "assign"
 %token NULLCH                "nullch"
 %token BACKSLASH             "backslash"
-%token STAR                  "star"
+%token STAR_TOK                  "star"
 %token NOTSTAR               "notstar"
-%token LEFTPAREN             "leftparen"
-%token NOTLEFTPAREN          "notleftparen"
+%token LEFTPAREN_TOK             "leftparen"
+%token NOTLEFTPAREN_TOK          "notleftparen"
 %token RIGHTPAREN            "rightparen"
 %token NOTRIGHTPAREN         "notrightparen"
 %token LINE_COMMENT          "line_comment"
 %token START_COMMENT         "start_comment"
 %token END_COMMENT           "end_comment"
 %token QUOTES                "quotes"
-%token ERROR                 "error"
+%token ERROR_TOK                 "error"
 %token '+'                    "+"
 %token '-'                    "-"
 %token '/'                    "/"
@@ -117,8 +117,8 @@ namespace noname {
 
 %token <id_v> IDENTIFIER                    "identifier"
 %token <id_v> STR_CONST             "string_constant"
-%token <double_v> DOUBLE            "double"
-%token <long_v> LONG                "long"
+%token <double_v> DOUBLE_TOK            "double"
+%token <long_v> LONG_TOK                "long"
 %type  <ast_node> declaration       "declaration"
 %type  <exp_node> assignment        "assignment"
 %type  <exp_node> optional_ret_stmt "optional_ret_stmt"
@@ -139,7 +139,7 @@ namespace noname {
 %left '-' '+'
 %left '*' '/'
 %right '^'        /* exponentiation */
-%precedence NEG   /* negation--unary minus */
+%precedence NEG_TOK   /* negation--unary minus */
 
 %start prog
 
@@ -218,7 +218,7 @@ optional_stmt_sep:
   // 
 
 function_def:
-    DEF IDENTIFIER {
+    DEF_TOK IDENTIFIER {
 
         if (yydebug >= 1) {
           fprintf(stdout, "\n[############## processing function_def BEFORE arglist ##############]");
@@ -281,10 +281,10 @@ exp:
   | STR_CONST {
     $$ = new StringExpNode(context, std::string($STR_CONST));
   }
-  | LONG {
+  | LONG_TOK {
     $$ = new NumberExpNode(context, $1);
   }
-  | DOUBLE {
+  | DOUBLE_TOK {
     $$ = new NumberExpNode(context, $1);
   }
   | exp '+' exp        {
@@ -299,7 +299,7 @@ exp:
   | exp '/' exp {
       $$ = new BinaryExpNode(context, '/', $1, $3);
     }
-  | '-' exp  %prec NEG {
+  | '-' exp  %prec NEG_TOK {
       $$ = new UnaryExpNode(context, '-', $2);
     }
   | exp '^' exp        {
@@ -334,8 +334,8 @@ ne_arg_list:
 
 arg:
   IDENTIFIER                      { $$ = new_arg(context, $1, NULL); }
-  | IDENTIFIER ASSIGN DOUBLE      { $$ = new_arg(context, $1, $3); }
-  | IDENTIFIER ASSIGN LONG        { $$ = new_arg(context, $1, $3); }
+  | IDENTIFIER ASSIGN DOUBLE_TOK      { $$ = new_arg(context, $1, $3); }
+  | IDENTIFIER ASSIGN LONG_TOK        { $$ = new_arg(context, $1, $3); }
   | IDENTIFIER ASSIGN STR_CONST   { $$ = new_arg(context, $1, $3); }
 ;
 

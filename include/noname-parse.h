@@ -100,41 +100,41 @@ enum yytokentype {
   ELSE_TOK = 265,
   FALSE = 266,
   IF_TOK = 267,
-  IN = 268,
+  IN_TOK = 268,
   LET_TOK = 269,
-  DEF = 270,
-  LOOP = 271,
-  THEN = 272,
+  DEF_TOK = 270,
+  LOOP_TOK = 271,
+  THEN_TOK = 272,
   WHILE = 273,
-  BREAK = 274,
-  CASE = 275,
-  NEW = 276,
-  NOT = 277,
+  BREAK_TOK = 274,
+  CASE_TOK = 275,
+  NEW_TOK = 276,
+  NOT_TOK = 277,
   RETURN = 278,
   TRUE = 279,
   NEWLINE = 280,
   NOTNEWLINE = 281,
   WHITESPACE = 282,
-  LE = 283,
+  LE_TOK = 283,
   ASSIGN = 284,
   NULLCH = 285,
   BACKSLASH = 286,
-  STAR = 287,
+  STAR_TOK = 287,
   NOTSTAR = 288,
-  LEFTPAREN = 289,
-  NOTLEFTPAREN = 290,
+  LEFTPAREN_TOK = 289,
+  NOTLEFTPAREN_TOK = 290,
   RIGHTPAREN = 291,
   NOTRIGHTPAREN = 292,
   LINE_COMMENT = 293,
   START_COMMENT = 294,
   END_COMMENT = 295,
   QUOTES = 296,
-  ERROR = 297,
+  ERROR_TOK = 297,
   IDENTIFIER = 298,
   STR_CONST = 299,
-  DOUBLE = 300,
-  LONG = 301,
-  NEG = 316
+  DOUBLE_TOK = 300,
+  LONG_TOK = 301,
+  NEG_TOK = 316
 };
 #endif
 /* Tokens.  */
@@ -148,41 +148,41 @@ enum yytokentype {
 #define ELSE_TOK 265
 #define FALSE 266
 #define IF_TOK 267
-#define IN 268
+#define IN_TOK 268
 #define LET_TOK 269
-#define DEF 270
-#define LOOP 271
-#define THEN 272
+#define DEF_TOK 270
+#define LOOP_TOK 271
+#define THEN_TOK 272
 #define WHILE 273
-#define BREAK 274
-#define CASE 275
-#define NEW 276
-#define NOT 277
+#define BREAK_TOK 274
+#define CASE_TOK 275
+#define NEW_TOK 276
+#define NOT_TOK 277
 #define RETURN 278
 #define TRUE 279
 #define NEWLINE 280
 #define NOTNEWLINE 281
 #define WHITESPACE 282
-#define LE 283
+#define LE_TOK 283
 #define ASSIGN 284
 #define NULLCH 285
 #define BACKSLASH 286
-#define STAR 287
+#define STAR_TOK 287
 #define NOTSTAR 288
-#define LEFTPAREN 289
-#define NOTLEFTPAREN 290
+#define LEFTPAREN_TOK 289
+#define NOTLEFTPAREN_TOK 290
 #define RIGHTPAREN 291
 #define NOTRIGHTPAREN 292
 #define LINE_COMMENT 293
 #define START_COMMENT 294
 #define END_COMMENT 295
 #define QUOTES 296
-#define ERROR 297
+#define ERROR_TOK 297
 #define IDENTIFIER 298
 #define STR_CONST 299
-#define DOUBLE 300
-#define LONG 301
-#define NEG 316
+#define DOUBLE_TOK 300
+#define LONG_TOK 301
+#define NEG_TOK 316
 
 /* Value type.  */
 #if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
