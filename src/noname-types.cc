@@ -1,6 +1,7 @@
 #include "noname-utils.h"
 #include "noname-types.h"
 #include "noname-jit.h"
+#include <limits.h>
 #include <stdio.h>
 #include <algorithm>
 #include <cassert>
@@ -15,6 +16,10 @@
 
 using namespace llvm;
 using namespace llvm::orc;
+
+#ifndef CHAR_BIT
+#define CHAR_BIT __CHAR_BIT__
+#endif
 
 extern FILE* fin;
 
@@ -63,15 +68,20 @@ void print_node_value(FILE* file, NodeValue* node_value) {
     if (!node_value) {
       fprintf(file, "\n##########[print_node_value] undef");
     } else if (node_value->getType() == TYPE_INT) {
-      fprintf(file, "\n##########[print_node_value] %d", *(int*)node_value->getRawValue());
+      fprintf(file, "\n##########[print_node_value] %d",
+              *(int*)node_value->getRawValue());
     } else if (node_value->getType() == TYPE_LONG) {
-      fprintf(file, "\n##########[print_node_value] %ld", *(long*)node_value->getRawValue());
+      fprintf(file, "\n##########[print_node_value] %ld",
+              *(long*)node_value->getRawValue());
     } else if (node_value->getType() == TYPE_DOUBLE) {
-      fprintf(file, "\n##########[print_node_value] %lf", *(double*)node_value->getRawValue());
+      fprintf(file, "\n##########[print_node_value] %lf",
+              *(double*)node_value->getRawValue());
     } else if (node_value->getType() == TYPE_STRING) {
-      fprintf(file, "\n##########[print_node_value] %s", (*(std::string*)node_value->getRawValue()).c_str());
+      fprintf(file, "\n##########[print_node_value] %s",
+              (*(std::string*)node_value->getRawValue()).c_str());
     } else {
-      fprintf(file == stdout ? stderr : file, "\n##########[print_node_value] [WARN] could not print type %d",
+      fprintf(file == stdout ? stderr : file,
+              "\n##########[print_node_value] [WARN] could not print type %d",
               node_value->getType());
     }
   } else {
@@ -86,11 +96,14 @@ void print_node_value(FILE* file, NodeValue* node_value) {
     } else if (node_value->getType() == TYPE_STRING) {
       fprintf(file, "%s", (*(std::string*)node_value->getRawValue()).c_str());
     } else {
-      fprintf(file == stdout ? stderr : file, "[WARN] could not print type %d", node_value->getType());
+      fprintf(file == stdout ? stderr : file, "[WARN] could not print type %d",
+              node_value->getType());
     }
   }
 }
-void print_node_value(NodeValue* node_value) { print_node_value(stdout, node_value); }
+void print_node_value(NodeValue* node_value) {
+  print_node_value(stdout, node_value);
+}
 
 // ReturnNode* new_return(ASTContext* context, ExpNode* exp_node) {
 //   ReturnNode* new_node = new ReturnNode(context, exp_node);
@@ -122,7 +135,8 @@ stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* ast_node) {
   return head_stmt_list;
 }
 
-stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_stmt_list, ASTNode* ast_node) {
+stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_stmt_list,
+                          ASTNode* ast_node) {
   stmtlist_node_t* new_node = (stmtlist_node_t*)malloc(sizeof(stmtlist_node_t));
 
   if (!new_node) {
@@ -161,7 +175,8 @@ explist_t* new_exp_list(ASTContext* context, ExpNode* exp_node) {
   return head_exp_list;
 }
 
-explist_t* new_exp_list(ASTContext* context, explist_t* head_exp_list, ExpNode* exp_node) {
+explist_t* new_exp_list(ASTContext* context, explist_t* head_exp_list,
+                        ExpNode* exp_node) {
   explist_node_t* new_node = (explist_node_t*)malloc(sizeof(explist_node_t));
 
   if (!new_node) {
@@ -199,7 +214,8 @@ arglist_t* new_arg_list(ASTContext* context, arg_t* arg) {
   head_arg_list->last = new_node;
   return head_arg_list;
 }
-arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg) {
+arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list,
+                        arg_t* arg) {
   arglist_node_t* new_node = (arglist_node_t*)malloc(sizeof(arglist_node_t));
 
   if (!new_node) {
@@ -223,7 +239,7 @@ arg_t* create_new_arg(ASTContext* context, char* arg_name) {
   return new_arg;
 }
 
-arg_t* new_arg(ASTContext* context, char* arg_name, ASTNode* default_value) {
+arg_t* new_arg(ASTContext* context, char* arg_name, ExpNode* default_value) {
   arg_t* new_arg = create_new_arg(context, arg_name);
   new_arg->default_value = default_value;
   return new_arg;
@@ -245,19 +261,40 @@ arg_t* new_arg(ASTContext* context, char* arg_name, char* default_value) {
   return new_arg;
 }
 
+llvm::Type* toLLVLType(llvm::LLVMContext& LLVMContext, int type) {
+  if (type == TYPE_DOUBLE) {
+    return Type::getDoubleTy(LLVMContext);
+  } else if (type == TYPE_FLOAT) {
+    return Type::getFloatTy(LLVMContext);
+  } else if (type == TYPE_LONG) {
+    return Type::getInt64Ty(LLVMContext);
+  } else if (type == TYPE_INT) {
+    return Type::getInt32Ty(LLVMContext);
+  } else if (type == TYPE_SHORT) {
+    return Type::getInt16Ty(LLVMContext);
+  } else if (type == TYPE_CHAR) {
+    return Type::getInt8Ty(LLVMContext);
+  }
+
+  return nullptr;
+}
+
 VarExpNode* new_var_node(ASTContext* context, const std::string name) {
   VarExpNode* new_node = new VarExpNode(context, name);
   return new_node;
 }
-AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* exp) {
+AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
+                                    ExpNode* exp) {
   AssignmentNode* new_node = new AssignmentNode(context, name, exp);
   return new_node;
 }
-CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* exp_list) {
+CallExpNode* new_call_node(ASTContext* context, const std::string name,
+                           explist_t* exp_list) {
   CallExpNode* new_node = new CallExpNode(context, name, exp_list);
   return new_node;
 }
-AssignmentNode* new_declaration_node(ASTContext* context, const std::string name) {
+AssignmentNode* new_declaration_node(ASTContext* context,
+                                     const std::string name) {
   AssignmentNode* new_node = new AssignmentNode(context, name, NULL);
 
   NodeValue* temp_node = context->getVariable(name);
@@ -265,7 +302,8 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string name
     return logErrorV("\nVariable already exists in this context!");
   }
 
-  context->store(name, temp_node);  // temp_node is null. It doesn't matter, it's only a declaration
+  context->store(name, temp_node);  // temp_node is null. It doesn't matter,
+                                    // it's only a declaration
 
   if (yydebug >= 1) {
     fprintf(stdout, "\n[new_assignment %s]", context->getName().c_str());
@@ -280,9 +318,11 @@ ImportNode* new_import(ASTContext* context, std::string filename) {
   return new_node;
 }
 
-ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
+ASTNode* new_function_def(ASTContext* context, const std::string name,
+                          arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* returnNode) {
-  FunctionDefNode* new_node = new FunctionDefNode(context, name, arg_list, stmt_list, returnNode);
+  FunctionDefNode* new_node =
+      new FunctionDefNode(context, name, arg_list, stmt_list, returnNode);
 
   ASTNode* check_result = new_node->check();
 
@@ -331,8 +371,8 @@ NodeValue* VarExpNode::getValue() {
   NodeValue* node = getContext()->getVariable(name);
 
   if (!node) {
-    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
-            getContext()->getName().c_str());
+    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n",
+            name.c_str(), getContext()->getName().c_str());
   }
 
   return node;
@@ -342,7 +382,9 @@ NodeValue* VarExpNode::getValue() {
 // void* UnaryExpNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* UnaryExpNode::getValue() {
   NodeValue* rhs_value = rhs.get()->getValue();
-  fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
+  fprintf(
+      stdout,
+      "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
   return rhs_value;
 }
 
@@ -355,8 +397,8 @@ bool any_of_type(NodeValue* lhs, NodeValue* rhs, int type) {
 }
 
 bool match_to_types(NodeValue* lhs, NodeValue* rhs, int type1, int type2) {
-  return lhs && rhs &&
-         ((lhs->getType() == type1 && rhs->getType() == type2) || (lhs->getType() == type2 && rhs->getType() == type1));
+  return lhs && rhs && ((lhs->getType() == type1 && rhs->getType() == type2) ||
+                        (lhs->getType() == type2 && rhs->getType() == type1));
 }
 
 int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs) {
@@ -516,7 +558,8 @@ void* AssignmentNode::eval() {
   getContext()->update(name, node_value);
 
   if (yydebug >= 2) {
-    fprintf(stdout, "\n\n############ updated %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
+    fprintf(stdout, "\n\n############ updated %s on context %s \n\n",
+            name.c_str(), getContext()->getName().c_str());
   }
 
   return node_value;
@@ -528,7 +571,8 @@ void* DeclarationAssignmentNode::eval() {
   getContext()->store(name, node_value);
 
   if (yydebug >= 2) {
-    fprintf(stdout, "\n\n############ stored %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
+    fprintf(stdout, "\n\n############ stored %s on context %s \n\n",
+            name.c_str(), getContext()->getName().c_str());
   }
 
   return node_value;
@@ -543,28 +587,40 @@ NodeValue* CallExpNode::getValue() {
   FunctionDefNode* function_node = call_exp_context->getFunction(getCallee());
 
   if (!function_node) {
-    fprintf(stdout, "\n\nThe called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
+    fprintf(stdout,
+            "\n\nThe called function was: '%s' BUT it wan not found on the "
+            "context\n",
+            getCallee().c_str());
     return 0;
   }
 
   // ASTContext* function_context = function_node->getContext();
-  // ASTContext* temp_context = new ASTContext("temp_context", call_exp_context, function_context);
+  // ASTContext* temp_context = new ASTContext("temp_context", call_exp_context,
+  // function_context);
   // function_node->setContext(temp_context);
 
   ExpNode* returnNode = function_node->getReturnNode();
   std::vector<std::unique_ptr<ExpNode>>* value_args = &getArgs();
-  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args = value_args->begin();
-  std::vector<std::unique_ptr<arg_t>>* signature_args = &function_node->getArgs();
-  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args = signature_args->begin();
-  std::vector<std::unique_ptr<ASTNode>>* body_nodes = &function_node->getBodyNodes();
-  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes->begin();
+  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args =
+      value_args->begin();
+  std::vector<std::unique_ptr<arg_t>>* signature_args =
+      &function_node->getArgs();
+  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args =
+      signature_args->begin();
+  std::vector<std::unique_ptr<ASTNode>>* body_nodes =
+      &function_node->getBodyNodes();
+  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes =
+      body_nodes->begin();
 
-  for (; it_signature_args != signature_args->end() || it_value_args != value_args->end();) {
+  for (; it_signature_args != signature_args->end() ||
+         it_value_args != value_args->end();) {
     std::unique_ptr<ExpNode>& value_arg = *it_value_args;
     std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
 
-    call_exp_context->store(signature_arg.get()->name, value_arg.get()->getValue());
-    // temp_context->store(signature_arg.get()->name, value_arg.get()->getValue());
+    call_exp_context->store(signature_arg.get()->name,
+                            value_arg.get()->getValue());
+    // temp_context->store(signature_arg.get()->name,
+    // value_arg.get()->getValue());
 
     ++it_signature_args;
     ++it_value_args;
@@ -607,13 +663,139 @@ void* ASTNodeProcessorStrategy::process(ASTNode* node) {
 
 void* ExpNodeProcessorStrategy::process(ASTNode* node) {
   NodeValue* return_value = (NodeValue*)node->eval();
+  print_node_value(stdout, return_value);
+  return nullptr;
+}
+Function* FunctionDefNode::getFunctionDefinition() {
+  // First, see if the function has already been added to the current module.
+  Function* function = TheModule->getFunction(name);
+
+  if (function) {
+    return function;
+  }
+
+  // Make the function type:  double(double,double) etc.
+  std::vector<Type*> arg_types(args.size(), Type::getVoidTy(TheContext));
+  FunctionType* function_type =
+      FunctionType::get(Type::getVoidTy(TheContext), arg_types, false);
+
+  function = Function::Create(function_type, Function::ExternalLinkage, name,
+                              TheModule.get());
+
+  // Set names for all arguments.
+  int index = 0;
+  for (auto& function_arg : function->args()) {
+    function_arg.setName(args[index++].get()->name);
+  }
+
+  return function;
+}
+
+Value* FunctionDefNode::codegen() {
+  // FunctionProtos[Proto->getName()] = std::move(Proto);
+  Function* function = getFunctionDefinition();
+  if (!function) {
+    return nullptr;
+  }
+
+  // Create a new basic block to start insertion into.
+  BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
+  Builder.SetInsertPoint(BB);
+
+  // Record the function arguments in the NamedValues map.
+  // NamedValues.clear();
+  // for (auto& Arg : function->args()) {
+  //   NamedValues[Arg.getName()] = &Arg;
+  // }
+
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ASTContext* function_def_node_context = getContext();
+  ExpNode* return_node = getReturnNode();
+  std::vector<std::unique_ptr<arg_t>>* signature_args = &getArgs();
+  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args =
+      signature_args->begin();
+  std::vector<std::unique_ptr<ASTNode>>* body_nodes = &getBodyNodes();
+  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes =
+      body_nodes->begin();
+
+  while (it_signature_args != signature_args->end()) {
+    std::unique_ptr<arg_t>& signature_arg = *it_signature_args++;
+
+    NodeValue* arg_node_value = NULL;
+
+    if (signature_arg.get()->default_value) {
+      arg_node_value = signature_arg.get()->default_value->getValue();
+    }
+
+    function_def_node_context->store(signature_arg.get()->name, arg_node_value);
+  }
+
+  while (it_body_nodes != body_nodes->end()) {
+    std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
+
+    body_node.get()->codegen();
+
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
+              ASTNode::toString(body_node.get()->getKind()).c_str());
+    }
+  }
+
+  if (return_node) {
+    Value* return_value = return_node->codegen();
+
+    // Finish off the function.
+    Builder.CreateRet(return_value);
+
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[## evaluating return]\n");
+    }
+  } else {
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[## no return given]\n");
+    }
+  }
+
+  // Validate the generated code, checking for consistency.
+  verifyFunction(*function);
+
+  // Run the optimizer on the function.
+  TheFPM->run(*function);
+
+  return function;
+}
+
+void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
+  FunctionDefNode* function_def_node = (FunctionDefNode*)node;
+  NodeValue* return_value = (NodeValue*)function_def_node->eval();
+  auto* function_ir = function_def_node->codegen();
+
+  if (!function_ir) {
+    fprintf(stderr, "\nFunction could not be defined");
+  }
+  if (function_ir) {
+    fprintf(stderr, "\nRead function definition:");
+    function_ir->dump();
+    TheJIT->addModule(std::move(TheModule));
+    InitializeModuleAndPassManager();
+  }
+
+  ///////////////////////////
+  ///////////////////////////
+  ///////////////////////////
+  ///////////////////////////
 
   // if (auto* FnIR = FnAST->codegen()) {
   //   fprintf(stderr, "Read top-level expression:");
   //   FnIR->print(errs());
   //   fprintf(stderr, "\n");
 
-  //   // JIT the module containing the anonymous expression, keeping a handle so
+  //   // JIT the module containing the anonymous expression, keeping a handle
+  //   so
   //   // we can free it later.
   //   auto H = TheJIT->addModule(std::move(TheModule));
   //   InitializeModuleAndPassManager();
@@ -641,18 +823,21 @@ void* AssignmentNodeProcessorStrategy::process(ASTNode* node) {
 }
 void* CallExpNodeProcessorStrategy::process(ASTNode* node) {
   CallExpNode* call_exp_node = (CallExpNode*)node;
-  FunctionDefNode* function_def_node = node->getContext()->getFunction(call_exp_node->getCallee());
+  FunctionDefNode* function_def_node =
+      node->getContext()->getFunction(call_exp_node->getCallee());
 
   if (function_def_node) {
     if (yydebug >= 2) {
-      fprintf(stdout, "\nThe called function was: '%s'\n", function_def_node->getName().c_str());
+      fprintf(stdout, "\nThe called function was: '%s'\n",
+              function_def_node->getName().c_str());
     }
 
     NodeValue* return_value = (NodeValue*)call_exp_node->eval();
     print_node_value(stdout, return_value);
 
   } else {
-    fprintf(stderr, "\nError: The function %s was not found int the context\n", call_exp_node->getCallee().c_str());
+    fprintf(stderr, "\nError: The function %s was not found int the context\n",
+            call_exp_node->getCallee().c_str());
   }
   return nullptr;
 }
@@ -687,34 +872,42 @@ void* ImportNodeProcessorStrategy::process(ASTNode* node) {
 // initialization
 ProcessorStrategy* astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
 ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
-ProcessorStrategy* assignmentNodeProcessorStrategy = new AssignmentNodeProcessorStrategy();
-ProcessorStrategy* callNodeProcessorStrategy = new CallExpNodeProcessorStrategy();
-ProcessorStrategy* importNodeProcessorStrategy = new ImportNodeProcessorStrategy();
+ProcessorStrategy* functionDefNodeProcessorStrategy =
+    new FunctionDefNodeProcessorStrategy();
+ProcessorStrategy* assignmentNodeProcessorStrategy =
+    new AssignmentNodeProcessorStrategy();
+ProcessorStrategy* callNodeProcessorStrategy =
+    new CallExpNodeProcessorStrategy();
+ProcessorStrategy* importNodeProcessorStrategy =
+    new ImportNodeProcessorStrategy();
 
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
 
 Value* NodeValue::codegen() {
-  Value* value = nullptr;
+  Value* llvm_value = nullptr;
 
   if (type == TYPE_DOUBLE) {
-    value = ConstantFP::get(TheContext, APFloat(*(double*)value));
+    llvm_value = ConstantFP::get(TheContext, APFloat(*(double*)value));
   } else if (type == TYPE_FLOAT) {
-    value = ConstantFP::get(TheContext, APFloat(*(float*)value));
+    llvm_value = ConstantFP::get(TheContext, APFloat(*(float*)value));
   } else if (type == TYPE_LONG) {
-    // APInt (unsigned numBits, uint64_t val, bool isSigned=false)
-    value = ConstantInt::get(TheContext, APInt(CHAR_BIT * sizeof(long), *(long*)value, true));
+    APInt v(CHAR_BIT * sizeof(long), *(long*)value, true);
+    llvm_value = ConstantInt::get(TheContext, v);
   } else if (type == TYPE_INT) {
     // APInt (unsigned numBits, uint64_t val, bool isSigned=false)
-    value = ConstantInt::get(TheContext, APInt(CHAR_BIT * sizeof(int), *(int*)value, true));
+    APInt v(CHAR_BIT * sizeof(int), *(int*)value, true);
+    llvm_value = ConstantInt::get(TheContext, v);
   } else if (type == TYPE_SHORT) {
-    value = ConstantInt::get(TheContext, APInt(CHAR_BIT * sizeof(short), *(short*)value, true));
+    APInt v(CHAR_BIT * sizeof(short), *(short*)value, true);
+    llvm_value = ConstantInt::get(TheContext, v);
   } else if (type == TYPE_CHAR) {
-    value = ConstantInt::get(TheContext, APInt(CHAR_BIT * sizeof(char), *(char*)value, true));
+    APInt v(CHAR_BIT * sizeof(char), *(char*)value, true);
+    llvm_value = ConstantInt::get(TheContext, v);
   }
 
-  return value;
+  return llvm_value;
 }
 
 Value* NumberExpNode::codegen() {
@@ -743,15 +936,16 @@ Value* VarExpNode::codegen() {
   NodeValue* node = getContext()->getVariable(name);
 
   if (!node) {
-    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
-            getContext()->getName().c_str());
+    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n",
+            name.c_str(), getContext()->getName().c_str());
     return nullptr;
   }
 
   return node->codegen();
 }
 
-Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow_tmp") {
+Value* BinaryExpNode::CreatePow(Value* L, Value* R,
+                                const char* name = "call_pow_tmp") {
   Function* pow_function = TheModule->getFunction(pow_function_name);
 
   if (!pow_function) {
@@ -795,8 +989,8 @@ Value* BinaryExpNode::codegen() {
       result = CreatePow(L, R);
     }
 
-  } else if (result_type == TYPE_LONG || result_type == TYPE_INT || result_type == TYPE_SHORT ||
-             result_type == TYPE_CHAR) {
+  } else if (result_type == TYPE_LONG || result_type == TYPE_INT ||
+             result_type == TYPE_SHORT || result_type == TYPE_CHAR) {
     int typed_lhs_value = *(int*)lhs_value;
     int typed_rhs_value = *(int*)rhs_value;
 
@@ -831,7 +1025,9 @@ Value* BinaryExpNode::codegen() {
 Value* UnaryExpNode::codegen() {
   NodeValue* rhs_node_value = rhs.get()->getValue();
   Value* R = rhs_node_value->codegen();
-  fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
+  fprintf(
+      stdout,
+      "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
   return R;
 }
 }

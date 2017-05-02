@@ -376,7 +376,7 @@ int main(int argc, char **argv) {
 
   yydebug = 0;
 
-  fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]");
+  fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]\n");
 
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
