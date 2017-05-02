@@ -97,11 +97,11 @@ enum yytokentype {
   DIGIT = 262,
   DIGITS = 263,
   DARROW = 264,
-  ELSE = 265,
+  ELSE_TOK = 265,
   FALSE = 266,
-  IF = 267,
+  IF_TOK = 267,
   IN = 268,
-  LET = 269,
+  LET_TOK = 269,
   DEF = 270,
   LOOP = 271,
   THEN = 272,
@@ -145,11 +145,11 @@ enum yytokentype {
 #define DIGIT 262
 #define DIGITS 263
 #define DARROW 264
-#define ELSE 265
+#define ELSE_TOK 265
 #define FALSE 266
-#define IF 267
+#define IF_TOK 267
 #define IN 268
-#define LET 269
+#define LET_TOK 269
 #define DEF 270
 #define LOOP 271
 #define THEN 272

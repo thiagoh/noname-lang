@@ -61,11 +61,11 @@ DOUBLE          {DIGIT}+(\.{DIGIT}+)?
 IDENTIFIER              {ALPHA}({ALPHA}|{DIGIT})*
 
 IMPORT          #import
-ELSE            else
+ELSE_TOK            else
 FALSE           false
-IF              if
+IF_TOK              if
 IN              in
-LET             let
+LET_TOK             let
 DEF             def
 RETURN          return
 LOOP            loop
@@ -216,10 +216,10 @@ QUOTES          \"
 <*>{WHITESPACE}                  { ++num_chars; }
 <INITIAL>{IMPORT}                { return (IMPORT); }
 <INITIAL>{ASSIGN}                { return (ASSIGN); }
-<INITIAL>{ELSE}                  { return (ELSE); }
-<INITIAL>{IF}                    { return (IF); }
+<INITIAL>{ELSE_TOK}                  { return (ELSE_TOK); }
+<INITIAL>{IF_TOK}                    { return (IF_TOK); }
 <INITIAL>{IN}                    { return (IN); }
-<INITIAL>{LET}                   { return (LET); }
+<INITIAL>{LET_TOK}                   { return (LET_TOK); }
 <INITIAL>{RETURN}                { return (RETURN); }
 <INITIAL>{DEF}                   { return (DEF); }
 <INITIAL>{THEN}                  { return (THEN); }

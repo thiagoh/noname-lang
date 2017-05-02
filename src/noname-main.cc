@@ -1,5 +1,23 @@
 // #define NDEBUG
 // #include "assert.h"
+
+// #include "llvm/ADT/APFloat.h"
+// #include "llvm/ADT/STLExtras.h"
+// #include "llvm/IR/BasicBlock.h"
+// #include "llvm/IR/Constants.h"
+// #include "llvm/IR/DerivedTypes.h"
+// #include "llvm/IR/Function.h"
+// #include "llvm/IR/IRBuilder.h"
+// #include "llvm/IR/LLVMContext.h"
+// #include "llvm/IR/LegacyPassManager.h"
+// #include "llvm/IR/Module.h"
+// #include "llvm/IR/Type.h"
+// #include "llvm/IR/Verifier.h"
+// #include "llvm/Support/TargetSelect.h"
+// #include "llvm/Target/TargetMachine.h"
+// #include "llvm/Transforms/Scalar.h"
+// #include "llvm/Transforms/Scalar/GVN.h"
+
 #include "lexer-utilities.h"
 #include "noname-utils.h"
 #include "noname-parse.h"
@@ -16,8 +34,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <cassert>
+#include <cctype>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 
 using namespace llvm;
+using namespace llvm::orc;
 using namespace noname;
 
 #ifndef YY_EXIT_FAILURE
@@ -295,11 +319,11 @@ int main(int argc, char **argv) {
   map[261] = "DIGIT";
   map[262] = "DIGITS";
   map[263] = "DARROW";
-  map[264] = "ELSE";
+  map[264] = "ELSE_TOK";
   map[265] = "FALSE";
-  map[266] = "IF";
+  map[266] = "IF_TOK";
   map[267] = "IN";
-  map[268] = "LET";
+  map[268] = "LET_TOK";
   map[269] = "DEF";
   map[270] = "LOOP";
   map[271] = "THEN";
@@ -336,18 +360,17 @@ int main(int argc, char **argv) {
 
   yydebug = 0;
 
-  write_cursor();
-
   fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]");
 
-  // Make the module, which holds all the code.
-  TheModule = llvm::make_unique<Module>("my cool jit", TheContext);
+  InitializeNativeTarget();
+  InitializeNativeTargetAsmPrinter();
+  InitializeNativeTargetAsmParser();
 
-  // Run the main "interpreter loop" now.
-  // MainLoop();
+  write_cursor();
 
-  // Print out all of the generated code.
-  TheModule->print(errs(), nullptr);
+  TheJIT = llvm::make_unique<NonameJIT>();
+
+  InitializeModuleAndPassManager();
 
   return yyparse();
 }

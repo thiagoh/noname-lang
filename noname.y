@@ -76,11 +76,11 @@ namespace noname {
 %token DIGIT                 "digit"         
 %token DIGITS                "digits"         
 %token DARROW                "darrow"
-%token ELSE                  "else"
+%token ELSE_TOK                  "else"
 %token FALSE                 "false"
-%token IF                    "if"
+%token IF_TOK                    "if"
 %token IN                    "in"
-%token LET                   "let"
+%token LET_TOK                   "let"
 %token DEF                   "def"
 %token LOOP                  "loop"
 %token THEN                  "then"
@@ -263,13 +263,13 @@ assignment:
     // $$ = new AssignmentNode($1, $3);
     $$ = new AssignmentNode(context, std::string($IDENTIFIER), std::move((ExpNode*) $exp));
   }
-  | LET IDENTIFIER ASSIGN exp {
+  | LET_TOK IDENTIFIER ASSIGN exp {
     $$ = new DeclarationAssignmentNode(context, std::string($IDENTIFIER), std::move((ExpNode*) $exp));
   }
 ;
 
 declaration:
-  LET IDENTIFIER {
+  LET_TOK IDENTIFIER {
     $$ = new DeclarationNode(context, std::string($IDENTIFIER));
   }
 ;

@@ -1,6 +1,5 @@
 CLASSDIR=.
 LIB= -ll
-LDFLAGS: `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native`
 SRC= noname.flex
 CSRC= 
 CGEN= noname-lex.cc noname-parse.cc src/noname-types.cc src/noname-main.cc src/lexer-utilities.cc
@@ -21,6 +20,7 @@ CC=g++
 # `llvm-config --cxxflags --ldflags --system-libs --libs core`
 #CFLAGS= -g -std=c++11 `llvm-config --cxxflags` -Wall -Wno-unused -Wno-deprecated -Wno-write-strings ${CPPINCLUDE}
 CFLAGS= -g3 `llvm-config --cxxflags`  -Wall -Wno-unused -Wno-deprecated -Wno-write-strings ${CPPINCLUDE}
+LDFLAGS= -g3 `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -Wno-unused -Wno-deprecated ${CPPINCLUDE}
 FLEX= flex ${FLEX_FLAGS}
 BISON= bison ${BISON_FLAGS}
 DEPEND = ${CC} -MM `llvm-config --cxxflags` ${CPPINCLUDE}
@@ -40,7 +40,7 @@ parser: ${OBJS}
 	${CC} ${CFLAGS} ${OBJS} ${LIB} -o parser
 
 noname: ${OBJS} noname-lex.cc 
-	${CC} ${CFLAGS} ${OBJS} ${LIB} ${LDFLAGS} `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -o noname -lm
+	${CC} ${LIB} ${LDFLAGS}  ${OBJS} -o noname -lm
 
 %.o: %.cc 
 	${CC} ${CFLAGS} -c -o $@ $<

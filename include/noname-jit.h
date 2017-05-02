@@ -11,207 +11,117 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_EXECUTIONENGINE_ORC_NONAMEJIT_H
-#define LLVM_EXECUTIONENGINE_ORC_NONAMEJIT_H
+#ifndef LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
+#define LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
 
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/JITSymbol.h"
+#include "llvm/ExecutionEngine/JITSymbolFlags.h"
+#include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
 #include "llvm/ExecutionEngine/RuntimeDyld.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
-#include "llvm/ExecutionEngine/Orc/CompileOnDemandLayer.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
+#include "llvm/ExecutionEngine/Orc/JITSymbol.h"
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
-#include "llvm/ExecutionEngine/Orc/IRTransformLayer.h"
 #include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
-#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
+#include "llvm/ExecutionEngine/Orc/ObjectLinkingLayer.h"
 #include "llvm/IR/DataLayout.h"
-#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Mangler.h"
 #include "llvm/Support/DynamicLibrary.h"
-#include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/Scalar/GVN.h"
-#include "noname-types.h"
 #include <algorithm>
-#include <cassert>
-#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
 
-using namespace llvm;
-using namespace llvm::orc;
-using namespace noname;
-
-// class PrototypeAST;
-// class ExprAST;
-
-// /// FunctionAST - This class represents a function definition itself.
-// class FunctionAST {
-//   std::unique_ptr<PrototypeAST> Proto;
-//   std::unique_ptr<ExprAST> Body;
-
-//  public:
-//   FunctionAST(std::unique_ptr<PrototypeAST> Proto, std::unique_ptr<ExprAST> Body)
-//       : Proto(std::move(Proto)), Body(std::move(Body)) {}
-
-//   const PrototypeAST &getProto() const;
-//   const std::string &getName() const;
-//   llvm::Function *codegen();
-// };
-
-/// This will compile FnAST to IR, rename the function to add the given
-/// suffix (needed to prevent a name-clash with the function's stub),
-/// and then take ownership of the module that the function was compiled
-/// into.
-std::unique_ptr<llvm::Module> irgenAndTakeOwnership(FunctionDefNode &FnAST, const std::string &Suffix);
-
-namespace noname {
+namespace llvm {
+namespace orc {
 
 class NonameJIT {
- private:
-  std::unique_ptr<TargetMachine> TM;
-  const DataLayout DL;
-  RTDyldObjectLinkingLayer<> ObjectLayer;
-  IRCompileLayer<decltype(ObjectLayer)> CompileLayer;
-
-  typedef std::function<std::unique_ptr<Module>(std::unique_ptr<Module>)> OptimizeFunction;
-
-  IRTransformLayer<decltype(CompileLayer), OptimizeFunction> OptimizeLayer;
-
-  std::unique_ptr<JITCompileCallbackManager> CompileCallbackMgr;
-  std::unique_ptr<IndirectStubsManager> IndirectStubsMgr;
-
  public:
-  typedef decltype(OptimizeLayer)::ModuleSetHandleT ModuleHandle;
+  typedef ObjectLinkingLayer<> ObjLayerT;
+  typedef IRCompileLayer<ObjLayerT> CompileLayerT;
+  typedef CompileLayerT::ModuleSetHandleT ModuleHandleT;
 
   NonameJIT()
       : TM(EngineBuilder().selectTarget()),
         DL(TM->createDataLayout()),
-        CompileLayer(ObjectLayer, SimpleCompiler(*TM)),
-        OptimizeLayer(CompileLayer, [this](std::unique_ptr<Module> M) { return optimizeModule(std::move(M)); }),
-        CompileCallbackMgr(orc::createLocalCompileCallbackManager(TM->getTargetTriple(), 0)) {
-    auto IndirectStubsMgrBuilder = orc::createLocalIndirectStubsManagerBuilder(TM->getTargetTriple());
-    IndirectStubsMgr = IndirectStubsMgrBuilder();
+        CompileLayer(ObjectLayer, SimpleCompiler(*TM)) {
     llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
   }
 
   TargetMachine &getTargetMachine() { return *TM; }
 
-  ModuleHandle addModule(std::unique_ptr<Module> M) {
-    // Build our symbol resolver:
-    // Lambda 1: Look back into the JIT itself to find symbols that are part of
-    //           the same "logical dylib".
-    // Lambda 2: Search for external symbols in the host process.
+  ModuleHandleT addModule(std::unique_ptr<Module> M) {
+    // We need a memory manager to allocate memory and resolve symbols for this
+    // new module. Create one that resolves symbols by looking back into the
+    // JIT.
     auto Resolver = createLambdaResolver(
         [&](const std::string &Name) {
-          if (auto Sym = IndirectStubsMgr->findStub(Name, false)) return Sym;
-          if (auto Sym = OptimizeLayer.findSymbol(Name, false)) return Sym;
-          return JITSymbol(nullptr);
+          if (auto Sym = findMangledSymbol(Name))
+            return Sym.toRuntimeDyldSymbol();
+          return RuntimeDyld::SymbolInfo(nullptr);
         },
-        [](const std::string &Name) {
-          if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name))
-            return JITSymbol(SymAddr, JITSymbolFlags::Exported);
-          return JITSymbol(nullptr);
-        });
+        [](const std::string &S) { return nullptr; });
+    auto H = CompileLayer.addModuleSet(singletonSet(std::move(M)),
+                                       make_unique<SectionMemoryManager>(),
+                                       std::move(Resolver));
 
-    // Build a singleton module set to hold our module.
-    std::vector<std::unique_ptr<Module>> Ms;
-    Ms.push_back(std::move(M));
-
-    // Add the set to the JIT with the resolver we created above and a newly
-    // created SectionMemoryManager.
-    return OptimizeLayer.addModuleSet(std::move(Ms), make_unique<SectionMemoryManager>(), std::move(Resolver));
+    ModuleHandles.push_back(H);
+    return H;
   }
 
-  Error addFunction(std::unique_ptr<FunctionDefNode> FnAST) {
-    // Create a CompileCallback - this is the re-entry point into the compiler
-    // for functions that haven't been compiled yet.
-    auto CCInfo = CompileCallbackMgr->getCompileCallback();
-
-    // Create an indirect stub. This serves as the functions "canonical
-    // definition" - an unchanging (constant address) entry point to the
-    // function implementation.
-    // Initially we point the stub's function-pointer at the compile callback
-    // that we just created. In the compile action for the callback (see below)
-    // we will update the stub's function pointer to point at the function
-    // implementation that we just implemented.
-    if (auto Err =
-            IndirectStubsMgr->createStub(mangle(FnAST->getName()), CCInfo.getAddress(), JITSymbolFlags::Exported)) {
-      return Err;
-    }
-
-    // Move ownership of FnAST to a shared pointer - C++11 lambdas don't support
-    // capture-by-move, which is be required for unique_ptr.
-    auto SharedFnAST = std::shared_ptr<FunctionDefNode>(std::move(FnAST));
-
-    // Set the action to compile our AST. This lambda will be run if/when
-    // execution hits the compile callback (via the stub).
-    //
-    // The steps to compile are:
-    // (1) IRGen the function.
-    // (2) Add the IR module to the JIT to make it executable like any other
-    //     module.
-    // (3) Use findSymbol to get the address of the compiled function.
-    // (4) Update the stub pointer to point at the implementation so that
-    ///    subsequent calls go directly to it and bypass the compiler.
-    // (5) Return the address of the implementation: this lambda will actually
-    //     be run inside an attempted call to the function, and we need to
-    //     continue on to the implementation to complete the attempted call.
-    //     The JIT runtime (the resolver block) will use the return address of
-    //     this function as the address to continue at once it has reset the
-    //     CPU state to what it was immediately before the call.
-    CCInfo.setCompileAction([this, SharedFnAST]() {
-      auto M = irgenAndTakeOwnership(*SharedFnAST, "$impl");
-      addModule(std::move(M));
-      auto Sym = findSymbol(SharedFnAST->getName() + "$impl");
-      assert(Sym && "Couldn't find compiled function?");
-      JITTargetAddress SymAddr = Sym.getAddress();
-      if (auto Err = IndirectStubsMgr->updatePointer(mangle(SharedFnAST->getName()), SymAddr)) {
-        logAllUnhandledErrors(std::move(Err), errs(), "Error updating function pointer: ");
-        exit(1);
-      }
-
-      return SymAddr;
-    });
-
-    return Error::success();
+  void removeModule(ModuleHandleT H) {
+    ModuleHandles.erase(
+        std::find(ModuleHandles.begin(), ModuleHandles.end(), H));
+    CompileLayer.removeModuleSet(H);
   }
 
-  JITSymbol findSymbol(const std::string Name) { return OptimizeLayer.findSymbol(mangle(Name), true); }
-
-  void removeModule(ModuleHandle H) { OptimizeLayer.removeModuleSet(H); }
+  JITSymbol findSymbol(const std::string Name) {
+    return findMangledSymbol(mangle(Name));
+  }
 
  private:
   std::string mangle(const std::string &Name) {
     std::string MangledName;
-    raw_string_ostream MangledNameStream(MangledName);
-    Mangler::getNameWithPrefix(MangledNameStream, Name, DL);
-    return MangledNameStream.str();
+    {
+      raw_string_ostream MangledNameStream(MangledName);
+      Mangler::getNameWithPrefix(MangledNameStream, Name, DL);
+    }
+    return MangledName;
   }
 
-  std::unique_ptr<Module> optimizeModule(std::unique_ptr<Module> M) {
-    // Create a function pass manager.
-    auto FPM = llvm::make_unique<legacy::FunctionPassManager>(M.get());
-
-    // Add some optimizations.
-    FPM->add(createInstructionCombiningPass());
-    FPM->add(createReassociatePass());
-    FPM->add(createGVNPass());
-    FPM->add(createCFGSimplificationPass());
-    FPM->doInitialization();
-
-    // Run the optimizations over all functions in the module being added to
-    // the JIT.
-    for (auto &F : *M) FPM->run(F);
-
-    return M;
+  template <typename T>
+  static std::vector<T> singletonSet(T t) {
+    std::vector<T> Vec;
+    Vec.push_back(std::move(t));
+    return Vec;
   }
+
+  JITSymbol findMangledSymbol(const std::string &Name) {
+    // Search modules in reverse order: from last added to first added.
+    // This is the opposite of the usual search order for dlsym, but makes more
+    // sense in a REPL where we want to bind to the newest available definition.
+    for (auto H : make_range(ModuleHandles.rbegin(), ModuleHandles.rend()))
+      if (auto Sym = CompileLayer.findSymbolIn(H, Name, true)) return Sym;
+
+    // If we can't find the symbol in the JIT, try looking in the host process.
+    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name))
+      return JITSymbol(SymAddr, JITSymbolFlags::Exported);
+
+    return nullptr;
+  }
+
+  std::unique_ptr<TargetMachine> TM;
+  const DataLayout DL;
+  ObjLayerT ObjectLayer;
+  CompileLayerT CompileLayer;
+  std::vector<ModuleHandleT> ModuleHandles;
 };
 
+}  // end namespace orc
 }  // end namespace llvm
 
-#endif  // LLVM_EXECUTIONENGINE_ORC_NONAMEJIT_H
+#endif  // LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
