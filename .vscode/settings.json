@@ -68,7 +68,20 @@
         "limits": "cpp",
         "ratio": "cpp",
         "*.tcc": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "sstream": "cpp",
+        "strstream": "cpp",
+        "cctype": "cpp",
+        "clocale": "cpp",
+        "cstdarg": "cpp",
+        "cstdio": "cpp",
+        "cstdlib": "cpp",
+        "cstring": "cpp",
+        "ctime": "cpp",
+        "cwchar": "cpp",
+        "iosfwd": "cpp",
+        "__mutex_base": "cpp",
+        "shared_mutex": "cpp"
     },
     "[cpp]": {
         "editor.quickSuggestions": false,

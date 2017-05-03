@@ -105,42 +105,35 @@ extern std::map<int, std::string> map;
 extern bool read_from_file_import;
 
 /* list of statements */
-struct stmtlist_node_t {
+typedef struct stmtlist_node_t {
   ASTNode* node;
-  struct stmtlist_node_t* next;
-  stmtlist_node_t& operator=(const stmtlist_node_t&) { return *this; }
-};
-struct stmtlist_t {
-  struct stmtlist_node_t* first;
-  struct stmtlist_node_t* last;
-  stmtlist_t& operator=(const stmtlist_t&) { return *this; }
-};
+  stmtlist_node_t* next;
+} stmtlist_node_t;
+typedef struct stmtlist_t {
+  stmtlist_node_t* first;
+  stmtlist_node_t* last;
+} stmtlist_t;
 /* list of expressions */
 struct explist_node_t {
   ExpNode* node;
   struct explist_node_t* next;
-  explist_node_t& operator=(const explist_node_t&) { return *this; }
 };
 struct explist_t {
   struct explist_node_t* first;
   struct explist_node_t* last;
-  explist_t& operator=(const explist_t&) { return *this; }
 };
 /* list of args, for an argument list */
 struct arg_t {
   char* name;
   ExpNode* default_value;
-  arg_t& operator=(const arg_t&) { return *this; }
 };
 struct arglist_node_t {
   struct arg_t* arg;
   struct arglist_node_t* next;
-  arglist_node_t& operator=(const arglist_node_t&) { return *this; }
 };
 struct arglist_t {
   struct arglist_node_t* first;
   struct arglist_node_t* last;
-  arglist_t& operator=(const arglist_t&) { return *this; }
 };
 
 typedef struct explist_t explist_t;
@@ -157,6 +150,9 @@ AssignmentNode* logErrorV(const char* str);
 ASTNode* logError(ErrorNode* error_node);
 NodeValue* logErrorNV(ErrorNode* error_node);
 
+llvm::Value* logErrorLLVM(const char* str);
+llvm::Value* logErrorLLVM(ErrorNode* error_node);
+
 bool is_file_already_imported(const std::string& file_path);
 bool is_file_already_imported(const char* file_path);
 char* get_current_dir();
@@ -170,6 +166,7 @@ stmtlist_t* new_stmt_list(ASTContext* context);
 stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* node);
 stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_exp_list,
                           ASTNode* node);
+
 explist_t* new_exp_list(ASTContext* context);
 explist_t* new_exp_list(ASTContext* context, ExpNode* node);
 explist_t* new_exp_list(ASTContext* context, explist_t* head_exp_list,
@@ -195,6 +192,14 @@ CallExpNode* new_call_node(ASTContext* context, const std::string name,
 ASTNode* new_function_def(ASTContext* context, const std::string name,
                           arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* returnNode);
+
+void release(explist_t* explist);
+void release(explist_node_t* explist_node);
+void release(stmtlist_t* stmtlist);
+void release(stmtlist_node_t* stmtlist_node);
+void release(arg_t* arg);
+void release(arglist_t* arglist);
+void release(arglist_node_t* arglist_node);
 
 llvm::Type* toLLVLType(llvm::LLVMContext& LLVMContext, int type);
 
@@ -869,23 +874,17 @@ class FunctionDefNode : public ASTNode {
     stmtlist_node_t* stmtlist_node = head_stmt_list->first;
     do {
       if (arglist_node && arglist_node->arg) {
-        args.push_back(std::unique_ptr<arg_t>(std::move(arglist_node->arg)));
+        args.push_back(std::unique_ptr<arg_t>(arglist_node->arg));
         arglist_node = arglist_node->next;
       }
     } while (arglist_node);
 
     do {
       if (stmtlist_node && stmtlist_node->node) {
-        bodyNodes.push_back(
-            std::unique_ptr<ASTNode>(std::move(stmtlist_node->node)));
+        bodyNodes.push_back(std::unique_ptr<ASTNode>(stmtlist_node->node));
         stmtlist_node = stmtlist_node->next;
       }
     } while (stmtlist_node);
-
-    // TODO: free all the args not just the first one
-    // free(first_arg);
-    // TODO: free all the stmts not just the first one
-    // free(first_stmt);
   }
 
   // void* eval() override;
@@ -1033,7 +1032,6 @@ class CallExpNode : public ExpNode {
     return S->getKind() >= AST_NODE_TYPE_CALL_EXP;
   }
 };
-
 
 class AssignmentNode : public ExpNode {
  protected:

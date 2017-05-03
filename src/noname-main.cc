@@ -17,7 +17,9 @@
 // #include "llvm/Target/TargetMachine.h"
 // #include "llvm/Transforms/Scalar.h"
 // #include "llvm/Transforms/Scalar/GVN.h"
-
+#include "llvm-c/BitWriter.h"
+#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Support/raw_ostream.h"
 #include "lexer-utilities.h"
 #include "noname-utils.h"
 #include "noname-parse.h"
@@ -58,8 +60,9 @@ void yyerror(char const *s);
 //  of the current line read from the input.
 //
 int curr_lineno = 1;
-char *curr_filename = "<stdin>";  // this name is arbitrary
-FILE *fin = stdin;                /* we read from this file */
+int mod_id = 1;
+const char *curr_filename = "<stdin>";  // this name is arbitrary
+FILE *fin = stdin;                      /* we read from this file */
 
 namespace noname {
 
@@ -183,63 +186,22 @@ int noname_read(char *buf, int *result, int max_size) {
   return 0;
 }
 
-// void process_node(ExpNode &exp_node) {
-//   NodeValue *return_value = (NodeValue *)exp_node->eval();
-//   print_node_value(stdout, return_value);
-// }
-// void process_node(AssignmentNode &assignment_node) {
-//   NodeValue *return_value = (NodeValue *)assignment_node->eval();
-//   print_node_value(stdout, return_value);
-// }
-// void process_node(CallExpNode &call_exp_node) {
-//   FunctionDefNode *function_def_node =
-//   context->getFunction(call_exp_node->getCallee());
-
-//   if (function_def_node) {
-//     if (yydebug >= 2) {
-//       fprintf(stdout, "\nThe called function was: '%s'\n",
-//       function_def_node->getName().c_str());
-//     }
-
-//     NodeValue *return_value = (NodeValue *)call_exp_node->eval();
-//     print_node_value(stdout, return_value);
-
-//   } else {
-//     fprintf(stderr, "\nError: The function %s was not found int the
-//     context\n", call_exp_node->getCallee().c_str());
-//   }
-// }
-// void process_node(ImportNode &import_node) {
-//   char *file_path = get_file_path(import_node->getFilename().c_str());
-//   char *const_file_path[] = {file_path};
-//   // const char *const_file_path = file_path;
-//   FILE *opened_file = fopen(*const_file_path, "r");
-
-//   if (opened_file != NULL) {
-//     if (is_file_already_imported(*const_file_path)) {
-//       if (yydebug >= 3) {
-//         fprintf(stdout, "\nNOTICE: File '%s' already imported\n", file_path);
-//       }
-//     } else {
-//       imported_files.push_back(file_path);
-//       read_from_file_import = true;
-//       fin = opened_file;
-//     }
-
-//   } else {
-//     fprintf(stderr, "\nError: File '%s' could not be opened.\n", file_path);
-//   }
-
-//   free(file_path);
-// }
-
 //===----------------------------------------------------------------------===//
 // Top-Level parsing and JIT Driver
 //===----------------------------------------------------------------------===//
 
 void InitializeModuleAndPassManager() {
+  fprintf(stdout, "\n[initialize module]");
+  // if (TheModule) {
+  //   fprintf(stdout, "\n[module write]");
+  //   raw_fd_ostream os(output_filedescriptor, false, false);
+  //   llvm::WriteBitcodeToFile(TheModule.get(), os);
+  // }
+
   // Open a new module.
-  TheModule = llvm::make_unique<Module>("my cool jit", TheContext);
+  std::string module_name("My JIT module");
+  module_name += std::to_string(mod_id++);
+  TheModule = llvm::make_unique<Module>(module_name, TheContext);
   TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
 
   // Create a new pass manager attached to it.
@@ -317,10 +279,17 @@ int yylex(void) {
 }
 
 void yyerror(char const *s) { fprintf(stdout, "\nERROR: %s\n", s); }
-
+void exit_hook() {
+  // TheJIT->release();
+}
 int main(int argc, char **argv) {
-  int token;
+  int i = atexit(exit_hook);
+  if (i != 0) {
+    fprintf(stderr, "cannot set exit function\n");
+    exit(EXIT_FAILURE);
+  }
 
+  int token;
   context = new ASTContext("root");
   context_stack.push(context);
 

@@ -63,6 +63,16 @@ NodeValue* logErrorNV(ErrorNode* error_node) {
   return nullptr;
 }
 
+llvm::Value* logErrorLLVM(const char* str) {
+  logError(str);
+  return nullptr;
+}
+
+llvm::Value* logErrorLLVM(ErrorNode* error_node) {
+  logError(error_node->what().c_str());
+  return nullptr;
+}
+
 void print_node_value(FILE* file, NodeValue* node_value) {
   if (yydebug >= 2) {
     if (!node_value) {
@@ -200,25 +210,59 @@ void call_and_print_jit_symbol_value(LLVMContext& TheContext,
 // }
 
 stmtlist_t* new_stmt_list(ASTContext* context) {
-  stmtlist_t* head_stmt_list = (stmtlist_t*)malloc(sizeof(stmtlist_t));
+  stmtlist_t* head_stmt_list = (stmtlist_t*)malloc(sizeof(struct stmtlist_t));
 
   if (!head_stmt_list) {
     yyerror("out of space");
     exit(0);
   }
-  head_stmt_list->first = 0;
-  head_stmt_list->last = 0;
+  head_stmt_list->first = nullptr;
+  head_stmt_list->last = nullptr;
   return head_stmt_list;
 }
+
+void release(stmtlist_t* stmtlist);
+void release(stmtlist_node_t* stmtlist_node);
+void release(explist_t* explist);
+void release(explist_node_t* explist_node);
+void release(arg_t* arg);
+void release(arglist_t* arglist);
+void release(arglist_node_t* arglist_node);
+
+void release(stmtlist_t* stmtlist) {
+  if (stmtlist->first) {
+    release(
+        stmtlist->first);  // this will free all the pointers -> up to the last
+  }
+  free(stmtlist);
+}
+void release(stmtlist_node_t* stmtlist_node) {
+  if (stmtlist_node->node) {
+    // delete stmtlist_node->node;
+  }
+  if (stmtlist_node->next) {
+    release(stmtlist_node->next);
+  }
+  free(stmtlist_node);
+}
+
+void release(explist_t* explist) {}
+void release(explist_node_t* explist_node) {}
+void release(arg_t* arg) {}
+void release(arglist_t* arglist) {}
+void release(arglist_node_t* arglist_node) {}
+
 stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* ast_node) {
-  stmtlist_t* head_stmt_list = (stmtlist_t*)malloc(sizeof(stmtlist_t));
-  stmtlist_node_t* new_node = (stmtlist_node_t*)malloc(sizeof(stmtlist_node_t));
+  stmtlist_t* head_stmt_list = (stmtlist_t*)malloc(sizeof(struct stmtlist_t));
+  stmtlist_node_t* new_node =
+      (stmtlist_node_t*)malloc(sizeof(struct stmtlist_node_t));
 
   if (!head_stmt_list || !new_node) {
     yyerror("out of space");
     exit(0);
   }
   new_node->node = ast_node;
+  new_node->next = nullptr;
   head_stmt_list->first = new_node;
   head_stmt_list->last = new_node;
   return head_stmt_list;
@@ -226,39 +270,43 @@ stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* ast_node) {
 
 stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_stmt_list,
                           ASTNode* ast_node) {
-  stmtlist_node_t* new_node = (stmtlist_node_t*)malloc(sizeof(stmtlist_node_t));
+  stmtlist_node_t* new_node =
+      (stmtlist_node_t*)malloc(sizeof(struct stmtlist_node_t));
 
   if (!new_node) {
     yyerror("out of space");
     exit(0);
   }
   new_node->node = ast_node;
+  new_node->next = nullptr;
   head_stmt_list->last->next = new_node;
   head_stmt_list->last = new_node;
   return head_stmt_list;
 }
 
 explist_t* new_exp_list(ASTContext* context) {
-  explist_t* head_exp_list = (explist_t*)malloc(sizeof(explist_t));
+  explist_t* head_exp_list = (explist_t*)malloc(sizeof(struct explist_t));
 
   if (!head_exp_list) {
     yyerror("out of space");
     exit(0);
   }
-  head_exp_list->first = 0;
-  head_exp_list->last = 0;
+  head_exp_list->first = nullptr;
+  head_exp_list->last = nullptr;
   return head_exp_list;
 }
 
 explist_t* new_exp_list(ASTContext* context, ExpNode* exp_node) {
-  explist_t* head_exp_list = (explist_t*)malloc(sizeof(explist_t));
-  explist_node_t* new_node = (explist_node_t*)malloc(sizeof(explist_node_t));
+  explist_t* head_exp_list = (explist_t*)malloc(sizeof(struct explist_t));
+  explist_node_t* new_node =
+      (explist_node_t*)malloc(sizeof(struct explist_node_t));
 
   if (!head_exp_list || !new_node) {
     yyerror("out of space");
     exit(0);
   }
   new_node->node = exp_node;
+  new_node->next = nullptr;
   head_exp_list->first = new_node;
   head_exp_list->last = new_node;
   return head_exp_list;
@@ -266,65 +314,72 @@ explist_t* new_exp_list(ASTContext* context, ExpNode* exp_node) {
 
 explist_t* new_exp_list(ASTContext* context, explist_t* head_exp_list,
                         ExpNode* exp_node) {
-  explist_node_t* new_node = (explist_node_t*)malloc(sizeof(explist_node_t));
+  explist_node_t* new_node =
+      (explist_node_t*)malloc(sizeof(struct explist_node_t));
 
   if (!new_node) {
     yyerror("out of space");
     exit(0);
   }
   new_node->node = exp_node;
+  new_node->next = nullptr;
   head_exp_list->last->next = new_node;
   head_exp_list->last = new_node;
   return head_exp_list;
 }
 
 arglist_t* new_arg_list(ASTContext* context) {
-  arglist_t* head_arg_list = (arglist_t*)malloc(sizeof(arglist_t));
+  arglist_t* head_arg_list = (arglist_t*)malloc(sizeof(struct arglist_t));
 
   if (!head_arg_list) {
     yyerror("out of space");
     exit(0);
   }
-  head_arg_list->first = 0;
-  head_arg_list->last = 0;
+  head_arg_list->first = nullptr;
+  head_arg_list->last = nullptr;
   return head_arg_list;
 }
 
 arglist_t* new_arg_list(ASTContext* context, arg_t* arg) {
-  arglist_t* head_arg_list = (arglist_t*)malloc(sizeof(arglist_t));
-  arglist_node_t* new_node = (arglist_node_t*)malloc(sizeof(arglist_node_t));
+  arglist_t* head_arg_list = (arglist_t*)malloc(sizeof(struct arglist_t));
+  arglist_node_t* new_node =
+      (arglist_node_t*)malloc(sizeof(struct arglist_node_t));
 
   if (!head_arg_list || !new_node) {
     yyerror("out of space");
     exit(0);
   }
   new_node->arg = arg;
+  new_node->next = nullptr;
   head_arg_list->first = new_node;
   head_arg_list->last = new_node;
   return head_arg_list;
 }
 arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list,
                         arg_t* arg) {
-  arglist_node_t* new_node = (arglist_node_t*)malloc(sizeof(arglist_node_t));
+  arglist_node_t* new_node =
+      (arglist_node_t*)malloc(sizeof(struct arglist_node_t));
 
   if (!new_node) {
     yyerror("out of space");
     exit(0);
   }
   new_node->arg = arg;
+  new_node->next = nullptr;
   head_arg_list->last->next = new_node;
   head_arg_list->last = new_node;
   return head_arg_list;
 }
 
 arg_t* create_new_arg(ASTContext* context, char* arg_name) {
-  arg_t* new_arg = (arg_t*)malloc(sizeof(arg_t));
+  arg_t* new_arg = (arg_t*)malloc(sizeof(struct arg_t));
 
   if (!new_arg) {
     yyerror("out of space");
     exit(0);
   }
   new_arg->name = arg_name;
+  new_arg->default_value = nullptr;
   return new_arg;
 }
 
@@ -486,7 +541,7 @@ NodeValue* VarExpNode::getValue() {
 // UNNECESSARY
 // void* UnaryExpNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* UnaryExpNode::getValue() {
-  NodeValue* rhs_value = rhs.get()->getValue();
+  NodeValue* rhs_value = rhs->getValue();
   fprintf(
       stdout,
       "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
@@ -537,8 +592,8 @@ int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs) {
 // UNNECESSARY
 // void* BinaryExpNode::eval() { NodeValue* node_value = getValue(); }
 NodeValue* BinaryExpNode::getValue() {
-  NodeValue* lhs_node_value = lhs.get()->getValue();
-  NodeValue* rhs_node_value = rhs.get()->getValue();
+  NodeValue* lhs_node_value = lhs->getValue();
+  NodeValue* rhs_node_value = rhs->getValue();
   int result_type = get_adequate_result_type(lhs_node_value, rhs_node_value);
   void* lhs_value = lhs_node_value->getValue(result_type);
   void* rhs_value = rhs_node_value->getValue(result_type);
@@ -683,7 +738,7 @@ void* DeclarationAssignmentNode::eval() {
   return node_value;
 }
 
-NodeValue* AssignmentNode::getValue() { return rhs.get()->getValue(); }
+NodeValue* AssignmentNode::getValue() { return rhs->getValue(); }
 
 // UNNECESSARY
 // void* CallExpNode::eval() { NodeValue* node_value = getValue(); }
@@ -722,8 +777,7 @@ NodeValue* CallExpNode::getValue() {
     std::unique_ptr<ExpNode>& value_arg = *it_value_args;
     std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
 
-    call_exp_context->store(signature_arg.get()->name,
-                            value_arg.get()->getValue());
+    call_exp_context->store(signature_arg->name, value_arg->getValue());
 
     ++it_signature_args;
     ++it_value_args;
@@ -732,11 +786,11 @@ NodeValue* CallExpNode::getValue() {
   for (; it_body_nodes != body_nodes->end();) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes;
 
-    body_node.get()->eval();
+    body_node->eval();
 
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
-              ASTNode::toString(body_node.get()->getKind()).c_str());
+              ASTNode::toString(body_node->getKind()).c_str());
     }
     ++it_body_nodes;
   }
@@ -787,7 +841,8 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
 
     // JIT the module containing the anonymous expression, keeping a handle so
     // we can free it later.
-    auto module = TheJIT->addModule(std::move(TheModule));
+    TheJIT->writeToFile(TheModule.get());
+    auto module_handle = TheJIT->addModule(std::move(TheModule));
     InitializeModuleAndPassManager();
 
     // Search the JIT for the __anon_expr symbol.
@@ -801,7 +856,7 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
                                     ExprSymbol);
 
     // Delete the anonymous expression module from the JIT.
-    TheJIT->removeModule(module);
+    TheJIT->removeModule(module_handle);
   }
 
   top_level_exp_node->release();
@@ -817,6 +872,7 @@ Value* TopLevelExpNode::codegen() {
 }
 Value* CallExpNode::codegen() {
   ASTContext* call_exp_context = getContext();
+
   FunctionDefNode* function_def_node =
       call_exp_context->getFunction(getCallee());
 
@@ -828,7 +884,54 @@ Value* CallExpNode::codegen() {
     return nullptr;
   }
 
-  return function_def_node->codegen();
+  // return function_def_node->codegen();
+
+  // Look up the name in the global module table.
+  Function* function = function_def_node->getFunctionDefinition();
+  if (!function) {
+    return logErrorLLVM("Unknown function referenced");
+  }
+
+  // ExpNode* returnNode = function_node->getReturnNode();
+  std::vector<std::unique_ptr<ExpNode>>& value_args = getArgs();
+
+  // If argument mismatch error.
+  if (function->arg_size() != value_args.size()) {
+    return logErrorLLVM("Incorrect # arguments passed");
+  }
+
+  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args =
+      value_args.begin();
+  std::vector<std::unique_ptr<arg_t>>& signature_args =
+      function_def_node->getArgs();
+  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args =
+      signature_args.begin();
+  std::vector<llvm::Value*> args_value;
+
+  for (; it_signature_args != signature_args.end() ||
+         it_value_args != value_args.end();) {
+    std::unique_ptr<ExpNode>& value_arg = *it_value_args;
+    std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
+
+    call_exp_context->store(signature_arg->name, value_arg->getValue());
+
+    args_value.push_back(value_arg->codegen());
+    if (!args_value.back()) {
+      return nullptr;
+    }
+
+    ++it_signature_args;
+    ++it_value_args;
+  }
+
+  if (function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
+    return Builder.CreateCall(
+        function, args_value);  // Cannot assign a name to void values!
+  } else {
+    return Builder.CreateCall(function, args_value, "__call_exp");
+  }
+
+  // return nullptr;
 }
 void* TopLevelExpNode::release() {
   if (anonymous_def_node) {
@@ -857,7 +960,7 @@ Function* FunctionDefNode::getFunctionDefinition() {
   // Set names for all arguments.
   int index = 0;
   for (auto& function_arg : function->args()) {
-    function_arg.setName(args[index++].get()->name);
+    function_arg.setName(args[index++]->name);
   }
 
   return function;
@@ -873,6 +976,9 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
   auto* function_def_node =
       new_function_def(context, annon_name, arg_list, stmt_list, return_node);
 
+  release(arg_list);
+  release(stmt_list);
+
   return function_def_node;
 }
 Value* FunctionDefNode::codegen() {
@@ -883,8 +989,8 @@ Value* FunctionDefNode::codegen() {
   }
 
   // Create a new basic block to start insertion into.
-  BasicBlock* BB = BasicBlock::Create(TheContext, "entry", function);
-  Builder.SetInsertPoint(BB);
+  BasicBlock* basic_block = BasicBlock::Create(TheContext, "entry", function);
+  Builder.SetInsertPoint(basic_block);
 
   // Record the function arguments in the NamedValues map.
   // NamedValues.clear();
@@ -911,22 +1017,22 @@ Value* FunctionDefNode::codegen() {
 
     NodeValue* arg_node_value = NULL;
 
-    if (signature_arg.get()->default_value) {
-      arg_node_value = signature_arg.get()->default_value->getValue();
+    if (signature_arg->default_value) {
+      arg_node_value = signature_arg->default_value->getValue();
     }
 
-    function_def_node_context->store(signature_arg.get()->name, arg_node_value);
+    function_def_node_context->store(signature_arg->name, arg_node_value);
   }
 
   while (it_body_nodes != body_nodes->end()) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
-    body_node.get()->codegen();
-
     if (yydebug >= 1) {
-      fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
-              ASTNode::toString(body_node.get()->getKind()).c_str());
+      fprintf(stderr, "\n[## evaluating body: ASTNode of type %s]\n",
+              ASTNode::toString(body_node->getKind()).c_str());
     }
+
+    body_node->codegen();
   }
 
   if (return_node) {
@@ -935,20 +1041,23 @@ Value* FunctionDefNode::codegen() {
     // Finish off the function by creating the ReturnInst
     if (!return_value ||
         return_value->getType() == llvm::Type::getVoidTy(TheContext)) {
+      if (yydebug >= 1) {
+        fprintf(stderr, "\n[## no return given]\n");
+      }
       Builder.CreateRetVoid();
     } else {
+      if (yydebug >= 1) {
+        fprintf(stderr, "\n[## evaluating return]\n");
+      }
       Builder.CreateRet(return_value);
       returnLLVMType = return_value->getType();
     }
 
-    if (yydebug >= 1) {
-      fprintf(stdout, "\n[## evaluating return]\n");
-    }
   } else {
-    Builder.CreateRetVoid();
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## no return given]\n");
     }
+    Builder.CreateRetVoid();
   }
 
   // Validate the generated code, checking for consistency.
@@ -973,6 +1082,7 @@ void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
       fprintf(stderr, "\nRead function definition:");
       function_ir->dump();
     }
+    TheJIT->writeToFile(TheModule.get());
     TheJIT->addModule(std::move(TheModule));
     InitializeModuleAndPassManager();
   }
@@ -1098,6 +1208,12 @@ Value* StringExpNode::codegen() {
 }
 
 Value* VarExpNode::codegen() {
+  //
+  // TODO FIXME: create a cache for this
+  // this method should NOT look for NodeValue* then convert it to Value
+  // this method should create a cache so that the code would generated once
+  //
+
   NodeValue* node = getContext()->getVariable(name);
 
   if (!node) {
@@ -1114,8 +1230,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
   Function* pow_function = TheModule->getFunction(pow_function_name);
 
   if (!pow_function) {
-    // result = LogErrorV("Unknown function referenced");
-    return nullptr;
+    return logErrorLLVM("Unknown function referenced");
   }
 
   std::vector<Value*> args_values;
@@ -1126,8 +1241,8 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
 }
 
 Value* BinaryExpNode::codegen() {
-  NodeValue* lhs_node_value = lhs.get()->getValue();
-  NodeValue* rhs_node_value = rhs.get()->getValue();
+  NodeValue* lhs_node_value = lhs->getValue();
+  NodeValue* rhs_node_value = rhs->getValue();
 
   int result_type = get_adequate_result_type(lhs_node_value, rhs_node_value);
   void* lhs_value = lhs_node_value->getValue(result_type);
@@ -1188,7 +1303,7 @@ Value* BinaryExpNode::codegen() {
 }
 
 Value* UnaryExpNode::codegen() {
-  NodeValue* rhs_node_value = rhs.get()->getValue();
+  NodeValue* rhs_node_value = rhs->getValue();
   Value* R = rhs_node_value->codegen();
   fprintf(
       stdout,

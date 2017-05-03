@@ -246,6 +246,9 @@ function_def:
       $$ = new_function_def(context->getParent(), std::string($IDENTIFIER), $arglist, $stmtlist, $optional_ret_stmt);
       context_stack.pop();
       context = context_stack.top();
+
+      release($arglist);
+      release($stmtlist);
     }
 ;
 

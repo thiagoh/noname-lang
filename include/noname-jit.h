@@ -1,9 +1,6 @@
-//===----- NonameJIT.h - A simple JIT for Kaleidoscope ----*- C++ -*-===//
+//===----- NonameJIT.h - A simple JIT for noname lang ----*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 //
@@ -11,8 +8,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
-#define LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
+#ifndef LLVM_EXECUTIONENGINE_ORC_NONAME_H
+#define LLVM_EXECUTIONENGINE_ORC_NONAME_H
 
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/ADT/STLExtras.h"
@@ -31,6 +28,10 @@
 #include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm-c/BitWriter.h"
+#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Support/raw_ostream.h"
+#include <stdio.h>
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -50,11 +51,16 @@ class NonameJIT {
         DL(TM->createDataLayout()),
         CompileLayer(ObjectLayer, SimpleCompiler(*TM)) {
     llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
+
+    // then run llvm-dis output.bc
+    output_file = fopen(output_filename, "w");
+    output_filedescriptor = fileno(output_file);
+    // os = new raw_fd_ostream(output_filedescriptor, false, false);
   }
 
   TargetMachine &getTargetMachine() { return *TM; }
 
-  ModuleHandleT addModule(std::unique_ptr<Module> M) {
+  ModuleHandleT addModule(std::unique_ptr<Module> module) {
     // We need a memory manager to allocate memory and resolve symbols for this
     // new module. Create one that resolves symbols by looking back into the
     // JIT.
@@ -65,22 +71,46 @@ class NonameJIT {
           return RuntimeDyld::SymbolInfo(nullptr);
         },
         [](const std::string &S) { return nullptr; });
-    auto H = CompileLayer.addModuleSet(singletonSet(std::move(M)),
-                                       make_unique<SectionMemoryManager>(),
-                                       std::move(Resolver));
 
-    ModuleHandles.push_back(H);
-    return H;
+    Modules.push_back(module.get());
+
+    auto module_handle = CompileLayer.addModuleSet(
+        singletonSet(std::move(module)), make_unique<SectionMemoryManager>(),
+        std::move(Resolver));
+
+    ModuleHandles.push_back(module_handle);
+    return module_handle;
   }
 
-  void removeModule(ModuleHandleT H) {
+  void removeModule(ModuleHandleT module_handle) {
     ModuleHandles.erase(
-        std::find(ModuleHandles.begin(), ModuleHandles.end(), H));
-    CompileLayer.removeModuleSet(H);
+        std::find(ModuleHandles.begin(), ModuleHandles.end(), module_handle));
+    CompileLayer.removeModuleSet(module_handle);
   }
 
   JITSymbol findSymbol(const std::string Name) {
     return findMangledSymbol(mangle(Name));
+  }
+
+  void writeToFile(const Module *mod) {
+    raw_fd_ostream os(output_filedescriptor, false, false);
+
+    fprintf(stdout, "\n[module write]");
+    llvm::WriteBitcodeToFile(mod, os);
+  }
+
+  void writeToFile() {
+    raw_fd_ostream os(output_filedescriptor, false, false);
+
+    for (auto &mod : Modules) {
+      fprintf(stdout, "\n[module write]");
+      llvm::WriteBitcodeToFile(mod, os);
+    }
+  }
+
+  void release() {
+    this->writeToFile();
+    fclose(output_file);
   }
 
  private:
@@ -95,9 +125,9 @@ class NonameJIT {
 
   template <typename T>
   static std::vector<T> singletonSet(T t) {
-    std::vector<T> Vec;
-    Vec.push_back(std::move(t));
-    return Vec;
+    std::vector<T> vec;
+    vec.push_back(std::move(t));
+    return vec;
   }
 
   JITSymbol findMangledSymbol(const std::string &Name) {
@@ -114,14 +144,19 @@ class NonameJIT {
     return nullptr;
   }
 
+  const char *output_filename = "output.bc";
+  FILE *output_file;
+  int output_filedescriptor;
+
   std::unique_ptr<TargetMachine> TM;
   const DataLayout DL;
   ObjLayerT ObjectLayer;
   CompileLayerT CompileLayer;
   std::vector<ModuleHandleT> ModuleHandles;
+  std::vector<Module *> Modules;
 };
 
 }  // end namespace orc
 }  // end namespace llvm
 
-#endif  // LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
+#endif  // LLVM_EXECUTIONENGINE_ORC_NONAME_H
