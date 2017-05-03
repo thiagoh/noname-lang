@@ -702,10 +702,17 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
     auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
     assert(ExprSymbol && "Function not found");
 
-    // Get the symbol's address and cast it to the right type (takes no
-    // arguments, returns a double) so we can call it as a native function.
-    double (*FP)() = (double (*)())(intptr_t)ExprSymbol.getAddress();
-    fprintf(stderr, "Evaluated to %f\n", FP());
+    // long (*function_pointer)() = (long
+    // (*)())(intptr_t)ExprSymbol.getAddress();
+    void* (*function_pointer)() =
+        (void* (*)())(intptr_t)ExprSymbol.getAddress();
+
+    fprintf(stderr, "Evaluated to %ld\n", (long)function_pointer());
+
+    // // Get the symbol's address and cast it to the right type (takes no
+    // // arguments, returns a double) so we can call it as a native function.
+    // double (*FP)() = (double (*)())(intptr_t)ExprSymbol.getAddress();
+    // fprintf(stderr, "Evaluated to %f\n", FP());
 
     // Delete the anonymous expression module from the JIT.
     TheJIT->removeModule(module);
@@ -859,35 +866,6 @@ void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
     TheJIT->addModule(std::move(TheModule));
     InitializeModuleAndPassManager();
   }
-
-  ///////////////////////////
-  ///////////////////////////
-  ///////////////////////////
-  ///////////////////////////
-
-  // if (auto* FnIR = FnAST->codegen()) {
-  //   fprintf(stderr, "Read top-level expression:");
-  //   FnIR->print(errs());
-  //   fprintf(stderr, "\n");
-
-  //   // JIT the module containing the anonymous expression, keeping a handle
-  //   so
-  //   // we can free it later.
-  //   auto H = TheJIT->addModule(std::move(TheModule));
-  //   InitializeModuleAndPassManager();
-
-  //   // Search the JIT for the __anon_expr symbol.
-  //   auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
-  //   assert(ExprSymbol && "Function not found");
-
-  //   // Get the symbol's address and cast it to the right type (takes no
-  //   // arguments, returns a double) so we can call it as a native function.
-  //   double (*FP)() = (double (*)())(intptr_t)ExprSymbol.getAddress();
-  //   fprintf(stderr, "Evaluated to %f\n", FP());
-
-  //   // Delete the anonymous expression module from the JIT.
-  //   TheJIT->removeModule(H);
-  // }
 
   print_node_value(stdout, return_value);
   return nullptr;
