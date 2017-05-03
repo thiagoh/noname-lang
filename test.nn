@@ -6,6 +6,7 @@ def func_foo() {
   let aaaaaaaaa5 = 321;
   let aaaaaaaaa6 = 321;
 };
+func_foo();
 
 def func_bar() {
   let cd1 = 3;

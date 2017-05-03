@@ -64,7 +64,7 @@ NodeValue* logErrorNV(ErrorNode* error_node) {
 }
 
 void print_node_value(FILE* file, NodeValue* node_value) {
-  if (yydebug >= 1) {
+  if (yydebug >= 2) {
     if (!node_value) {
       fprintf(file, "\n##########[print_node_value] undef");
     } else if (node_value->getType() == TYPE_INT) {
@@ -103,6 +103,95 @@ void print_node_value(FILE* file, NodeValue* node_value) {
 }
 void print_node_value(NodeValue* node_value) {
   print_node_value(stdout, node_value);
+}
+
+void call_and_print_jit_symbol_value(FILE* file, LLVMContext& TheContext,
+                                     llvm::Type* result_type,
+                                     JITSymbol& jit_symbol) {
+  fprintf(file, "\n###########[fixme] I should call or print only");
+
+  // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
+  if (yydebug >= 2) {
+    if (!result_type) {
+      assert(result_type && "Result type is null");
+    } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] undef");
+    } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
+      double (*function_pointer)() =
+          (double (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %lf",
+              function_pointer());
+
+    } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
+      float (*function_pointer)() =
+          (float (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %f",
+              function_pointer());
+
+    } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
+      long (*function_pointer)() =
+          (long (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %ld",
+              function_pointer());
+
+    } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
+      int (*function_pointer)() = (int (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %d",
+              function_pointer());
+
+    } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
+      short (*function_pointer)() =
+          (short (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %hd",
+              function_pointer());
+
+    } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
+      char (*function_pointer)() =
+          (char (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %c",
+              function_pointer());
+    }
+  } else {
+    if (!result_type) {
+      assert(result_type && "Result type is null");
+    } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
+      fprintf(file, "undef");
+    } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
+      double (*function_pointer)() =
+          (double (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "%lf", function_pointer());
+
+    } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
+      float (*function_pointer)() =
+          (float (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "%f", function_pointer());
+
+    } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
+      long (*function_pointer)() =
+          (long (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "%ld", function_pointer());
+
+    } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
+      int (*function_pointer)() = (int (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "%d", function_pointer());
+
+    } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
+      short (*function_pointer)() =
+          (short (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "%hd", function_pointer());
+
+    } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
+      char (*function_pointer)() =
+          (char (*)())(intptr_t)jit_symbol.getAddress();
+      fprintf(file, "%c", function_pointer());
+    }
+  }
+}
+
+void call_and_print_jit_symbol_value(LLVMContext& TheContext,
+                                     llvm::Type* result_type,
+                                     JITSymbol& jit_symbol) {
+  call_and_print_jit_symbol_value(stdout, TheContext, result_type, jit_symbol);
 }
 
 // ReturnNode* new_return(ASTContext* context, ExpNode* exp_node) {
@@ -603,11 +692,11 @@ NodeValue* CallExpNode::getValue() {
   FunctionDefNode* function_node = call_exp_context->getFunction(getCallee());
 
   if (!function_node) {
-    fprintf(stdout,
+    fprintf(stderr,
             "\n\nThe called function was: '%s' BUT it wan not found on the "
             "context\n",
             getCallee().c_str());
-    return 0;
+    return nullptr;
   }
 
   // ASTContext* function_context = function_node->getContext();
@@ -680,18 +769,21 @@ void* ExpNodeProcessorStrategy::process(ASTNode* node) {
   print_node_value(stdout, return_value);
   return nullptr;
 }
+
 void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
   TopLevelExpNode* top_level_exp_node = (TopLevelExpNode*)node;
-  NodeValue* return_value = (NodeValue*)top_level_exp_node->eval();
-  print_node_value(stdout, return_value);
+  // NodeValue* return_value = (NodeValue*)top_level_exp_node->eval();
+  // print_node_value(stdout, return_value);
 
   auto* top_level_node_ir = top_level_exp_node->codegen();
 
   if (!top_level_node_ir) {
     fprintf(stderr, "\nTop level expression could not be evaluated");
   } else {
-    fprintf(stderr, "\nRead top level expression:");
-    top_level_node_ir->dump();
+    if (yydebug >= 1) {
+      fprintf(stderr, "\n[read top level expression]");
+      top_level_node_ir->dump();
+    }
 
     // JIT the module containing the anonymous expression, keeping a handle so
     // we can free it later.
@@ -702,17 +794,11 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
     auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
     assert(ExprSymbol && "Function not found");
 
-    // long (*function_pointer)() = (long
-    // (*)())(intptr_t)ExprSymbol.getAddress();
-    void* (*function_pointer)() =
-        (void* (*)())(intptr_t)ExprSymbol.getAddress();
+    llvm::Type* result_type = top_level_exp_node->getReturnLLVMType(TheContext);
+    assert(result_type && "Result type is null");
 
-    fprintf(stderr, "Evaluated to %ld\n", (long)function_pointer());
-
-    // // Get the symbol's address and cast it to the right type (takes no
-    // // arguments, returns a double) so we can call it as a native function.
-    // double (*FP)() = (double (*)())(intptr_t)ExprSymbol.getAddress();
-    // fprintf(stderr, "Evaluated to %f\n", FP());
+    call_and_print_jit_symbol_value(stdout, TheContext, result_type,
+                                    ExprSymbol);
 
     // Delete the anonymous expression module from the JIT.
     TheJIT->removeModule(module);
@@ -724,10 +810,25 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
 }
 Value* TopLevelExpNode::codegen() {
   if (!anonymous_def_node) {
-    fprintf(stdout, "\n\n############ could not resolve top level expression");
+    fprintf(stderr, "\n\n############ could not resolve top level expression");
     return nullptr;
   }
   return anonymous_def_node->codegen();
+}
+Value* CallExpNode::codegen() {
+  ASTContext* call_exp_context = getContext();
+  FunctionDefNode* function_def_node =
+      call_exp_context->getFunction(getCallee());
+
+  if (!function_def_node) {
+    fprintf(stderr,
+            "\n\nThe called function was: '%s' BUT it wan not found on the "
+            "context\n",
+            getCallee().c_str());
+    return nullptr;
+  }
+
+  return function_def_node->codegen();
 }
 void* TopLevelExpNode::release() {
   if (anonymous_def_node) {
@@ -831,13 +932,20 @@ Value* FunctionDefNode::codegen() {
   if (return_node) {
     Value* return_value = return_node->codegen();
 
-    // Finish off the function.
-    Builder.CreateRet(return_value);
+    // Finish off the function by creating the ReturnInst
+    if (!return_value ||
+        return_value->getType() == llvm::Type::getVoidTy(TheContext)) {
+      Builder.CreateRetVoid();
+    } else {
+      Builder.CreateRet(return_value);
+      returnLLVMType = return_value->getType();
+    }
 
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## evaluating return]\n");
     }
   } else {
+    Builder.CreateRetVoid();
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## no return given]\n");
     }
@@ -861,8 +969,10 @@ void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
     fprintf(stderr, "\nFunction could not be defined");
   }
   if (function_ir) {
-    fprintf(stderr, "\nRead function definition:");
-    function_ir->dump();
+    if (yydebug >= 1) {
+      fprintf(stderr, "\nRead function definition:");
+      function_ir->dump();
+    }
     TheJIT->addModule(std::move(TheModule));
     InitializeModuleAndPassManager();
   }
@@ -971,16 +1081,6 @@ Value* NumberExpNode::codegen() {
 
   if (!node) {
     fprintf(stdout, "\n\n############ could not resolve number expression");
-    return nullptr;
-  }
-
-  return node->codegen();
-}
-Value* CallExpNode::codegen() {
-  NodeValue* node = this->getValue();
-
-  if (!node) {
-    fprintf(stdout, "\n\n############ could not resolve string expression");
     return nullptr;
   }
 
