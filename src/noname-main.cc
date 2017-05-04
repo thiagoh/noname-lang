@@ -220,8 +220,8 @@ void InitializeModuleAndPassManager() {
 }
 
 ASTNode *pre_process(ASTNode *node) {
-  if (!node || isa<ErrorNode>(*node)) {
-    return logError((ErrorNode *)node);
+  if (!node) {
+    return node;
   }
 
   if (isa<CallExpNode>(*node)) {

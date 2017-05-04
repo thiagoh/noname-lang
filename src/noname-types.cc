@@ -989,8 +989,6 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
   return function_def_node;
 }
 Value* FunctionDefNode::codegen() {
-  fprintf(stderr, "\n[#######3## FunctionDefNode::codegen]");
-
   // FunctionProtos[Proto->getName()] = std::move(Proto);
   Function* function = getFunctionDefinition();
   if (!function) {
