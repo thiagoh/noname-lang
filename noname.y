@@ -36,7 +36,8 @@ namespace noname {
   extern int noname_read(char *buf, int *result, int max_size);
   extern void write_cursor();
   extern void division_by_zero(YYLTYPE &yylloc);
-  extern void eval(ASTNode* ast_node);
+  extern ASTNode* pre_process(ASTNode* node);
+  extern void eval(ASTNode* node);
 }
 
 %}
@@ -154,6 +155,7 @@ prog:
     write_cursor();
   }
   | prog stmt {
+      $2 = pre_process($2);
       eval($2);
       write_cursor();
     }
@@ -204,7 +206,7 @@ stmt:
       if (yydebug) {
         fprintf(stderr, "\n[stmt exp]: ");
       }
-      $$ = new_top_level_exp_node($1);
+      $$ = $1;
     }
 ;
 

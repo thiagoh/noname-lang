@@ -9,9 +9,10 @@ def func_foo() {
 func_foo();
 
 def func_bar() {
-  let cd1 = 3;
+  let cd1 = 22;
+  let cd2 = 33;
   func_foo();
-  let cd2 = 3;
+  let cd3 = 44;
 };
 bar();
 

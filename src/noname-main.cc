@@ -219,6 +219,19 @@ void InitializeModuleAndPassManager() {
   TheFPM->doInitialization();
 }
 
+ASTNode *pre_process(ASTNode *node) {
+  if (!node || isa<ErrorNode>(*node)) {
+    return logError((ErrorNode *)node);
+  }
+
+  if (isa<CallExpNode>(*node)) {
+    fprintf(stderr, "\n ####################################### CALL NODE!!!!!!!!");
+    return new_top_level_exp_node((CallExpNode *)node);
+  }
+
+  return node;
+}
+
 void eval(ASTNode *node) {
   if (!node || isa<ErrorNode>(*node)) {
     logError((ErrorNode *)node);

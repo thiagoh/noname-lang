@@ -715,7 +715,7 @@ class NumberExpNode : public ExpNode {
   // static int getClassType() { return AST_NODE_TYPE_NUMBER; };
 
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_NUMBER;
+    return S->getKind() == AST_NODE_TYPE_NUMBER;
   }
 };
 
@@ -737,7 +737,7 @@ class StringExpNode : public ExpNode {
   // static int getClassType() { return AST_NODE_TYPE_STRING; };
 
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_STRING;
+    return S->getKind() == AST_NODE_TYPE_STRING;
   }
 };
 
@@ -758,7 +758,7 @@ class VarExpNode : public ExpNode {
   // static int getClassType() { return AST_NODE_TYPE_VARIABLE; };
 
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_VARIABLE;
+    return S->getKind() == AST_NODE_TYPE_VARIABLE;
   }
 };
 
@@ -784,7 +784,7 @@ class UnaryExpNode : public ExpNode {
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_UNARY_EXP; };
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_UNARY_EXP;
+    return S->getKind() == AST_NODE_TYPE_UNARY_EXP;
   }
 };
 
@@ -814,7 +814,7 @@ class BinaryExpNode : public ExpNode {
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_BINARY; };
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_BINARY;
+    return S->getKind() == AST_NODE_TYPE_BINARY;
   }
 
  private:
@@ -839,7 +839,7 @@ class ImportNode : public ASTNode {
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_IMPORT; };
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_IMPORT;
+    return S->getKind() == AST_NODE_TYPE_IMPORT;
   }
 };
 
@@ -948,7 +948,7 @@ class FunctionDefNode : public ASTNode {
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_DEF_FUNCTION; };
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_DEF_FUNCTION;
+    return S->getKind() == AST_NODE_TYPE_DEF_FUNCTION;
   }
 };
 
@@ -980,7 +980,7 @@ class TopLevelExpNode : public ExpNode {
   };
 
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_TOP_LEVEL_EXP_NODE;
+    return S->getKind() == AST_NODE_TYPE_TOP_LEVEL_EXP_NODE;
   }
 };
 
@@ -1029,7 +1029,7 @@ class CallExpNode : public ExpNode {
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_CALL_EXP; };
   static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_CALL_EXP;
+    return S->getKind() == AST_NODE_TYPE_CALL_EXP;
   }
 };
 

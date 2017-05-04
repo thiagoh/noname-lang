@@ -871,6 +871,7 @@ Value* TopLevelExpNode::codegen() {
   return anonymous_def_node->codegen();
 }
 Value* CallExpNode::codegen() {
+  fprintf(stderr, "\n############## 1");
   ASTContext* call_exp_context = getContext();
 
   FunctionDefNode* function_def_node =
@@ -924,14 +925,25 @@ Value* CallExpNode::codegen() {
     ++it_value_args;
   }
 
+  llvm::CallInst* call_inst = nullptr;
+
   if (function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
-    return Builder.CreateCall(
-        function, args_value);  // Cannot assign a name to void values!
+    fprintf(stderr, "\n############## 10");
+    // Cannot assign a name to void values!
+    call_inst = Builder.CreateCall(function, args_value);
+    call_inst->setCallingConv(CallingConv::C);
+    call_inst->setTailCall(false);
+    fprintf(stderr, "\n############## 11");
   } else {
-    return Builder.CreateCall(function, args_value, "__call_exp");
+    fprintf(stderr, "\n############## 12");
+    call_inst = Builder.CreateCall(function, args_value, "__call_exp");
+    fprintf(stderr, "\n############## 13");
   }
 
-  // return nullptr;
+  fprintf(stderr, "\n############## 14");
+  call_inst->dump();
+
+  return call_inst;
 }
 void* TopLevelExpNode::release() {
   if (anonymous_def_node) {
@@ -956,6 +968,7 @@ Function* FunctionDefNode::getFunctionDefinition() {
 
   function = Function::Create(function_type, Function::ExternalLinkage, name,
                               TheModule.get());
+  function->setCallingConv(CallingConv::C);
 
   // Set names for all arguments.
   int index = 0;
@@ -982,6 +995,8 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
   return function_def_node;
 }
 Value* FunctionDefNode::codegen() {
+  fprintf(stderr, "\n[#######3## FunctionDefNode::codegen]");
+
   // FunctionProtos[Proto->getName()] = std::move(Proto);
   Function* function = getFunctionDefinition();
   if (!function) {
@@ -1027,16 +1042,22 @@ Value* FunctionDefNode::codegen() {
   while (it_body_nodes != body_nodes->end()) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
-    if (yydebug >= 1) {
-      fprintf(stderr, "\n[## evaluating body: ASTNode of type %s]\n",
-              ASTNode::toString(body_node->getKind()).c_str());
-    }
+    fprintf(stderr, "\n[## evaluating body: ASTNode of type %s]\n",
+            ASTNode::toString(body_node->getKind()).c_str());
+    // if (yydebug >= 1) {
+    // }
 
     body_node->codegen();
+
+    fprintf(stderr, "\n[## body evaluated]");
   }
 
+  fprintf(stderr, "\n[## if return_node]");
+
   if (return_node) {
+    fprintf(stderr, "\n[## if return_node 1]");
     Value* return_value = return_node->codegen();
+    fprintf(stderr, "\n[## if return_node 2]");
 
     // Finish off the function by creating the ReturnInst
     if (!return_value ||
@@ -1054,24 +1075,32 @@ Value* FunctionDefNode::codegen() {
     }
 
   } else {
+    fprintf(stderr, "\n[## if return_node 8]");
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## no return given]\n");
     }
+    fprintf(stderr, "\n[## if return_node 9]");
     Builder.CreateRetVoid();
+    fprintf(stderr, "\n[## if return_node 10]");
   }
+
+  fprintf(stderr, "\n[## verify]");
 
   // Validate the generated code, checking for consistency.
   verifyFunction(*function);
 
+  fprintf(stderr, "\n[## verified]");
+
   // Run the optimizer on the function.
+  fprintf(stderr, "\n[## run]");
   TheFPM->run(*function);
+  // function->dump();
 
   return function;
 }
 
 void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
   FunctionDefNode* function_def_node = (FunctionDefNode*)node;
-  NodeValue* return_value = (NodeValue*)function_def_node->eval();
   auto* function_ir = function_def_node->codegen();
 
   if (!function_ir) {
@@ -1087,6 +1116,7 @@ void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
     InitializeModuleAndPassManager();
   }
 
+  NodeValue* return_value = (NodeValue*)function_def_node->eval();
   print_node_value(stdout, return_value);
   return nullptr;
 }
