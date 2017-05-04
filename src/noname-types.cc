@@ -871,7 +871,6 @@ Value* TopLevelExpNode::codegen() {
   return anonymous_def_node->codegen();
 }
 Value* CallExpNode::codegen() {
-  fprintf(stderr, "\n############## 1");
   ASTContext* call_exp_context = getContext();
 
   FunctionDefNode* function_def_node =
@@ -879,8 +878,8 @@ Value* CallExpNode::codegen() {
 
   if (!function_def_node) {
     fprintf(stderr,
-            "\n\nThe called function was: '%s' BUT it wan not found on the "
-            "context\n",
+            "\nError: the called function was: '%s' BUT it wan not found on "
+            "the context\n",
             getCallee().c_str());
     return nullptr;
   }
@@ -928,19 +927,14 @@ Value* CallExpNode::codegen() {
   llvm::CallInst* call_inst = nullptr;
 
   if (function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
-    fprintf(stderr, "\n############## 10");
     // Cannot assign a name to void values!
     call_inst = Builder.CreateCall(function, args_value);
     call_inst->setCallingConv(CallingConv::C);
     call_inst->setTailCall(false);
-    fprintf(stderr, "\n############## 11");
   } else {
-    fprintf(stderr, "\n############## 12");
     call_inst = Builder.CreateCall(function, args_value, "__call_exp");
-    fprintf(stderr, "\n############## 13");
   }
 
-  fprintf(stderr, "\n############## 14");
   call_inst->dump();
 
   return call_inst;
@@ -1042,22 +1036,20 @@ Value* FunctionDefNode::codegen() {
   while (it_body_nodes != body_nodes->end()) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
-    fprintf(stderr, "\n[## evaluating body: ASTNode of type %s]\n",
-            ASTNode::toString(body_node->getKind()).c_str());
-    // if (yydebug >= 1) {
-    // }
+    if (yydebug >= 1) {
+      fprintf(stderr, "\n[## codegen of body statement (type %s)]\n",
+              ASTNode::toString(body_node->getKind()).c_str());
+    }
 
-    body_node->codegen();
+    Value* body_codegen_value = body_node->codegen();
 
-    fprintf(stderr, "\n[## body evaluated]");
+    if (yydebug >= 1) {
+      body_codegen_value->dump();
+    }
   }
 
-  fprintf(stderr, "\n[## if return_node]");
-
   if (return_node) {
-    fprintf(stderr, "\n[## if return_node 1]");
     Value* return_value = return_node->codegen();
-    fprintf(stderr, "\n[## if return_node 2]");
 
     // Finish off the function by creating the ReturnInst
     if (!return_value ||
@@ -1068,6 +1060,7 @@ Value* FunctionDefNode::codegen() {
       Builder.CreateRetVoid();
     } else {
       if (yydebug >= 1) {
+        return_value->dump();
         fprintf(stderr, "\n[## evaluating return]\n");
       }
       Builder.CreateRet(return_value);
@@ -1075,26 +1068,20 @@ Value* FunctionDefNode::codegen() {
     }
 
   } else {
-    fprintf(stderr, "\n[## if return_node 8]");
     if (yydebug >= 1) {
       fprintf(stdout, "\n[## no return given]\n");
     }
-    fprintf(stderr, "\n[## if return_node 9]");
     Builder.CreateRetVoid();
-    fprintf(stderr, "\n[## if return_node 10]");
   }
-
-  fprintf(stderr, "\n[## verify]");
 
   // Validate the generated code, checking for consistency.
   verifyFunction(*function);
 
-  fprintf(stderr, "\n[## verified]");
-
   // Run the optimizer on the function.
-  fprintf(stderr, "\n[## run]");
   TheFPM->run(*function);
-  // function->dump();
+  if (yydebug >= 1) {
+    function->dump();
+  }
 
   return function;
 }

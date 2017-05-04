@@ -225,7 +225,6 @@ ASTNode *pre_process(ASTNode *node) {
   }
 
   if (isa<CallExpNode>(*node)) {
-    fprintf(stderr, "\n ####################################### CALL NODE!!!!!!!!");
     return new_top_level_exp_node((CallExpNode *)node);
   }
 
