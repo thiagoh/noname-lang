@@ -17,8 +17,6 @@
 using namespace llvm;
 using namespace llvm::orc;
 
-extern int yydebug;
-
 namespace noname {
 
 extern LLVMContext TheContext;
@@ -101,7 +99,7 @@ bool ASTContext::removeVariable(const std::string name) {
 }
 NodeValue* ASTContext::updateVariable(const std::string name,
                                       NodeValue* node_value) {
-  if (yydebug >= 2) {
+  if (noname::debug >= 2) {
     fprintf(stdout, "\n############ looking '%s' on context %s \n",
             name.c_str(), this->getName().c_str());
   }

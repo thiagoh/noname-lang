@@ -297,7 +297,18 @@ void exit_hook() { TheJIT->release(); }
 int main(int argc, char **argv) {
   // http://llvm.org/docs/CommandLine.html#the-cl-getregisteredoptions-function
 
-  cl::opt<bool> force_arg("f", cl::desc("Enable binary output on terminals"));
+  // // ManagedStatic<CommandLineParser> GlobalParser;
+  // // cl::GlobalParser;
+  // StringMap<llvm::cl::Option *> &opts = llvm::cl::getRegisteredOptions();
+  // opts["debug"]->removeArgument();
+
+  // cl::opt<bool> force_arg("f", cl::desc("Enable binary output on
+  // terminals"));
+  cl::opt<int> debug_arg1("app-debug",
+                          cl::desc("Enable application debug 1-4"));
+  cl::opt<int> debug_arg2("d", cl::desc("Enable application debug 1-4"));
+  cl::opt<int> yydebug_arg("yydebug",
+                           cl::desc("Enable yydebug (lexer and parser)"));
   cl::opt<bool> quiet_arg1("quiet",
                            cl::desc("Don't print informational messages"));
   cl::opt<bool> quiet_arg2("q", cl::desc("Don't print informational messages"));
@@ -308,21 +319,17 @@ int main(int argc, char **argv) {
                               " CommandLine compiler example\n\n"
                               "  This program blah blah blah...\n");
 
+  int token;
   bool quiet = quiet_arg1 || quiet_arg2 || quiet_arg3;
 
-  if (quiet) {
-    fprintf(stdout, "\nQUIET");
-  } else {
-    fprintf(stdout, "\nNOT QUIET");
-  }
+  yydebug = yydebug_arg;
+  noname::debug = std::max((int)debug_arg1, (int)debug_arg2);
 
-  int i = atexit(exit_hook);
-  if (i != 0) {
-    fprintf(stderr, "cannot set exit function\n");
+  if (atexit(exit_hook) != 0) {
+    logError("Cannot set exit function\n");
     exit(EXIT_FAILURE);
   }
 
-  int token;
   context = new ASTContext("root");
   context_stack.push(context);
 
@@ -375,8 +382,6 @@ int main(int argc, char **argv) {
   map[299] = "DOUBLE_TOK";
   map[300] = "LONG_TOK";
   map[314] = "NEG_TOK";
-
-  yydebug = 0;
 
   fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]\n");
 

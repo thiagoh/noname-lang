@@ -86,7 +86,7 @@ ASTNode* FunctionDefNode::check() {
                                   "Cannot import inside function definition");
     }
 
-    if (yydebug >= 2) {
+    if (noname::debug >= 2) {
       fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
               ASTNode::toString(bodyNode.get()->getKind()).c_str());
     }
@@ -193,14 +193,14 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
   ReturnInst* return_inst = nullptr;
   // Finish off the function by creating the ReturnInst
   if (!return_value) {
-    if (yydebug >= 1) {
+    if (noname::debug >= 1) {
       fprintf(stderr, "\n[## no return_value nullptr]\n");
     }
     // Builder.CreateRetVoid();
     return_inst = ReturnInst::Create(TheContext);
 
   } else {
-    if (yydebug >= 1) {
+    if (noname::debug >= 1) {
       return_value->dump();
       return_value->print(dbgs(), true);
     }
@@ -254,7 +254,7 @@ Value* FunctionDefNode::codegen() {
   while (it_body_nodes != body_nodes->end()) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
-    if (yydebug >= 1) {
+    if (noname::debug >= 1) {
       fprintf(stderr, "\n[## codegen of body statement (type %s)]",
               ASTNode::toString(body_node->getKind()).c_str());
     }
@@ -262,16 +262,18 @@ Value* FunctionDefNode::codegen() {
     Instruction* body_codegen_value = (Instruction*)body_node->codegen();
     bb->getInstList().push_back(body_codegen_value);
 
-    if (yydebug >= 1) {
+    if (noname::debug >= 1) {
       body_codegen_value->dump();
     }
   }
 
-  if (isa<CallInst>(return_value)) {
-    bb->getInstList().push_back((Instruction*)return_value);
+  if (return_value) {
+    if (isa<CallInst>(return_value)) {
+      bb->getInstList().push_back((Instruction*)return_value);
+    }
   }
 
-  if (yydebug >= 1) {
+  if (noname::debug >= 1) {
     fprintf(stderr, "\n[## adding return inst]");
   }
 
@@ -288,7 +290,7 @@ Value* FunctionDefNode::codegen() {
   // Run the optimizer on the function.
   TheFPM->run(*function);
 
-  if (yydebug >= 1) {
+  if (noname::debug >= 1) {
     function->dump();
   }
 

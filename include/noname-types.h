@@ -97,6 +97,7 @@ extern ProcessorStrategy* assignmentNodeProcessorStrategy;
 extern ProcessorStrategy* callNodeProcessorStrategy;
 extern ProcessorStrategy* importNodeProcessorStrategy;
 
+extern int debug;
 extern ASTContext* context;
 extern std::vector<std::string> imported_files;
 extern std::stack<ASTContext*> context_stack;

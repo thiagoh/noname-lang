@@ -25,6 +25,7 @@ extern FILE* fin;
 
 namespace noname {
 
+int debug = 0;
 extern LLVMContext TheContext;
 extern IRBuilder<> Builder;
 extern std::unique_ptr<Module> TheModule;
