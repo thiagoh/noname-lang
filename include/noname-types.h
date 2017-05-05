@@ -35,7 +35,6 @@
 #include <stack>
 #include <vector>
 
-extern int yydebug;
 extern void yyerror(const char* error_msg);
 
 using namespace llvm;
@@ -150,8 +149,16 @@ AssignmentNode* logErrorV(const char* str);
 ASTNode* logError(ErrorNode* error_node);
 NodeValue* logErrorNV(ErrorNode* error_node);
 
+/// LogError* - These are little helper functions for error handling.
+ASTNode* logError(const char* str);
+FunctionDefNode* logErrorF(const char* str);
+AssignmentNode* logErrorV(const char* str);
+ASTNode* logError(ErrorNode* error_node);
+NodeValue* logErrorNV(ErrorNode* error_node);
 llvm::Value* logErrorLLVM(const char* str);
+llvm::Function* logErrorLLVMF(const char* str);
 llvm::Value* logErrorLLVM(ErrorNode* error_node);
+llvm::Function* logErrorLLVMF(ErrorNode* error_node);
 
 bool is_file_already_imported(const std::string& file_path);
 bool is_file_already_imported(const char* file_path);
@@ -372,100 +379,18 @@ class ASTContext {
   std::string& getName() { return name; }
   ASTContext* getParent() { return parent; }
   // Functions
-  FunctionDefNode* getFunction(const std::string& name) {
-    itFunctions = mFunctions.find(name);
-    if (itFunctions != mFunctions.end()) {
-      return mFunctions[name];
-    }
-
-    ASTContext* parent = this->getParent();
-
-    if (parent) {
-      return parent->getFunction(name);
-    }
-
-    return nullptr;
-  };
-
-  bool storeFunction(const std::string name, FunctionDefNode* function_nomde) {
-    mFunctions[name] = function_nomde;
-    return true;
-  }
-  bool store(const std::string name, FunctionDefNode* function_nomde) {
-    return storeFunction(name, function_nomde);
-  }
+  FunctionDefNode* getFunction(const std::string& name);
+  bool storeFunction(const std::string name, FunctionDefNode* function_nomde);
+  bool store(const std::string name, FunctionDefNode* function_nomde);
   // Variables
-  NodeValue* getVariableShallow(const std::string& name) {
-    itVariables = mVariables.find(name);
-    if (itVariables != mVariables.end()) {
-      return mVariables[name];
-    }
-
-    return nullptr;
-  };
-
-  NodeValue* getVariable(const std::string& name) {
-    itVariables = mVariables.find(name);
-    if (itVariables != mVariables.end()) {
-      return mVariables[name];
-    }
-
-    ASTContext* parent = this->getParent();
-
-    if (parent) {
-      return parent->getVariable(name);
-    }
-
-    return nullptr;
-  };
-  bool storeVariable(const std::string name, NodeValue* node_value) {
-    mVariables[name] = node_value;
-    return true;
-  }
-  bool store(const std::string name, NodeValue* node_value) {
-    return storeVariable(name, node_value);
-  }
-  bool removeFunction(const std::string name) {
-    itFunctions = mFunctions.find(name);
-    if (itFunctions != mFunctions.end()) {
-      mFunctions.erase(itFunctions);
-      return true;
-    }
-    return false;
-  }
-  bool removeVariable(const std::string name) {
-    itVariables = mVariables.find(name);
-    if (itVariables != mVariables.end()) {
-      mVariables.erase(itVariables);
-      return true;
-    }
-    return false;
-  }
-  NodeValue* updateVariable(const std::string name, NodeValue* node_value) {
-    if (yydebug >= 2) {
-      fprintf(stdout, "\n############ looking '%s' on context %s \n",
-              name.c_str(), this->getName().c_str());
-    }
-
-    itVariables = mVariables.find(name);
-
-    if (itVariables != mVariables.end()) {
-      mVariables[name] = node_value;
-      return node_value;
-    }
-
-    ASTContext* parent = this->getParent();
-
-    if (parent) {
-      return parent->update(name, node_value);
-    }
-
-    std::string error_msg("Variable '" + name + "' is not defined");
-    return logErrorNV(new LogicErrorNode(this, error_msg));
-  }
-  NodeValue* update(const std::string name, NodeValue* node_value) {
-    return updateVariable(name, node_value);
-  }
+  NodeValue* getVariableShallow(const std::string& name);
+  NodeValue* getVariable(const std::string& name);
+  bool storeVariable(const std::string name, NodeValue* node_value);
+  bool store(const std::string name, NodeValue* node_value);
+  bool removeFunction(const std::string name);
+  bool removeVariable(const std::string name);
+  NodeValue* updateVariable(const std::string name, NodeValue* node_value);
+  NodeValue* update(const std::string name, NodeValue* node_value);
 };
 
 class NodeValue {
@@ -842,6 +767,8 @@ class ImportNode : public ASTNode {
     return S->getKind() == AST_NODE_TYPE_IMPORT;
   }
 };
+ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
+                                         ExpNode* exp_node);
 
 // FunctionDefNode - Node class for function definition.
 class FunctionDefNode : public ASTNode {
@@ -856,90 +783,18 @@ class FunctionDefNode : public ASTNode {
   FunctionDefNode(ASTContext* context, const std::string& name,
                   std::vector<std::unique_ptr<arg_t>>& args,
                   std::vector<std::unique_ptr<ASTNode>>& body_nodes,
-                  ExpNode* returnNode)
-      : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
-        name(name),
-        args(std::move(args)),
-        bodyNodes(std::move(body_nodes)),
-        returnNode(std::move(returnNode)) {}
+                  ExpNode* returnNode);
   FunctionDefNode(ASTContext* context, const std::string& name,
                   arglist_t* head_arg_list, stmtlist_t* head_stmt_list,
-                  ExpNode* returnNode)
-      : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
-        name(name),
-        args(std::vector<std::unique_ptr<arg_t>>()),
-        bodyNodes(std::vector<std::unique_ptr<ASTNode>>()),
-        returnNode(std::move(returnNode)) {
-    arglist_node_t* arglist_node = head_arg_list->first;
-    stmtlist_node_t* stmtlist_node = head_stmt_list->first;
-    do {
-      if (arglist_node && arglist_node->arg) {
-        args.push_back(std::unique_ptr<arg_t>(arglist_node->arg));
-        arglist_node = arglist_node->next;
-      }
-    } while (arglist_node);
-
-    do {
-      if (stmtlist_node && stmtlist_node->node) {
-        bodyNodes.push_back(std::unique_ptr<ASTNode>(stmtlist_node->node));
-        stmtlist_node = stmtlist_node->next;
-      }
-    } while (stmtlist_node);
-  }
+                  ExpNode* returnNode);
 
   // void* eval() override;
-
-  ASTNode* check() override {
-    ASTContext* context = getContext();
-
-    FunctionDefNode* function_node = context->getFunction(name);
-    if (function_node) {
-      char error_message[2048];
-      snprintf(error_message, 2048,
-               "Function '%s' already exists in this context. %s", name.c_str(),
-               context->getName().c_str());
-      return new LogicErrorNode(context, error_message);
-    }
-
-    std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes =
-        bodyNodes.begin();
-
-    for (; it_body_nodes != bodyNodes.end();) {
-      std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
-
-      if (isa<ImportNode>(*bodyNode.get())) {
-        return new InvalidStatement(context,
-                                    "Cannot import inside function definition");
-      }
-
-      if (yydebug >= 2) {
-        fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
-                ASTNode::toString(bodyNode.get()->getKind()).c_str());
-      }
-      ++it_body_nodes;
-    }
-
-    if (returnNode && isa<ImportNode>(*returnNode)) {
-      return new InvalidStatement(context,
-                                  "Cannot import inside function definition");
-    }
-
-    return this;
-  }
-
+  ASTNode* check() override;
   const std::string& getName() const { return name; }
   std::vector<std::unique_ptr<arg_t>>& getArgs() { return args; }
   std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() { return bodyNodes; }
   ExpNode* getReturnNode() { return returnNode; }
-  llvm::Type* getReturnLLVMType(LLVMContext& TheContext) {
-    if (!returnLLVMType) {
-      fprintf(stderr, "Function %s has no return type set", name.c_str());
-      exit(1);
-      return llvm::Type::getVoidTy(TheContext);
-    }
-
-    return returnLLVMType;
-  }
+  llvm::Type* getReturnLLVMType(LLVMContext& TheContext);
 
   virtual Value* codegen() override;
   Function* getFunctionDefinition(Value* return_value = nullptr);

@@ -17,6 +17,7 @@
 // #include "llvm/Target/TargetMachine.h"
 // #include "llvm/Transforms/Scalar.h"
 // #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm-c/BitWriter.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/raw_ostream.h"
@@ -290,8 +291,31 @@ int yylex(void) {
 }
 
 void yyerror(char const *s) { fprintf(stdout, "\nERROR: %s\n", s); }
+
 void exit_hook() { TheJIT->release(); }
+
 int main(int argc, char **argv) {
+  // http://llvm.org/docs/CommandLine.html#the-cl-getregisteredoptions-function
+
+  cl::opt<bool> force_arg("f", cl::desc("Enable binary output on terminals"));
+  cl::opt<bool> quiet_arg1("quiet",
+                           cl::desc("Don't print informational messages"));
+  cl::opt<bool> quiet_arg2("q", cl::desc("Don't print informational messages"));
+  cl::opt<bool> quiet_arg3(
+      "no-verbose", cl::desc("Don't print informational messages"), cl::Hidden);
+
+  cl::ParseCommandLineOptions(argc, argv,
+                              " CommandLine compiler example\n\n"
+                              "  This program blah blah blah...\n");
+
+  bool quiet = quiet_arg1 || quiet_arg2 || quiet_arg3;
+
+  if (quiet) {
+    fprintf(stdout, "\nQUIET");
+  } else {
+    fprintf(stdout, "\nNOT QUIET");
+  }
+
   int i = atexit(exit_hook);
   if (i != 0) {
     fprintf(stderr, "cannot set exit function\n");
