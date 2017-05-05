@@ -933,6 +933,8 @@ class FunctionDefNode : public ASTNode {
   ExpNode* getReturnNode() { return returnNode; }
   llvm::Type* getReturnLLVMType(LLVMContext& TheContext) {
     if (!returnLLVMType) {
+      fprintf(stderr, "Function %s has no return type set", name.c_str());
+      exit(1);
       return llvm::Type::getVoidTy(TheContext);
     }
 
@@ -940,7 +942,7 @@ class FunctionDefNode : public ASTNode {
   }
 
   virtual Value* codegen() override;
-  Function* getFunctionDefinition();
+  Function* getFunctionDefinition(Value* return_value = nullptr);
   ProcessorStrategy* getProcessorStrategy() override {
     return functionDefNodeProcessorStrategy;
   };
@@ -950,6 +952,10 @@ class FunctionDefNode : public ASTNode {
   static bool classof(const ASTNode* S) {
     return S->getKind() == AST_NODE_TYPE_DEF_FUNCTION;
   }
+
+ private:
+  llvm::ReturnInst* getLLVMReturnInst(Value* return_value);
+  llvm::Type* getLLVMReturnInstType(llvm::Value* return_value);
 };
 
 class TopLevelExpNode : public ExpNode {
@@ -970,9 +976,9 @@ class TopLevelExpNode : public ExpNode {
   virtual Value* codegen() override;
   void* release();
   llvm::Type* getReturnLLVMType(LLVMContext& TheContext) {
-    if (!anonymous_def_node) {
-      return nullptr;
-    }
+    // if (!anonymous_def_node) {
+    //   return nullptr;
+    // }
     return anonymous_def_node->getReturnLLVMType(TheContext);
   }
   ProcessorStrategy* getProcessorStrategy() override {

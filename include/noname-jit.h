@@ -51,11 +51,6 @@ class NonameJIT {
         DL(TM->createDataLayout()),
         CompileLayer(ObjectLayer, SimpleCompiler(*TM)) {
     llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
-
-    // then run llvm-dis output.bc
-    output_file = fopen(output_filename, "w");
-    output_filedescriptor = fileno(output_file);
-    // os = new raw_fd_ostream(output_filedescriptor, false, false);
   }
 
   TargetMachine &getTargetMachine() { return *TM; }
@@ -92,26 +87,35 @@ class NonameJIT {
     return findMangledSymbol(mangle(Name));
   }
 
+  // TODO FIXME
   void writeToFile(const Module *mod) {
-    raw_fd_ostream os(output_filedescriptor, false, false);
+    // then run llvm-dis output.bc
 
+    std::string sname = "bc-output/";
+    sname += mod->getName().str();
+    sname += ".bc";
+    const char *output_filename = sname.c_str();
+    FILE *output_file = fopen(output_filename, "w");
+    int output_filedescriptor = fileno(output_file);
+
+    raw_fd_ostream os(output_filedescriptor, false, false);
     fprintf(stdout, "\n[module write]");
     llvm::WriteBitcodeToFile(mod, os);
+    // fclose(output_file);
   }
 
+  // TODO FIXME
   void writeToFile() {
-    raw_fd_ostream os(output_filedescriptor, false, false);
-
+    // raw_fd_ostream os(output_filedescriptor, false, false);
     for (auto &mod : Modules) {
       fprintf(stdout, "\n[module write]");
-      llvm::WriteBitcodeToFile(mod, os);
+      // llvm::WriteBitcodeToFile(mod, os);
+      writeToFile(mod);
     }
   }
 
-  void release() {
-    this->writeToFile();
-    fclose(output_file);
-  }
+  // TODO FIXME
+  void release() { this->writeToFile(); }
 
  private:
   std::string mangle(const std::string &Name) {
@@ -143,10 +147,6 @@ class NonameJIT {
 
     return nullptr;
   }
-
-  const char *output_filename = "output.bc";
-  FILE *output_file;
-  int output_filedescriptor;
 
   std::unique_ptr<TargetMachine> TM;
   const DataLayout DL;

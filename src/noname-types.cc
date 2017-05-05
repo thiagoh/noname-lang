@@ -68,7 +68,17 @@ llvm::Value* logErrorLLVM(const char* str) {
   return nullptr;
 }
 
+llvm::Function* logErrorLLVMF(const char* str) {
+  logError(str);
+  return nullptr;
+}
+
 llvm::Value* logErrorLLVM(ErrorNode* error_node) {
+  logError(error_node->what().c_str());
+  return nullptr;
+}
+
+llvm::Function* logErrorLLVMF(ErrorNode* error_node) {
   logError(error_node->what().c_str());
   return nullptr;
 }
@@ -115,11 +125,47 @@ void print_node_value(NodeValue* node_value) {
   print_node_value(stdout, node_value);
 }
 
-void call_and_print_jit_symbol_value(FILE* file, LLVMContext& TheContext,
-                                     llvm::Type* result_type,
-                                     JITSymbol& jit_symbol) {
-  fprintf(file, "\n###########[fixme] I should call or print only");
+void* call_jit_symbol(LLVMContext& TheContext, llvm::Type* result_type,
+                      JITSymbol& jit_symbol) {
+  void* result = nullptr;
+  // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
+  if (!result_type) {
+    assert(result_type && "Result type is null");
+  } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
+    ;
+  } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
+    double (*function_pointer)() =
+        (double (*)())(intptr_t)jit_symbol.getAddress();
+    result = new double(function_pointer());
 
+  } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
+    float (*function_pointer)() =
+        (float (*)())(intptr_t)jit_symbol.getAddress();
+    result = new float(function_pointer());
+
+  } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
+    long (*function_pointer)() = (long (*)())(intptr_t)jit_symbol.getAddress();
+    result = new long(function_pointer());
+
+  } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
+    int (*function_pointer)() = (int (*)())(intptr_t)jit_symbol.getAddress();
+    result = new int(function_pointer());
+
+  } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
+    short (*function_pointer)() =
+        (short (*)())(intptr_t)jit_symbol.getAddress();
+    result = new short(function_pointer());
+
+  } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
+    char (*function_pointer)() = (char (*)())(intptr_t)jit_symbol.getAddress();
+    result = new char(function_pointer());
+  }
+
+  return result;
+}
+
+void print_jit_symbol_value(FILE* file, LLVMContext& TheContext,
+                            llvm::Type* result_type, void* result) {
   // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
   if (yydebug >= 2) {
     if (!result_type) {
@@ -127,81 +173,75 @@ void call_and_print_jit_symbol_value(FILE* file, LLVMContext& TheContext,
     } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] undef");
     } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
-      double (*function_pointer)() =
-          (double (*)())(intptr_t)jit_symbol.getAddress();
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %lf",
-              function_pointer());
+              *(double*)result);
 
     } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
-      float (*function_pointer)() =
-          (float (*)())(intptr_t)jit_symbol.getAddress();
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %f",
-              function_pointer());
+              *(float*)result);
 
     } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
-      long (*function_pointer)() =
-          (long (*)())(intptr_t)jit_symbol.getAddress();
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %ld",
-              function_pointer());
+              *(long*)result);
 
     } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
-      int (*function_pointer)() = (int (*)())(intptr_t)jit_symbol.getAddress();
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %d",
-              function_pointer());
+              *(int*)result);
 
     } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
-      short (*function_pointer)() =
-          (short (*)())(intptr_t)jit_symbol.getAddress();
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %hd",
-              function_pointer());
+              *(short*)result);
 
     } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
-      char (*function_pointer)() =
-          (char (*)())(intptr_t)jit_symbol.getAddress();
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %c",
-              function_pointer());
+              *(char*)result);
     }
   } else {
+    fprintf(file, "\n[printing result]");
     if (!result_type) {
       assert(result_type && "Result type is null");
     } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
       fprintf(file, "undef");
     } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
-      double (*function_pointer)() =
-          (double (*)())(intptr_t)jit_symbol.getAddress();
-      fprintf(file, "%lf", function_pointer());
+      fprintf(file, "%lf", *(double*)result);
 
     } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
-      float (*function_pointer)() =
-          (float (*)())(intptr_t)jit_symbol.getAddress();
-      fprintf(file, "%f", function_pointer());
+      fprintf(file, "%f", *(float*)result);
 
     } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
-      long (*function_pointer)() =
-          (long (*)())(intptr_t)jit_symbol.getAddress();
-      fprintf(file, "%ld", function_pointer());
+      fprintf(file, "%ld", *(long*)result);
 
     } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
-      int (*function_pointer)() = (int (*)())(intptr_t)jit_symbol.getAddress();
-      fprintf(file, "%d", function_pointer());
+      fprintf(file, "%d", *(int*)result);
 
     } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
-      short (*function_pointer)() =
-          (short (*)())(intptr_t)jit_symbol.getAddress();
-      fprintf(file, "%hd", function_pointer());
+      fprintf(file, "%hd", *(short*)result);
 
     } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
-      char (*function_pointer)() =
-          (char (*)())(intptr_t)jit_symbol.getAddress();
-      fprintf(file, "%c", function_pointer());
+      fprintf(file, "%c", *(char*)result);
+    } else {
+      fprintf(file, "no such type found");
     }
   }
 }
+void print_jit_symbol_value(LLVMContext& TheContext, llvm::Type* result_type,
+                            void* result) {
+  print_jit_symbol_value(stdout, TheContext, result_type, result);
+}
+void* call_and_print_jit_symbol_value(FILE* file, LLVMContext& TheContext,
+                                      llvm::Type* result_type,
+                                      JITSymbol& jit_symbol) {
+  fprintf(file, "\n###########[fixme] I should call or print only");
+  void* result = call_jit_symbol(TheContext, result_type, jit_symbol);
+  print_jit_symbol_value(file, TheContext, result_type, result);
+  return result;
+}
 
-void call_and_print_jit_symbol_value(LLVMContext& TheContext,
-                                     llvm::Type* result_type,
-                                     JITSymbol& jit_symbol) {
-  call_and_print_jit_symbol_value(stdout, TheContext, result_type, jit_symbol);
+void* call_and_print_jit_symbol_value(LLVMContext& TheContext,
+                                      llvm::Type* result_type,
+                                      JITSymbol& jit_symbol) {
+  return call_and_print_jit_symbol_value(stdout, TheContext, result_type,
+                                         jit_symbol);
 }
 
 // ReturnNode* new_return(ASTContext* context, ExpNode* exp_node) {
@@ -488,7 +528,6 @@ ASTNode* new_function_def(ASTContext* context, const std::string name,
   ASTNode* check_result = new_node->check();
 
   if (check_result && isa<ErrorNode>(*check_result)) {
-    // logError((ErrorNode*)check_result);
     return check_result;
   }
 
@@ -835,9 +874,9 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
     fprintf(stderr, "\nTop level expression could not be evaluated");
   } else {
     if (yydebug >= 1) {
-      fprintf(stderr, "\n[read top level expression]");
-      top_level_node_ir->dump();
     }
+    fprintf(stderr, "\n[read top level expression]");
+    top_level_node_ir->dump();
 
     // JIT the module containing the anonymous expression, keeping a handle so
     // we can free it later.
@@ -851,6 +890,10 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
 
     llvm::Type* result_type = top_level_exp_node->getReturnLLVMType(TheContext);
     assert(result_type && "Result type is null");
+
+    // result_type->print(dbgs(), true);
+
+    // fprintf(stderr, "\n[type: %d]", result_type->getTypeID());
 
     call_and_print_jit_symbol_value(stdout, TheContext, result_type,
                                     ExprSymbol);
@@ -892,7 +935,6 @@ Value* CallExpNode::codegen() {
     return logErrorLLVM("Unknown function referenced");
   }
 
-  // ExpNode* returnNode = function_node->getReturnNode();
   std::vector<std::unique_ptr<ExpNode>>& value_args = getArgs();
 
   // If argument mismatch error.
@@ -928,14 +970,19 @@ Value* CallExpNode::codegen() {
 
   if (function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
     // Cannot assign a name to void values!
-    call_inst = Builder.CreateCall(function, args_value);
-    call_inst->setCallingConv(CallingConv::C);
+    // call_inst = Builder.CreateCall(function, args_value);
+    call_inst = CallInst::Create(function, args_value);
     call_inst->setTailCall(false);
   } else {
-    call_inst = Builder.CreateCall(function, args_value, "__call_exp");
+    // call_inst = Builder.CreateCall(function, args_value, "__call_exp");
+    call_inst = CallInst::Create(function, args_value, "__call_exp");
   }
 
-  call_inst->dump();
+  call_inst->setCallingConv(CallingConv::C);
+
+  if (yydebug >= 1) {
+    call_inst->dump();
+  }
 
   return call_inst;
 }
@@ -947,7 +994,7 @@ void* TopLevelExpNode::release() {
 
   return nullptr;
 }
-Function* FunctionDefNode::getFunctionDefinition() {
+Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
   // First, see if the function has already been added to the current module.
   Function* function = TheModule->getFunction(name);
 
@@ -955,10 +1002,24 @@ Function* FunctionDefNode::getFunctionDefinition() {
     return function;
   }
 
+  llvm::Type* return_type = nullptr;
+  if (!return_value) {
+    ExpNode* return_node = getReturnNode();
+    if (return_node) {
+      return_value = return_node->codegen();
+      ReturnInst* return_inst = getLLVMReturnInst(return_value);
+      if (!return_inst) {
+        return logErrorLLVMF("ReturnInst is null");
+      }
+    }
+  }
+  return_type = getLLVMReturnInstType(return_value);
+
   // Make the function type:  double(double,double) etc.
-  std::vector<Type*> arg_types(args.size(), Type::getVoidTy(TheContext));
+  std::vector<llvm::Type*> arg_types(args.size(), Type::getVoidTy(TheContext));
+
   FunctionType* function_type =
-      FunctionType::get(Type::getVoidTy(TheContext), arg_types, false);
+      FunctionType::get(return_type, arg_types, false);
 
   function = Function::Create(function_type, Function::ExternalLinkage, name,
                               TheModule.get());
@@ -988,30 +1049,73 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
 
   return function_def_node;
 }
+llvm::Type* FunctionDefNode::getLLVMReturnInstType(llvm::Value* return_value) {
+  if (isa<CallInst>(return_value)) {
+    fprintf(stderr, "\n[## isa CallInst ]\n");
+    CallInst* call_inst = (CallInst*)return_value;
+    Function* f = call_inst->getCalledFunction();
+    f->dump();
+    llvm::Type* t = f->getReturnType();
+    t->print(dbgs(), true);
+
+    this->returnLLVMType = t;
+
+  } else {
+    fprintf(stderr, "\n[## is NOT a CallInst ]\n");
+    this->returnLLVMType = return_value->getType();
+  }
+
+  return this->returnLLVMType;
+}
+llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
+  ReturnInst* return_inst = nullptr;
+  // Finish off the function by creating the ReturnInst
+  if (!return_value) {
+    if (yydebug >= 1) {
+    }
+    fprintf(stderr, "\n[## no return_value nullptr]\n");
+    // Builder.CreateRetVoid();
+    return_inst = ReturnInst::Create(TheContext);
+
+  } else {
+    if (yydebug >= 1) {
+    }
+    // return_value->dump();
+
+    fprintf(stderr, "\n[## 1111]");
+    return_value->print(dbgs(), true);
+    fprintf(stderr, "\n[## 2222]");
+    return_value->getType()->print(dbgs(), true);
+    fprintf(stderr, "\n[## 3333]");
+    fprintf(stderr, "\n[## setting return type of %s ]\n", name.c_str());
+
+    // Builder.CreateRet(return_value);
+    return_inst = ReturnInst::Create(TheContext, return_value);
+  }
+
+  return return_inst;
+}
 Value* FunctionDefNode::codegen() {
-  // FunctionProtos[Proto->getName()] = std::move(Proto);
-  Function* function = getFunctionDefinition();
+  fprintf(stderr, "\n[## codegen of %s ]", name.c_str());
+
+  ExpNode* return_node = getReturnNode();
+  Value* return_value = nullptr;
+  if (return_node) {
+    return_value = return_node->codegen();
+  }
+  ReturnInst* return_inst = getLLVMReturnInst(return_value);
+  Function* function = getFunctionDefinition(return_value);
+
   if (!function) {
+    fprintf(stderr, "\nError: function %s not defined", name.c_str());
     return nullptr;
   }
 
   // Create a new basic block to start insertion into.
-  BasicBlock* basic_block = BasicBlock::Create(TheContext, "entry", function);
-  Builder.SetInsertPoint(basic_block);
+  BasicBlock* bb = BasicBlock::Create(TheContext, "entry", function);
+  // Builder.SetInsertPoint(bb);
 
-  // Record the function arguments in the NamedValues map.
-  // NamedValues.clear();
-  // for (auto& Arg : function->args()) {
-  //   NamedValues[Arg.getName()] = &Arg;
-  // }
-
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
   ASTContext* function_def_node_context = getContext();
-  ExpNode* return_node = getReturnNode();
   std::vector<std::unique_ptr<arg_t>>* signature_args = &getArgs();
   std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args =
       signature_args->begin();
@@ -1035,51 +1139,34 @@ Value* FunctionDefNode::codegen() {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
     if (yydebug >= 1) {
-      fprintf(stderr, "\n[## codegen of body statement (type %s)]\n",
-              ASTNode::toString(body_node->getKind()).c_str());
     }
+    fprintf(stderr, "\n[## codegen of body statement (type %s)]",
+            ASTNode::toString(body_node->getKind()).c_str());
 
-    Value* body_codegen_value = body_node->codegen();
+    Instruction* body_codegen_value = (Instruction*)body_node->codegen();
+    bb->getInstList().push_back(body_codegen_value);
 
     if (yydebug >= 1) {
-      body_codegen_value->dump();
     }
+    body_codegen_value->dump();
   }
 
-  if (return_node) {
-    Value* return_value = return_node->codegen();
-
-    // Finish off the function by creating the ReturnInst
-    if (!return_value ||
-        return_value->getType() == llvm::Type::getVoidTy(TheContext)) {
-      if (yydebug >= 1) {
-        fprintf(stderr, "\n[## no return given]\n");
-      }
-      Builder.CreateRetVoid();
-    } else {
-      if (yydebug >= 1) {
-        return_value->dump();
-        fprintf(stderr, "\n[## evaluating return]\n");
-      }
-      Builder.CreateRet(return_value);
-      returnLLVMType = return_value->getType();
-    }
-
-  } else {
-    if (yydebug >= 1) {
-      fprintf(stdout, "\n[## no return given]\n");
-    }
-    Builder.CreateRetVoid();
+  if (isa<CallInst>(return_value)) {
+    bb->getInstList().push_back((Instruction*)return_value);
   }
+
+  fprintf(stderr, "\n[## adding return inst]");
+  bb->getInstList().push_back(return_inst);
 
   // Validate the generated code, checking for consistency.
   verifyFunction(*function);
 
   // Run the optimizer on the function.
   TheFPM->run(*function);
+
   if (yydebug >= 1) {
-    function->dump();
   }
+  function->dump();
 
   return function;
 }
@@ -1252,7 +1339,9 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
   args_values.push_back(L);
   args_values.push_back(R);
 
-  return Builder.CreateCall(pow_function, args_values, name);
+  // return Builder.CreateCall(pow_function, args_values, name);
+  fprintf(stderr, "\nError: pow function not implemented");
+  return nullptr;
 }
 
 Value* BinaryExpNode::codegen() {
@@ -1271,15 +1360,56 @@ Value* BinaryExpNode::codegen() {
     return result;
   }
 
+  ////////////////////////////////
+  ////////////////////////////////
+  ////////////////////////////////
+  ////////////////////////////////
+
+  /*
+  how to insert into correct point
+  http://llvm.org/docs/doxygen/html/Instruction_8cpp_source.html#l00023
+  Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
+                          Instruction *InsertBefore)
+   : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
+
+   // If requested, insert this instruction into a basic block...
+   if (InsertBefore) {
+     BasicBlock *BB = InsertBefore->getParent();
+     assert(BB && "Instruction to insert before is not in a basic block!");
+     BB->getInstList().insert(InsertBefore->getIterator(), this);
+   }
+ }
+
+ Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
+                          BasicBlock *InsertAtEnd)
+   : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
+
+   // append this instruction into the basic block
+   assert(InsertAtEnd && "Basic block to append to may not be NULL!");
+   InsertAtEnd->getInstList().push_back(this);
+ }
+
+
+  */
+
+  ////////////////////////////////
+  ////////////////////////////////
+  ////////////////////////////////
+  ////////////////////////////////
+
   if (result_type == TYPE_DOUBLE || result_type == TYPE_FLOAT) {
     if (op == '+') {
-      result = Builder.CreateFAdd(L, R, "addtmp");
+      // result = Builder.CreateFAdd(L, R, "addtmp");
+      result = BinaryOperator::Create(Instruction::FAdd, L, R, "add");
     } else if (op == '-') {
-      result = Builder.CreateFSub(L, R, "addtmp");
+      // result = Builder.CreateFSub(L, R, "addtmp");
+      result = BinaryOperator::Create(Instruction::FSub, L, R, "sub");
     } else if (op == '*') {
-      result = Builder.CreateFMul(L, R, "multmp");
+      // result = Builder.CreateFMul(L, R, "multmp");
+      result = BinaryOperator::Create(Instruction::FMul, L, R, "mul");
     } else if (op == '/') {
-      result = Builder.CreateFDiv(L, R, "divtmp");
+      // result = Builder.CreateFDiv(L, R, "divtmp");
+      result = BinaryOperator::Create(Instruction::FDiv, L, R, "div");
     } else if (op == '^') {
       result = CreatePow(L, R);
     }
@@ -1290,13 +1420,17 @@ Value* BinaryExpNode::codegen() {
     int typed_rhs_value = *(int*)rhs_value;
 
     if (op == '+') {
-      result = Builder.CreateAdd(L, R, "addtmp");
+      // result = Builder.CreateAdd(L, R, "addtmp");
+      result = BinaryOperator::Create(Instruction::Add, L, R, "add");
     } else if (op == '-') {
-      result = Builder.CreateSub(L, R, "addtmp");
+      // result = Builder.CreateSub(L, R, "addtmp");
+      result = BinaryOperator::Create(Instruction::Sub, L, R, "sub");
     } else if (op == '*') {
-      result = Builder.CreateMul(L, R, "multmp");
+      // result = Builder.CreateMul(L, R, "multmp");
+      result = BinaryOperator::Create(Instruction::Mul, L, R, "mul");
     } else if (op == '/') {
-      result = Builder.CreateSDiv(L, R, "divtmp");
+      // result = Builder.CreateSDiv(L, R, "divtmp");
+      result = BinaryOperator::Create(Instruction::SDiv, L, R, "div");
 
       // cast from int to double
       // Builder.CreateSIToFP(result, Type * DestTy, const Twine& Name = "")
