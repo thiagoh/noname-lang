@@ -1116,28 +1116,30 @@ ProcessorStrategy* importNodeProcessorStrategy =
 //===----------------------------------------------------------------------===//
 
 Value* NodeValue::codegen(BasicBlock* bb) {
-  Value* llvm_value = nullptr;
+  Value* codegen = nullptr;
 
   if (type == TYPE_DOUBLE) {
-    llvm_value = ConstantFP::get(TheContext, APFloat(*(double*)value));
+    APFloat ap_value(*(double*)value);
+    codegen = ConstantFP::get(TheContext, ap_value, 10);
   } else if (type == TYPE_FLOAT) {
-    llvm_value = ConstantFP::get(TheContext, APFloat(*(float*)value));
+    APFloat ap_value(*(float*)value);
+    codegen = ConstantFP::get(TheContext, ap_value, 10);
   } else if (type == TYPE_LONG) {
-    APInt v(CHAR_BIT * sizeof(long), *(long*)value, true);
-    llvm_value = ConstantInt::get(TheContext, v);
+    APInt ap_value(CHAR_BIT * sizeof(long), *(long*)value, true);
+    codegen = ConstantInt::get(TheContext, ap_value, 10);
   } else if (type == TYPE_INT) {
     // APInt (unsigned numBits, uint64_t val, bool isSigned=false)
-    APInt v(CHAR_BIT * sizeof(int), *(int*)value, true);
-    llvm_value = ConstantInt::get(TheContext, v);
+    APInt ap_value(CHAR_BIT * sizeof(int), *(int*)value, true);
+    codegen = ConstantInt::get(TheContext, ap_value, 10);
   } else if (type == TYPE_SHORT) {
-    APInt v(CHAR_BIT * sizeof(short), *(short*)value, true);
-    llvm_value = ConstantInt::get(TheContext, v);
+    APInt ap_value(CHAR_BIT * sizeof(short), *(short*)value, true);
+    codegen = ConstantInt::get(TheContext, ap_value, 10);
   } else if (type == TYPE_CHAR) {
-    APInt v(CHAR_BIT * sizeof(char), *(char*)value, true);
-    llvm_value = ConstantInt::get(TheContext, v);
+    APInt ap_value(CHAR_BIT * sizeof(char), *(char*)value, true);
+    codegen = ConstantInt::get(TheContext, ap_value, 10);
   }
 
-  return llvm_value;
+  return codegen;
 }
 
 Value* NumberExpNode::codegen(BasicBlock* bb) {
@@ -1154,33 +1156,116 @@ Value* StringExpNode::codegen(BasicBlock* bb) {
   NodeValue* node = this->getValue();
 
   if (!node) {
-    fprintf(stdout, "\n\n############ could not resolve string expression");
+    logError("Could not resolve string expression");
     return nullptr;
   }
 
   return node->codegen();
 }
-Value* AssignmentNode::codegen(BasicBlock* bb) {
-  fprintf(
-      stderr,
-      "\n[Value* AssignmentNode::codegen(BasicBlock *bb) - NOT IMPLEMENTED]");
-  return nullptr;
+std::vector<std::unique_ptr<Value>> declarationCodegen(ASTNode* node) {
+  std::string alloca_name = "decl_alloca_";
+
+  if (isa<DeclarationNode>(node)) {
+    DeclarationNode* declaration = (DeclarationNode*)node;
+    alloca_name += declaration.getName();
+
+  } else if (isa<DeclarationAssignmentNode>(node)) {
+    DeclarationAssignmentNode* declaration = (DeclarationAssignmentNode*)node;
+    alloca_name += declaration.getName();
+  }
+
+  AllocaInst* alloca_inst = new AllocaInst(PointerTy_4, alloca_name);
+  alloca_inst->setAlignment(8);
+
+  std::vector<std::unique_ptr<Value>> codegen(std::vector());
+  codegen.push_back(alloca_inst);
+  return codegen;
 }
+
+std::vector<std::unique_ptr<Value>> DeclarationNode::codegen_elements(BasicBlock* bb) {
+  return declarationCodegen(this, bb);
+}
+std::vector<std::unique_ptr<Value>> DeclarationAssignmentNode::codegen_elements(BasicBlock* bb) {
+
+  std::vector<std::unique_ptr<Value>> declaration_codegen = declarationCodegen(this, bb);
+  std::vector<std::unique_ptr<Value>> assign_codegen = assignCodegen(this, bb);
+  std::vector<std::unique_ptr<Value>> codegen(std::vector());
+  codegen.insert(codegen.end(), declaration_codegen.begin(), declaration_codegen.end());
+  codegen.insert(codegen.end(), assign_codegen.begin(), assign_codegen.end());
+  
+  return codegen;
+}
+
+std::vector<std::unique_ptr<Value>> assignCodegen(Assignment* assignment) {
+
+  std::vector<std::unique_ptr<Value>> codegen(std::vector());
+  
+  /**
+    * Instructions for this method can be found at:docs/declare-and-assign.cc
+    */
+
+  std::string voidp_alloca_name = "voidp_alloca_";
+  voidp_alloca_name += assignment->getName();
+  std::unique_ptr<ExpNode>rhs = assignment->geRHS();
+
+  /**
+  * user level untyped variable
+  * declare the "untyped"  variable that will ultimately point to the value
+  */
+  AllocaInst* voidp_alloca = new AllocaInst(PointerTy_4, voidp_alloca_name);
+  voidp_alloca->setAlignment(8);
+  codegen.push_back(voidp_alloca);
+  
+  // create the actual Constant value
+  // ConstantInt* value_const = ConstantInt::get(mod->getContext(), APInt(32, StringRef("100"), 10));
+  std::vector<std::unique_ptr<Value>> value_codegen_elements = assignment->codegen_elements();
+  codegen.insert(codegen.end(), value_codegen_elements.begin(), value_codegen_elements.end());
+
+  // alocate the "typed" variable that will handle the Constant value
+  AllocaInst* typed_pointer_alloca = new AllocaInst(IntegerType::get(mod->getContext(), 32), "int_v");
+  typed_pointer_alloca->setAlignment(4);
+  codegen.push_back(typed_pointer_alloca);
+
+  // store the Constant into the allocated "typed" variable
+  StoreInst* void_34 = new StoreInst(value_const, typed_pointer_alloca, false);
+  void_34->setAlignment(4);
+  codegen.push_back(void_34);
+
+  // Cast the the "typed" variable to the "untyped" variable
+  CastInst* casted_inst = new BitCastInst(typed_pointer_alloca, PointerTy_4, "");
+  codegen.push_back(casted_inst);
+
+  // Store the address of the 
+  StoreInst* voidp_store = new StoreInst(casted_inst, voidp_alloca, false);
+  voidp_store->setAlignment(8);
+  codegen.push_back(voidp_store);
+  
+  return codegen;
+}
+Value* AssignmentNode::codegen(BasicBlock* bb) { 
+
+  std::vector<std::unique_ptr<Value>> codegen_elements(this->codegen_elements());
+
+  if (bb) {
+    for (Value* value: codegen_elements) {
+      bb->getInstList().push_back(body_codegen_value);
+    }
+  }
+  
+  return codegen_elements.back();
+ }
 Value* DeclarationAssignmentNode::codegen(BasicBlock* bb) {
-  std::string alloca_name = "alloca_" + name;
-  AllocaInst* alloca_inst = new AllocaInst(PointerTy_4, alloca_name);
-  alloca_inst->setAlignment(8);
+  /**
+    * Instructions for this method can be found at:docs/declare-and-assign.cc
+    */
 
-  return nullptr;
+  std::vector<std::unique_ptr<Value>>* declaration_codegen = declarationCodegen(this, bb);
+
+  return codegen;
 }
-
 Value* DeclarationNode::codegen(BasicBlock* bb) {
-  std::string alloca_name = "alloca_" + name;
-
-  AllocaInst* alloca_inst = new AllocaInst(PointerTy_4, alloca_name);
-  alloca_inst->setAlignment(8);
-
-  return alloca_inst;
+  std::vector<std::unique_ptr<Value>>* declaration_codegen = declarationCodegen(this, bb);
+  return declaration_codegen[0];
 }
 Value* VarExpNode::codegen(BasicBlock* bb) {
   //
@@ -1208,7 +1293,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
     return logErrorLLVM("Unknown function referenced");
   }
 
-  std::vector<Value*> args_values;
+  std::vector<std::unique_ptr<Value>> args_values;
   args_values.push_back(L);
   args_values.push_back(R);
 
@@ -1233,17 +1318,12 @@ Value* BinaryExpNode::codegen(BasicBlock* bb) {
     return result;
   }
 
-  ////////////////////////////////
-  ////////////////////////////////
-  ////////////////////////////////
-  ////////////////////////////////
-
   /*
   how to insert into correct point
   http://llvm.org/docs/doxygen/html/Instruction_8cpp_source.html#l00023
   Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
-                          Instruction *InsertBefore)
-   : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
+    Instruction *InsertBefore)
+    : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
 
    // If requested, insert this instruction into a basic block...
    if (InsertBefore) {
@@ -1251,24 +1331,16 @@ Value* BinaryExpNode::codegen(BasicBlock* bb) {
      assert(BB && "Instruction to insert before is not in a basic block!");
      BB->getInstList().insert(InsertBefore->getIterator(), this);
    }
- }
+  }
+  Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
+    BasicBlock *InsertAtEnd)
+    : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
 
- Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
-                          BasicBlock *InsertAtEnd)
-   : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
-
-   // append this instruction into the basic block
-   assert(InsertAtEnd && "Basic block to append to may not be NULL!");
-   InsertAtEnd->getInstList().push_back(this);
- }
-
-
+    // append this instruction into the basic block
+    assert(InsertAtEnd && "Basic block to append to may not be NULL!");
+    InsertAtEnd->getInstList().push_back(this);
+  }
   */
-
-  ////////////////////////////////
-  ////////////////////////////////
-  ////////////////////////////////
-  ////////////////////////////////
 
   if (result_type == TYPE_DOUBLE || result_type == TYPE_FLOAT) {
     if (op == '+') {
@@ -1315,7 +1387,6 @@ Value* BinaryExpNode::codegen(BasicBlock* bb) {
     // } else if (result_type == TYPE_STRING) {
     //   std::string typed_lhs_value = *(std::string*)lhs_value;
     //   std::string typed_rhs_value = *(std::string*)rhs_value;
-
     //   if (op == '+') {
     //     result = new NodeValue(typed_lhs_value + typed_rhs_value);
     //   }
