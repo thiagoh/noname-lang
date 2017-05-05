@@ -290,9 +290,7 @@ int yylex(void) {
 }
 
 void yyerror(char const *s) { fprintf(stdout, "\nERROR: %s\n", s); }
-void exit_hook() {
-  // TheJIT->release();
-}
+void exit_hook() { TheJIT->release(); }
 int main(int argc, char **argv) {
   int i = atexit(exit_hook);
   if (i != 0) {

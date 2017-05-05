@@ -1066,6 +1066,7 @@ class AssignmentNode : public ExpNode {
 
   void* eval() override;
   NodeValue* getValue() override;
+  virtual Value* codegen() override;
   ProcessorStrategy* getProcessorStrategy() override {
     return assignmentNodeProcessorStrategy;
   };
@@ -1091,6 +1092,7 @@ class DeclarationAssignmentNode : public AssignmentNode {
                        std::move(rhs)) {}
 
   void* eval() override;
+  virtual Value* codegen() override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_DECLARATION_ASSIGNMENT; };
@@ -1109,6 +1111,7 @@ class DeclarationNode : public ASTNode {
       : ASTNode(context, AST_NODE_TYPE_DECLARATION), name(name) {}
 
   void* eval() override;
+  virtual Value* codegen() override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_DECLARATION; };

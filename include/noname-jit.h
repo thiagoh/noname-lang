@@ -121,7 +121,13 @@ class NonameJIT {
   }
 
   // TODO FIXME
-  void release() { this->writeToFile(); }
+  void release() {
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[release]");
+    }
+
+    Modules.clear();
+  }
 
  private:
   std::string mangle(const std::string &Name) {

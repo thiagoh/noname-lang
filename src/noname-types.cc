@@ -1050,7 +1050,9 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
 llvm::Type* FunctionDefNode::getLLVMReturnInstType(llvm::Value* return_value) {
   llvm::Type* type = nullptr;
 
-  if (isa<CallInst>(return_value)) {
+  if (!return_value) {
+    type = llvm::Type::getVoidTy(TheContext);
+  } else if (isa<CallInst>(return_value)) {
     CallInst* call_inst = (CallInst*)return_value;
     Function* function = call_inst->getCalledFunction();
     if (!function) {
@@ -1135,9 +1137,9 @@ Value* FunctionDefNode::codegen() {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
     if (yydebug >= 1) {
+      fprintf(stderr, "\n[## codegen of body statement (type %s)]",
+              ASTNode::toString(body_node->getKind()).c_str());
     }
-    fprintf(stderr, "\n[## codegen of body statement (type %s)]",
-            ASTNode::toString(body_node->getKind()).c_str());
 
     Instruction* body_codegen_value = (Instruction*)body_node->codegen();
     bb->getInstList().push_back(body_codegen_value);
@@ -1154,6 +1156,12 @@ Value* FunctionDefNode::codegen() {
   if (yydebug >= 1) {
     fprintf(stderr, "\n[## adding return inst]");
   }
+
+  if (!return_inst) {
+    function->eraseFromParent();
+    return nullptr;
+  }
+
   bb->getInstList().push_back(return_inst);
 
   // Validate the generated code, checking for consistency.
@@ -1306,7 +1314,19 @@ Value* StringExpNode::codegen() {
 
   return node->codegen();
 }
-
+Value* AssignmentNode::codegen() {
+  fprintf(stderr, "\n[Value* AssignmentNode::codegen() - NOT IMPLEMENTED]");
+  return nullptr;
+}
+Value* DeclarationAssignmentNode::codegen() {
+  fprintf(stderr,
+          "\n[Value* DeclarationAssignmentNode::codegen() - NOT IMPLEMENTED]");
+  return nullptr;
+}
+Value* DeclarationNode::codegen() {
+  fprintf(stderr, "\n[Value* DeclarationNode::codegen() - NOT IMPLEMENTED]");
+  return nullptr;
+}
 Value* VarExpNode::codegen() {
   //
   // TODO FIXME: create a cache for this
