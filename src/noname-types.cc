@@ -934,14 +934,14 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
 
   return nullptr;
 }
-Value* TopLevelExpNode::codegen() {
+Value* TopLevelExpNode::codegen(BasicBlock* bb) {
   if (!anonymous_def_node) {
     fprintf(stderr, "\n\n############ could not resolve top level expression");
     return nullptr;
   }
   return anonymous_def_node->codegen();
 }
-Value* CallExpNode::codegen() {
+Value* CallExpNode::codegen(BasicBlock* bb) {
   ASTContext* call_exp_context = getContext();
 
   FunctionDefNode* function_def_node =
@@ -1115,7 +1115,7 @@ ProcessorStrategy* importNodeProcessorStrategy =
 // Code Generation
 //===----------------------------------------------------------------------===//
 
-Value* NodeValue::codegen() {
+Value* NodeValue::codegen(BasicBlock* bb) {
   Value* llvm_value = nullptr;
 
   if (type == TYPE_DOUBLE) {
@@ -1140,7 +1140,7 @@ Value* NodeValue::codegen() {
   return llvm_value;
 }
 
-Value* NumberExpNode::codegen() {
+Value* NumberExpNode::codegen(BasicBlock* bb) {
   NodeValue* node = this->getValue();
 
   if (!node) {
@@ -1150,7 +1150,7 @@ Value* NumberExpNode::codegen() {
 
   return node->codegen();
 }
-Value* StringExpNode::codegen() {
+Value* StringExpNode::codegen(BasicBlock* bb) {
   NodeValue* node = this->getValue();
 
   if (!node) {
@@ -1160,17 +1160,21 @@ Value* StringExpNode::codegen() {
 
   return node->codegen();
 }
-Value* AssignmentNode::codegen() {
-  fprintf(stderr, "\n[Value* AssignmentNode::codegen() - NOT IMPLEMENTED]");
+Value* AssignmentNode::codegen(BasicBlock* bb) {
+  fprintf(
+      stderr,
+      "\n[Value* AssignmentNode::codegen(BasicBlock *bb) - NOT IMPLEMENTED]");
   return nullptr;
 }
-Value* DeclarationAssignmentNode::codegen() {
-  fprintf(stderr,
-          "\n[Value* DeclarationAssignmentNode::codegen() - NOT IMPLEMENTED]");
+Value* DeclarationAssignmentNode::codegen(BasicBlock* bb) {
+  std::string alloca_name = "alloca_" + name;
+  AllocaInst* alloca_inst = new AllocaInst(PointerTy_4, alloca_name);
+  alloca_inst->setAlignment(8);
+
   return nullptr;
 }
 
-Value* DeclarationNode::codegen() {
+Value* DeclarationNode::codegen(BasicBlock* bb) {
   std::string alloca_name = "alloca_" + name;
 
   AllocaInst* alloca_inst = new AllocaInst(PointerTy_4, alloca_name);
@@ -1178,7 +1182,7 @@ Value* DeclarationNode::codegen() {
 
   return alloca_inst;
 }
-Value* VarExpNode::codegen() {
+Value* VarExpNode::codegen(BasicBlock* bb) {
   //
   // TODO FIXME: create a cache for this
   // this method should NOT look for NodeValue* then convert it to Value
@@ -1213,7 +1217,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
   return nullptr;
 }
 
-Value* BinaryExpNode::codegen() {
+Value* BinaryExpNode::codegen(BasicBlock* bb) {
   NodeValue* lhs_node_value = lhs->getValue();
   NodeValue* rhs_node_value = rhs->getValue();
 
@@ -1320,7 +1324,7 @@ Value* BinaryExpNode::codegen() {
   return result;
 }
 
-Value* UnaryExpNode::codegen() {
+Value* UnaryExpNode::codegen(BasicBlock* bb) {
   NodeValue* rhs_node_value = rhs->getValue();
   Value* R = rhs_node_value->codegen();
   fprintf(

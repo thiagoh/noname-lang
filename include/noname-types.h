@@ -264,7 +264,7 @@ class ASTNode {
       : context(context), kind(kind) {}
   virtual ~ASTNode() = default;
   ASTNodeKind getKind() const { return kind; }
-  virtual Value* codegen() { return nullptr; };
+  virtual Value* codegen(BasicBlock* bb = nullptr) { return nullptr; };
 
   virtual ASTNode* check() { return this; };
   virtual void* eval() { return nullptr; };
@@ -424,7 +424,7 @@ class NodeValue {
 
   int getType() { return type; }
   void* getRawValue() { return value; }
-  Value* codegen();
+  Value* codegen(BasicBlock* bb = nullptr);
   void* getValue(int as_type) {
     // string
     if (as_type == TYPE_STRING && type != TYPE_STRING) {
@@ -642,7 +642,7 @@ class NumberExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_NUMBER; };
@@ -664,7 +664,7 @@ class StringExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_STRING; };
@@ -685,7 +685,7 @@ class VarExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_VARIABLE; };
@@ -712,7 +712,7 @@ class UnaryExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_UNARY_EXP; };
@@ -742,7 +742,7 @@ class BinaryExpNode : public ExpNode {
 
   // void* eval() override;
   NodeValue* getValue() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_BINARY; };
@@ -804,7 +804,7 @@ class FunctionDefNode : public ASTNode {
   ExpNode* getReturnNode() { return returnNode; }
   llvm::Type* getReturnLLVMType(LLVMContext& TheContext);
 
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
   Function* getFunctionDefinition(Value* return_value = nullptr);
   ProcessorStrategy* getProcessorStrategy() override {
     return functionDefNodeProcessorStrategy;
@@ -836,7 +836,7 @@ class TopLevelExpNode : public ExpNode {
 
   void* eval() override { return exp_node->eval(); };
   virtual NodeValue* getValue() override { return exp_node->getValue(); };
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
   void* release();
   llvm::Type* getReturnLLVMType(LLVMContext& TheContext) {
     // if (!anonymous_def_node) {
@@ -886,7 +886,7 @@ class CallExpNode : public ExpNode {
   }
 
   // void* eval() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
   NodeValue* getValue() override;
   ProcessorStrategy* getProcessorStrategy() override {
     return callNodeProcessorStrategy;
@@ -929,7 +929,7 @@ class AssignmentNode : public ExpNode {
 
   void* eval() override;
   NodeValue* getValue() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
   ProcessorStrategy* getProcessorStrategy() override {
     return assignmentNodeProcessorStrategy;
   };
@@ -955,7 +955,7 @@ class DeclarationAssignmentNode : public AssignmentNode {
                        std::move(rhs)) {}
 
   void* eval() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_DECLARATION_ASSIGNMENT; };
@@ -974,7 +974,7 @@ class DeclarationNode : public ASTNode {
       : ASTNode(context, AST_NODE_TYPE_DECLARATION), name(name) {}
 
   void* eval() override;
-  virtual Value* codegen() override;
+  virtual Value* codegen(BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_DECLARATION; };

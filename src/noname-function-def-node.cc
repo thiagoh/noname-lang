@@ -211,7 +211,7 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
 
   return return_inst;
 }
-Value* FunctionDefNode::codegen() {
+Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // fprintf(stderr, "\n[## codegen of %s ]", name.c_str());
 
   ExpNode* return_node = getReturnNode();
@@ -228,8 +228,8 @@ Value* FunctionDefNode::codegen() {
   }
 
   // Create a new basic block to start insertion into.
-  BasicBlock* bb = BasicBlock::Create(TheContext, "entry", function);
-  // Builder.SetInsertPoint(bb);
+  BasicBlock* function_bb = BasicBlock::Create(TheContext, "entry", function);
+  // Builder.SetInsertPoint(function_bb);
 
   ASTContext* function_def_node_context = getContext();
   std::vector<std::unique_ptr<arg_t>>* signature_args = &getArgs();
@@ -260,7 +260,7 @@ Value* FunctionDefNode::codegen() {
     }
 
     Instruction* body_codegen_value = (Instruction*)body_node->codegen();
-    bb->getInstList().push_back(body_codegen_value);
+    function_bb->getInstList().push_back(body_codegen_value);
 
     if (noname::debug >= 1) {
       body_codegen_value->dump();
@@ -269,7 +269,7 @@ Value* FunctionDefNode::codegen() {
 
   if (return_value) {
     if (isa<CallInst>(return_value)) {
-      bb->getInstList().push_back((Instruction*)return_value);
+      function_bb->getInstList().push_back((Instruction*)return_value);
     }
   }
 
@@ -282,7 +282,7 @@ Value* FunctionDefNode::codegen() {
     return nullptr;
   }
 
-  bb->getInstList().push_back(return_inst);
+  function_bb->getInstList().push_back(return_inst);
 
   // Validate the generated code, checking for consistency.
   verifyFunction(*function);
