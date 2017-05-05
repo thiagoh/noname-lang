@@ -191,7 +191,6 @@ int noname_read(char *buf, int *result, int max_size) {
 //===----------------------------------------------------------------------===//
 
 void InitializeModuleAndPassManager() {
-  fprintf(stdout, "\n[initialize module]");
   // if (TheModule) {
   //   fprintf(stdout, "\n[module write]");
   //   raw_fd_ostream os(output_filedescriptor, false, false);

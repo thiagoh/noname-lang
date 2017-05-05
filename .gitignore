@@ -1,5 +1,6 @@
 # Custom
 .vagrant/
+bc-output/
 noname
 noname.output
 noname-lex.cc

@@ -197,7 +197,6 @@ void print_jit_symbol_value(FILE* file, LLVMContext& TheContext,
               *(char*)result);
     }
   } else {
-    fprintf(file, "\n[printing result]");
     if (!result_type) {
       assert(result_type && "Result type is null");
     } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
@@ -231,7 +230,6 @@ void print_jit_symbol_value(LLVMContext& TheContext, llvm::Type* result_type,
 void* call_and_print_jit_symbol_value(FILE* file, LLVMContext& TheContext,
                                       llvm::Type* result_type,
                                       JITSymbol& jit_symbol) {
-  fprintf(file, "\n###########[fixme] I should call or print only");
   void* result = call_jit_symbol(TheContext, result_type, jit_symbol);
   print_jit_symbol_value(file, TheContext, result_type, result);
   return result;
@@ -874,9 +872,9 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
     fprintf(stderr, "\nTop level expression could not be evaluated");
   } else {
     if (yydebug >= 1) {
+      fprintf(stderr, "\n[read top level expression]");
+      top_level_node_ir->dump();
     }
-    fprintf(stderr, "\n[read top level expression]");
-    top_level_node_ir->dump();
 
     // JIT the module containing the anonymous expression, keeping a handle so
     // we can free it later.
@@ -1050,44 +1048,42 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
   return function_def_node;
 }
 llvm::Type* FunctionDefNode::getLLVMReturnInstType(llvm::Value* return_value) {
+  llvm::Type* type = nullptr;
+
   if (isa<CallInst>(return_value)) {
-    fprintf(stderr, "\n[## isa CallInst ]\n");
     CallInst* call_inst = (CallInst*)return_value;
-    Function* f = call_inst->getCalledFunction();
-    f->dump();
-    llvm::Type* t = f->getReturnType();
-    t->print(dbgs(), true);
-
-    this->returnLLVMType = t;
-
+    Function* function = call_inst->getCalledFunction();
+    if (!function) {
+      logError("Could not find function");
+      return nullptr;
+    }
+    type = function->getReturnType();
+    if (!type) {
+      logError("Function returning invalid type");
+      return nullptr;
+    }
   } else {
-    fprintf(stderr, "\n[## is NOT a CallInst ]\n");
-    this->returnLLVMType = return_value->getType();
+    type = return_value->getType();
   }
+  this->returnLLVMType = type;
 
-  return this->returnLLVMType;
+  return type;
 }
 llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
   ReturnInst* return_inst = nullptr;
   // Finish off the function by creating the ReturnInst
   if (!return_value) {
     if (yydebug >= 1) {
+      fprintf(stderr, "\n[## no return_value nullptr]\n");
     }
-    fprintf(stderr, "\n[## no return_value nullptr]\n");
     // Builder.CreateRetVoid();
     return_inst = ReturnInst::Create(TheContext);
 
   } else {
     if (yydebug >= 1) {
+      return_value->dump();
+      return_value->print(dbgs(), true);
     }
-    // return_value->dump();
-
-    fprintf(stderr, "\n[## 1111]");
-    return_value->print(dbgs(), true);
-    fprintf(stderr, "\n[## 2222]");
-    return_value->getType()->print(dbgs(), true);
-    fprintf(stderr, "\n[## 3333]");
-    fprintf(stderr, "\n[## setting return type of %s ]\n", name.c_str());
 
     // Builder.CreateRet(return_value);
     return_inst = ReturnInst::Create(TheContext, return_value);
@@ -1096,7 +1092,7 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
   return return_inst;
 }
 Value* FunctionDefNode::codegen() {
-  fprintf(stderr, "\n[## codegen of %s ]", name.c_str());
+  // fprintf(stderr, "\n[## codegen of %s ]", name.c_str());
 
   ExpNode* return_node = getReturnNode();
   Value* return_value = nullptr;
@@ -1147,15 +1143,17 @@ Value* FunctionDefNode::codegen() {
     bb->getInstList().push_back(body_codegen_value);
 
     if (yydebug >= 1) {
+      body_codegen_value->dump();
     }
-    body_codegen_value->dump();
   }
 
   if (isa<CallInst>(return_value)) {
     bb->getInstList().push_back((Instruction*)return_value);
   }
 
-  fprintf(stderr, "\n[## adding return inst]");
+  if (yydebug >= 1) {
+    fprintf(stderr, "\n[## adding return inst]");
+  }
   bb->getInstList().push_back(return_inst);
 
   // Validate the generated code, checking for consistency.
@@ -1165,8 +1163,8 @@ Value* FunctionDefNode::codegen() {
   TheFPM->run(*function);
 
   if (yydebug >= 1) {
+    function->dump();
   }
-  function->dump();
 
   return function;
 }

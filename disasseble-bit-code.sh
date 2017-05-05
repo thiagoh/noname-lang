@@ -25,10 +25,9 @@ for i in "$@"; do
   esac
 done
 
-echo $output_directory
-exit
+rm -rf $output_directory/*.bc.ll
 
-for file in *.bc; do 
+for file in $output_directory/*.bc; do 
   llvm-dis $file -o $file.ll
 
   if [ $verbose -eq 1 ]; then

@@ -37,6 +37,8 @@
 #include <string>
 #include <vector>
 
+extern int yydebug;
+
 namespace llvm {
 namespace orc {
 
@@ -99,7 +101,9 @@ class NonameJIT {
     int output_filedescriptor = fileno(output_file);
 
     raw_fd_ostream os(output_filedescriptor, false, false);
-    fprintf(stdout, "\n[module write]");
+    if (yydebug >= 1) {
+      fprintf(stdout, "\n[module write]");
+    }
     llvm::WriteBitcodeToFile(mod, os);
     // fclose(output_file);
   }
@@ -108,7 +112,9 @@ class NonameJIT {
   void writeToFile() {
     // raw_fd_ostream os(output_filedescriptor, false, false);
     for (auto &mod : Modules) {
-      fprintf(stdout, "\n[module write]");
+      if (yydebug >= 1) {
+        fprintf(stdout, "\n[module write]");
+      }
       // llvm::WriteBitcodeToFile(mod, os);
       writeToFile(mod);
     }

@@ -16,6 +16,11 @@ def func_bar() {
 };
 bar();
 
+def func_999() {
+  return 999;
+};
+func_999();
+
 def baz() {
   let cd2 = 3;
   let my_returned_var = 3.14159;
