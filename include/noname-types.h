@@ -104,6 +104,12 @@ extern std::stack<ASTContext*> context_stack;
 extern std::map<int, std::string> map;
 extern bool read_from_file_import;
 
+extern LLVMContext TheContext;
+extern IRBuilder<> Builder;
+extern std::unique_ptr<Module> TheModule;
+extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+// extern std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
+
 /* list of statements */
 typedef struct stmtlist_node_t {
   ASTNode* node;
@@ -188,6 +194,7 @@ arglist_t* new_arg_list(ASTContext* context, arg_t* arg);
 arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list,
                         arg_t* arg);
 
+void InitializeNonameEnvironment();
 ImportNode* new_import(ASTContext* context, std::string filename);
 ASTNode* new_top_level_exp_node(ExpNode* node);
 VarExpNode* new_var_node(ASTContext* context, const std::string name);

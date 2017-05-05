@@ -41,7 +41,16 @@ extern int yydebug;
 
 namespace llvm {
 namespace orc {
+class NonameJIT;
+}
+}
 
+namespace noname {
+extern std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
+}
+
+namespace llvm {
+namespace orc {
 class NonameJIT {
  public:
   typedef ObjectLinkingLayer<> ObjLayerT;

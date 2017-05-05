@@ -26,13 +26,44 @@ extern FILE* fin;
 namespace noname {
 
 int debug = 0;
-extern LLVMContext TheContext;
-extern IRBuilder<> Builder;
-extern std::unique_ptr<Module> TheModule;
-extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
-extern std::unique_ptr<NonameJIT> TheJIT;
+LLVMContext TheContext;
+IRBuilder<> Builder(TheContext);
+std::unique_ptr<Module> TheModule;
+std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
+
+bool initialized = false;
+PointerType* PointerTy_1;
+PointerType* PointerTy_2;
+PointerType* PointerTy_3;
+PointerType* PointerTy_4;
+PointerType* PointerTy_5;
+PointerType* PointerTy_6;
+PointerType* PointerTy_7;
 
 std::string pow_function_name("_noname_function_pow");
+
+void InitializeNonameEnvironment() {
+  if (initialized) {
+    return;
+  }
+
+  // LLVMContext TheContext;
+  // IRBuilder<> Builder(TheContext);
+  // std::unique_ptr<Module> TheModule;
+  // std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+  // std::unique_ptr<NonameJIT> TheJIT;
+
+  PointerTy_1 = PointerType::get(IntegerType::get(TheContext, 32), 0);
+  PointerTy_2 = PointerType::get(IntegerType::get(TheContext, 64), 0);
+  PointerTy_3 = PointerType::get(IntegerType::get(TheContext, 16), 0);
+  PointerTy_4 = PointerType::get(IntegerType::get(TheContext, 8), 0);
+  PointerTy_5 = PointerType::get(Type::getDoubleTy(TheContext), 0);
+  PointerTy_6 = PointerType::get(Type::getFloatTy(TheContext), 0);
+  PointerTy_7 = PointerType::get(PointerTy_4, 0);
+
+  initialized = true;
+}
 
 /// LogError* - These are little helper functions for error handling.
 ASTNode* logError(const char* str) {
@@ -1138,9 +1169,14 @@ Value* DeclarationAssignmentNode::codegen() {
           "\n[Value* DeclarationAssignmentNode::codegen() - NOT IMPLEMENTED]");
   return nullptr;
 }
+
 Value* DeclarationNode::codegen() {
-  fprintf(stderr, "\n[Value* DeclarationNode::codegen() - NOT IMPLEMENTED]");
-  return nullptr;
+  std::string alloca_name = "alloca_" + name;
+
+  AllocaInst* alloca_inst = new AllocaInst(PointerTy_4, alloca_name);
+  alloca_inst->setAlignment(8);
+
+  return alloca_inst;
 }
 Value* VarExpNode::codegen() {
   //

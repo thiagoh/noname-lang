@@ -73,12 +73,6 @@ std::stack<ASTContext *> context_stack;
 std::map<int, std::string> map;
 bool read_from_file_import = false;
 
-LLVMContext TheContext;
-IRBuilder<> Builder(TheContext);
-std::unique_ptr<Module> TheModule;
-std::unique_ptr<legacy::FunctionPassManager> TheFPM;
-std::unique_ptr<NonameJIT> TheJIT;
-
 void fatal_error(const char *msg) {
   fprintf(stderr, "%s\n", msg);
   exit(YY_EXIT_FAILURE);
@@ -395,5 +389,7 @@ int main(int argc, char **argv) {
 
   InitializeModuleAndPassManager();
 
+  noname::InitializeNonameEnvironment();
+  
   return yyparse();
 }
