@@ -140,8 +140,7 @@ NodeValue* BinaryExpNode::getValue() {
   return result;
 }
 
-Value* BinaryExpNode::CreatePow(Value* L, Value* R,
-                                const char* name = "call_pow_tmp") {
+Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow_tmp") {
   Function* pow_function = TheModule->getFunction(pow_function_name);
 
   if (!pow_function) {
@@ -157,8 +156,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
   return nullptr;
 }
 
-std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(
-    llvm::BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(llvm::BasicBlock* bb) {
   std::vector<std::unique_ptr<Value>> codegen;
   Value* result = nullptr;
   Value* L = lhs->codegen();
@@ -169,8 +167,8 @@ std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(
     return codegen;
   }
 
-  int lhs_type = fromLLVMValueToType(L);
-  int rhs_type = fromLLVMValueToType(R);
+  int lhs_type = toNonameType(TheContext, L);
+  int rhs_type = toNonameType(TheContext, R);
   int result_type = get_adequate_result_type(lhs_type, rhs_type);
 
   /*
@@ -214,8 +212,8 @@ std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(
       result = CreatePow(L, R);
     }
 
-  } else if (result_type == TYPE_LONG || result_type == TYPE_INT ||
-             result_type == TYPE_SHORT || result_type == TYPE_CHAR) {
+  } else if (result_type == TYPE_LONG || result_type == TYPE_INT || result_type == TYPE_SHORT ||
+             result_type == TYPE_CHAR) {
     if (op == '+') {
       // result = Builder.CreateAdd(L, R, "addtmp");
       result = BinaryOperator::Create(Instruction::Add, L, R, "add");
@@ -248,7 +246,5 @@ std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(
   return codegen;
 }
 
-Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) {
-  return codegen_elements_retlast(this, bb);
-}
+Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
 }

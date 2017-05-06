@@ -160,27 +160,8 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
   return function;
 }
 llvm::Type* FunctionDefNode::getLLVMReturnInstType(llvm::Value* return_value) {
-  llvm::Type* type = nullptr;
-
-  if (!return_value) {
-    type = llvm::Type::getVoidTy(TheContext);
-  } else if (isa<CallInst>(return_value)) {
-    CallInst* call_inst = (CallInst*)return_value;
-    Function* function = call_inst->getCalledFunction();
-    if (!function) {
-      logError("Could not find function");
-      return nullptr;
-    }
-    type = function->getReturnType();
-    if (!type) {
-      logError("Function returning invalid type");
-      return nullptr;
-    }
-  } else {
-    type = return_value->getType();
-  }
+  llvm::Type* type = toLLVMType(TheContext, return_value);
   this->returnLLVMType = type;
-
   return type;
 }
 llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {

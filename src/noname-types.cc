@@ -463,23 +463,72 @@ arg_t *new_arg(ASTContext *context, char *arg_name, char *default_value) {
 
 llvm::Type *toLLVLType(llvm::LLVMContext &LLVMContext, int type) {
   if (type == TYPE_DOUBLE) {
-    return Type::getDoubleTy(LLVMContext);
+    return llvm::Type::getDoubleTy(LLVMContext);
   } else if (type == TYPE_FLOAT) {
-    return Type::getFloatTy(LLVMContext);
+    return llvm::Type::getFloatTy(LLVMContext);
   } else if (type == TYPE_LONG) {
-    return Type::getInt64Ty(LLVMContext);
+    return llvm::Type::getInt64Ty(LLVMContext);
   } else if (type == TYPE_INT) {
-    return Type::getInt32Ty(LLVMContext);
+    return llvm::Type::getInt32Ty(LLVMContext);
   } else if (type == TYPE_SHORT) {
-    return Type::getInt16Ty(LLVMContext);
+    return llvm::Type::getInt16Ty(LLVMContext);
   } else if (type == TYPE_CHAR) {
-    return Type::getInt8Ty(LLVMContext);
+    return llvm::Type::getInt8Ty(LLVMContext);
+  } else if (type == TYPE_VOID) {
+    return llvm::Type::getVoidTy(LLVMContext);
+  } else if (type == TYPE_VOID_POINTER) {
+    return llvm::Type::getInt8PtrTy(LLVMContext);
   }
 
   return nullptr;
 }
-int fromLLVMValueToType(llvm::Value *value) {
-  fprintf(stderr, "NOT IMPLEMENTED - int fromLLVMValueToType(llvm::Value* value)");
+llvm::Type *toLLVMType(llvm::LLVMContext &LLVMContext, llvm::Value *value) {
+  llvm::Type *type = nullptr;
+
+  if (!value) {
+    type = llvm::Type::getVoidTy(TheContext);
+  } else if (isa<CallInst>(value)) {
+    CallInst *call_inst = (CallInst *)value;
+    Function *function = call_inst->getCalledFunction();
+    if (!function) {
+      logError("Could not find function");
+      return nullptr;
+    }
+    type = function->getReturnType();
+    if (!type) {
+      logError("Function returning invalid type");
+      return nullptr;
+    }
+  } else {
+    type = value->getType();
+  }
+
+  return type;
+}
+int toNonameType(llvm::LLVMContext &LLVMContext, llvm::Value *value) {
+  llvm::Type *type = toLLVMType(LLVMContext, value);
+  return toNonameType(LLVMContext, type);
+}
+
+int toNonameType(llvm::LLVMContext &LLVMContext, llvm::Type *type) {
+  if (llvm::Type::getDoubleTy(LLVMContext) == type) {
+    return TYPE_DOUBLE;
+  } else if (llvm::Type::getFloatTy(LLVMContext) == type) {
+    return TYPE_FLOAT;
+  } else if (llvm::Type::getInt64Ty(LLVMContext) == type) {
+    return TYPE_LONG;
+  } else if (llvm::Type::getInt32Ty(LLVMContext) == type) {
+    return TYPE_INT;
+  } else if (llvm::Type::getInt16Ty(LLVMContext) == type) {
+    return TYPE_SHORT;
+  } else if (llvm::Type::getInt8Ty(LLVMContext) == type) {
+    return TYPE_CHAR;
+  } else if (llvm::Type::getVoidTy(LLVMContext) == type) {
+    return TYPE_VOID;
+  } else if (llvm::Type::getInt8PtrTy(LLVMContext) == type) {
+    return TYPE_VOID_POINTER;
+  }
+
   return 0;
 }
 VarExpNode *new_var_node(ASTContext *context, const std::string name) {

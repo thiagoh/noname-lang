@@ -4,3 +4,5 @@ BasedOnStyle:  Google
 ColumnLimit:     120
 TabWidth:        2
 UseTab:          Never
+ReflowComments:  false
+AlignTrailingComments: true

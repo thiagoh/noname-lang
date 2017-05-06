@@ -27,21 +27,16 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 
 NodeValue* UnaryExpNode::getValue() {
   NodeValue* rhs_value = rhs->getValue();
-  fprintf(
-      stdout,
-      "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
+  fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
   return rhs_value;
 }
 
 Value* UnaryExpNode::codegen(llvm::BasicBlock* bb) {
   Value* R = rhs->codegen();
-  fprintf(
-      stdout,
-      "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
+  fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
   return R;
 }
-std::vector<std::unique_ptr<Value>> UnaryExpNode::codegen_elements(
-    BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> UnaryExpNode::codegen_elements(BasicBlock* bb) {
   logError(
       "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
       "UnaryExpNode::codegen_elements");
