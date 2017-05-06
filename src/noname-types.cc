@@ -41,6 +41,14 @@ PointerType* PointerTy_5;
 PointerType* PointerTy_6;
 PointerType* PointerTy_7;
 
+ProcessorStrategy* astNodeProcessorStrategy;
+ProcessorStrategy* expNodeProcessorStrategy;
+ProcessorStrategy* topLevelExpNodeProcessorStrategy;
+ProcessorStrategy* functionDefNodeProcessorStrategy;
+ProcessorStrategy* assignmentNodeProcessorStrategy;
+ProcessorStrategy* callNodeProcessorStrategy;
+ProcessorStrategy* importNodeProcessorStrategy;
+
 void InitializeNonameEnvironment() {
   if (initialized) {
     return;
@@ -61,18 +69,13 @@ void InitializeNonameEnvironment() {
   PointerTy_7 = PointerType::get(PointerTy_4, 0);
 
   // initialization
-  ProcessorStrategy* astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
-  ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
-  ProcessorStrategy* topLevelExpNodeProcessorStrategy =
-      new TopLevelExpNodeProcessorStrategy();
-  ProcessorStrategy* functionDefNodeProcessorStrategy =
-      new FunctionDefNodeProcessorStrategy();
-  ProcessorStrategy* assignmentNodeProcessorStrategy =
-      new AssignmentNodeProcessorStrategy();
-  ProcessorStrategy* callNodeProcessorStrategy =
-      new CallExpNodeProcessorStrategy();
-  ProcessorStrategy* importNodeProcessorStrategy =
-      new ImportNodeProcessorStrategy();
+  astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
+  expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
+  topLevelExpNodeProcessorStrategy = new TopLevelExpNodeProcessorStrategy();
+  functionDefNodeProcessorStrategy = new FunctionDefNodeProcessorStrategy();
+  assignmentNodeProcessorStrategy = new AssignmentNodeProcessorStrategy();
+  callNodeProcessorStrategy = new CallExpNodeProcessorStrategy();
+  importNodeProcessorStrategy = new ImportNodeProcessorStrategy();
 
   initialized = true;
 }
@@ -510,7 +513,8 @@ llvm::Type* toLLVLType(llvm::LLVMContext& LLVMContext, int type) {
   return nullptr;
 }
 int fromLLVMValueToType(llvm::Value* value) {
-  fprintf(stderr, "NOT IMPLEMENTED - int fromLLVMValueToType(llvm::Value* value)");
+  fprintf(stderr,
+          "NOT IMPLEMENTED - int fromLLVMValueToType(llvm::Value* value)");
   return 0;
 }
 VarExpNode* new_var_node(ASTContext* context, const std::string name) {
@@ -529,26 +533,6 @@ ImportNode* new_import(ASTContext* context, std::string filename) {
   ImportNode* new_node = new ImportNode(context, filename);
 
   return new_node;
-}
-
-NodeValue* NumberExpNode::getValue() {
-  NodeValue* node = nullptr;
-
-  if (type == TYPE_DOUBLE) {
-    node = new NodeValue(*(double*)value);
-  } else if (type == TYPE_LONG) {
-    node = new NodeValue(*(long*)value);
-  } else if (type == TYPE_INT) {
-    node = new NodeValue(*(int*)value);
-  } else if (type == TYPE_FLOAT) {
-    node = new NodeValue(*(float*)value);
-  } else if (type == TYPE_SHORT) {
-    node = new NodeValue(*(short*)value);
-  } else if (type == TYPE_CHAR) {
-    node = new NodeValue(*(char*)value);
-  }
-
-  return node;
 }
 
 NodeValue* StringExpNode::getValue() {
@@ -734,22 +718,48 @@ void* ImportNodeProcessorStrategy::process(ASTNode* node) {
   return nullptr;
 }
 
+NodeValue* NumberExpNode::getValue() {
+  NodeValue* node = nullptr;
+
+  if (type == TYPE_DOUBLE) {
+    node = new NodeValue(*(double*)value);
+  } else if (type == TYPE_LONG) {
+    node = new NodeValue(*(long*)value);
+  } else if (type == TYPE_INT) {
+    node = new NodeValue(*(int*)value);
+  } else if (type == TYPE_FLOAT) {
+    node = new NodeValue(*(float*)value);
+  } else if (type == TYPE_SHORT) {
+    node = new NodeValue(*(short*)value);
+  } else if (type == TYPE_CHAR) {
+    node = new NodeValue(*(char*)value);
+  }
+
+  return node;
+}
+
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
-
-Value* NumberExpNode::codegen(llvm::BasicBlock* bb) {
-  NodeValue* node = this->getValue();
+std::vector<std::unique_ptr<Value>> NumberExpNode::codegen_elements(
+    llvm::BasicBlock* bb) {
+  std::vector<std::unique_ptr<Value>> codegen;
+  NodeValue* node = getValue();
 
   if (!node) {
-    fprintf(stdout, "\n\n############ could not resolve number expression");
-    return nullptr;
+    logError("Invalid or undefined NodeValue");
+    return codegen;
   }
 
-  return node->constant_codegen(bb);
+  Value* constant_value = node->constant_codegen(bb);
+  codegen.push_back(std::unique_ptr<Value>(constant_value));
+  return codegen;
+}
+Value* NumberExpNode::codegen(llvm::BasicBlock* bb) {
+  return codegen_elements_retlast(this, bb);
 }
 Value* StringExpNode::codegen(llvm::BasicBlock* bb) {
-  NodeValue* node = this->getValue();
+  NodeValue* node = getValue();
 
   if (!node) {
     logError("Could not resolve string expression");
