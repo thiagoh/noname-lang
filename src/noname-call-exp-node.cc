@@ -95,8 +95,9 @@ NodeValue* CallExpNode::getValue() {
 
   return nullptr;
 }
-
-Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(
+    llvm::BasicBlock* bb) {
+  std::vector<std::unique_ptr<Value>> codegen;
   ASTContext* call_exp_context = getContext();
 
   FunctionDefNode* function_def_node =
@@ -107,22 +108,22 @@ Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
             "\nError: the called function was: '%s' BUT it wan not found on "
             "the context\n",
             getCallee().c_str());
-    return nullptr;
+    return codegen;
   }
-
-  // return function_def_node->codegen();
 
   // Look up the name in the global module table.
   Function* function = function_def_node->getFunctionDefinition();
   if (!function) {
-    return logErrorLLVM("Unknown function referenced");
+    logErrorLLVM("Unknown function referenced");
+    return codegen;
   }
 
   const std::vector<std::unique_ptr<ExpNode>>& value_args = getArgs();
 
   // If argument mismatch error.
   if (function->arg_size() != value_args.size()) {
-    return logErrorLLVM("Incorrect # arguments passed");
+    logErrorLLVM("Incorrect # arguments passed");
+    return codegen;
   }
 
   std::vector<std::unique_ptr<ExpNode>>::const_iterator it_value_args =
@@ -142,7 +143,8 @@ Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
 
     args_value.push_back(value_arg->codegen());
     if (!args_value.back()) {
-      return nullptr;
+      logErrorLLVM("Invalid or undefined argument");
+      return codegen;
     }
 
     ++it_signature_args;
@@ -167,7 +169,11 @@ Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
     call_inst->dump();
   }
 
-  return call_inst;
+  codegen.push_back(std::unique_ptr<Value>(call_inst));
+  return codegen;
+}
+Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
+  return codegen_elements_retlast(this, bb);
 }
 
 //----------------------------------------------//

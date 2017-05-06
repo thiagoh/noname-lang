@@ -157,14 +157,16 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
   return nullptr;
 }
 
-Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) {
-
+std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(
+    llvm::BasicBlock* bb) {
+  std::vector<std::unique_ptr<Value>> codegen;
   Value* result = nullptr;
   Value* L = lhs->codegen();
   Value* R = rhs->codegen();
 
   if (!L || !R) {
-    return result;
+    logError("L or R are undefined");
+    return codegen;
   }
 
   int lhs_type = fromLLVMValueToType(L);
@@ -214,7 +216,6 @@ Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) {
 
   } else if (result_type == TYPE_LONG || result_type == TYPE_INT ||
              result_type == TYPE_SHORT || result_type == TYPE_CHAR) {
-
     if (op == '+') {
       // result = Builder.CreateAdd(L, R, "addtmp");
       result = BinaryOperator::Create(Instruction::Add, L, R, "add");
@@ -243,6 +244,11 @@ Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) {
     //   }
   }
 
-  return result;
+  codegen.push_back(std::unique_ptr<Value>(result));
+  return codegen;
+}
+
+Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) {
+  return codegen_elements_retlast(this, bb);
 }
 }
