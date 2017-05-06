@@ -62,6 +62,20 @@ void InitializeNonameEnvironment() {
   PointerTy_6 = PointerType::get(Type::getFloatTy(TheContext), 0);
   PointerTy_7 = PointerType::get(PointerTy_4, 0);
 
+  // initialization
+  ProcessorStrategy* astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
+  ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
+  ProcessorStrategy* topLevelExpNodeProcessorStrategy =
+      new TopLevelExpNodeProcessorStrategy();
+  ProcessorStrategy* functionDefNodeProcessorStrategy =
+      new FunctionDefNodeProcessorStrategy();
+  ProcessorStrategy* assignmentNodeProcessorStrategy =
+      new AssignmentNodeProcessorStrategy();
+  ProcessorStrategy* callNodeProcessorStrategy =
+      new CallExpNodeProcessorStrategy();
+  ProcessorStrategy* importNodeProcessorStrategy =
+      new ImportNodeProcessorStrategy();
+
   initialized = true;
 }
 
@@ -656,34 +670,6 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
   return nullptr;
 }
 
-
-
-void* AssignmentNodeProcessorStrategy::process(ASTNode* node) {
-  NodeValue* return_value = (NodeValue*)node->eval();
-  print_node_value(stdout, return_value);
-  return nullptr;
-}
-void* CallExpNodeProcessorStrategy::process(ASTNode* node) {
-  CallExpNode* call_exp_node = (CallExpNode*)node;
-  FunctionDefNode* function_def_node =
-      node->getContext()->getFunction(call_exp_node->getCallee());
-
-  if (function_def_node) {
-    if (noname::debug >= 2) {
-      fprintf(stdout, "\nThe called function was: '%s'\n",
-              function_def_node->getName().c_str());
-    }
-
-    NodeValue* return_value = (NodeValue*)call_exp_node->eval();
-    print_node_value(stdout, return_value);
-
-  } else {
-    fprintf(stderr, "\nError: The function %s was not found int the context\n",
-            call_exp_node->getCallee().c_str());
-  }
-  return nullptr;
-}
-
 void* ImportNodeProcessorStrategy::process(ASTNode* node) {
   ImportNode* import_node = (ImportNode*)node;
 
@@ -711,24 +697,9 @@ void* ImportNodeProcessorStrategy::process(ASTNode* node) {
   return nullptr;
 }
 
-// initialization
-ProcessorStrategy* astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
-ProcessorStrategy* expNodeProcessorStrategy = new ExpNodeProcessorStrategy();
-ProcessorStrategy* topLevelExpNodeProcessorStrategy =
-    new TopLevelExpNodeProcessorStrategy();
-ProcessorStrategy* functionDefNodeProcessorStrategy =
-    new FunctionDefNodeProcessorStrategy();
-ProcessorStrategy* assignmentNodeProcessorStrategy =
-    new AssignmentNodeProcessorStrategy();
-ProcessorStrategy* callNodeProcessorStrategy =
-    new CallExpNodeProcessorStrategy();
-ProcessorStrategy* importNodeProcessorStrategy =
-    new ImportNodeProcessorStrategy();
-
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
-
 
 Value* NumberExpNode::codegen(llvm::BasicBlock* bb) {
   NodeValue* node = this->getValue();
@@ -749,19 +720,6 @@ Value* StringExpNode::codegen(llvm::BasicBlock* bb) {
   }
 
   return node->codegen();
-}
-Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr) { 
-
-  std::vector<std::unique_ptr<Value>> codegen_elements(node->codegen_elements());
-  Value* last=nullptr;
-  if (bb) {
-    for (std::unique_ptr<Value>& ptr: codegen_elements) {
-      last = ptr.get();
-      bb->getInstList().push_back(std::move(ptr));
-    }
-  }
-  
-  return last;
 }
 
 Value* VarExpNode::codegen(llvm::BasicBlock* bb) {

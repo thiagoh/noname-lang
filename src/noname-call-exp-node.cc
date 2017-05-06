@@ -168,4 +168,30 @@ Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
 
   return call_inst;
 }
+
+//----------------------------------------------//
+//----------- Processor Strategy ---------------//
+//----------------------------------------------//
+
+void* CallExpNodeProcessorStrategy::process(ASTNode* node) {
+  CallExpNode* call_exp_node = (CallExpNode*)node;
+  FunctionDefNode* function_def_node =
+      node->getContext()->getFunction(call_exp_node->getCallee());
+
+  if (function_def_node) {
+    if (noname::debug >= 2) {
+      fprintf(stdout, "\nThe called function was: '%s'\n",
+              function_def_node->getName().c_str());
+    }
+
+    NodeValue* return_value = (NodeValue*)call_exp_node->eval();
+    print_node_value(stdout, return_value);
+
+  } else {
+    fprintf(stderr, "\nError: The function %s was not found int the context\n",
+            call_exp_node->getCallee().c_str());
+  }
+  return nullptr;
+}
+
 }

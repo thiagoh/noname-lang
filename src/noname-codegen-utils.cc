@@ -25,6 +25,20 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr) {
+  std::vector<std::unique_ptr<Value>> codegen_elements(
+      node->codegen_elements());
+  Value* last = nullptr;
+  if (bb) {
+    for (std::unique_ptr<Value>& ptr : codegen_elements) {
+      last = ptr.get();
+      bb->getInstList().push_back(std::move(ptr));
+    }
+  }
+
+  return last;
+}
+
 std::vector<std::unique_ptr<Value>> declaration_codegen_util(ASTNode* node, llvm::BasicBlock* bb = nullptr) {
   std::string alloca_name = "decl_alloca_";
 

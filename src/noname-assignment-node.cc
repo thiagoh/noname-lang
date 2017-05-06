@@ -61,4 +61,15 @@ std::vector<std::unique_ptr<Value>> AssignmentNode::codegen_elements(
 Value* AssignmentNode::codegen(llvm::BasicBlock* bb) {
   return codegen_elements_retlast(this, bb);
 }
+
+//----------------------------------------------//
+//----------- Processor Strategy ---------------//
+//----------------------------------------------//
+
+void* AssignmentNodeProcessorStrategy::process(ASTNode* node) {
+  NodeValue* return_value = (NodeValue*)node->eval();
+  print_node_value(stdout, return_value);
+  return nullptr;
+}
+
 }
