@@ -85,7 +85,8 @@
         "cwchar": "cpp",
         "iosfwd": "cpp",
         "__mutex_base": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "__refstring": "cpp"
     },
     "[cpp]": {
         "editor.quickSuggestions": false,

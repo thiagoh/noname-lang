@@ -36,7 +36,7 @@ void* DeclarationAssignmentNode::eval() {
 
   return node_value;
 }
-std::vector<std::unique_ptr<Value>> DeclarationAssignmentNode::codegen_elements(llvm::BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> DeclarationAssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   AllocaInst* untyped_poiter_alloca = declaration_codegen_util(this, bb);
 
   std::vector<std::unique_ptr<Value>> assign_codegen = assign_codegen_util(untyped_poiter_alloca, this, bb);

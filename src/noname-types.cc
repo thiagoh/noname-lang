@@ -54,7 +54,7 @@ void InitializeNonameEnvironment() {
     return;
   }
 
-  // LLVMContext TheContext;
+  // TheContext TheContext;
   // IRBuilder<> Builder(TheContext);
   // std::unique_ptr<Module> TheModule;
   // std::unique_ptr<legacy::FunctionPassManager> TheFPM;
@@ -81,6 +81,11 @@ void InitializeNonameEnvironment() {
 }
 
 /// LogError* - These are little helper functions for error handling.
+Error *createError(const char *str) {
+  char msg[1024];
+  sprintf(msg, "%s\n", str);
+  return new Error(msg);
+}
 ASTNode *logError(const char *str) {
   char msg[1024];
   sprintf(msg, "%s\n", str);
@@ -169,7 +174,7 @@ void print_node_value(FILE *file, NodeValue *node_value) {
 }
 void print_node_value(NodeValue *node_value) { print_node_value(stdout, node_value); }
 
-void *call_jit_symbol(LLVMContext &TheContext, llvm::Type *result_type, JITSymbol &jit_symbol) {
+void *call_jit_symbol(llvm::Type *result_type, JITSymbol &jit_symbol) {
   void *result = nullptr;
   // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
   if (!result_type) {
@@ -204,7 +209,7 @@ void *call_jit_symbol(LLVMContext &TheContext, llvm::Type *result_type, JITSymbo
   return result;
 }
 
-void print_jit_symbol_value(FILE *file, LLVMContext &TheContext, llvm::Type *result_type, void *result) {
+void print_jit_symbol_value(FILE *file, llvm::Type *result_type, void *result) {
   // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
   if (noname::debug >= 2) {
     if (!result_type) {
@@ -256,18 +261,17 @@ void print_jit_symbol_value(FILE *file, LLVMContext &TheContext, llvm::Type *res
     }
   }
 }
-void print_jit_symbol_value(LLVMContext &TheContext, llvm::Type *result_type, void *result) {
-  print_jit_symbol_value(stdout, TheContext, result_type, result);
+void print_jit_symbol_value(llvm::Type *result_type, void *result) {
+  print_jit_symbol_value(stdout, result_type, result);
 }
-void *call_and_print_jit_symbol_value(FILE *file, LLVMContext &TheContext, llvm::Type *result_type,
-                                      JITSymbol &jit_symbol) {
-  void *result = call_jit_symbol(TheContext, result_type, jit_symbol);
-  print_jit_symbol_value(file, TheContext, result_type, result);
+void *call_and_print_jit_symbol_value(FILE *file, llvm::Type *result_type, JITSymbol &jit_symbol) {
+  void *result = call_jit_symbol(result_type, jit_symbol);
+  print_jit_symbol_value(file, result_type, result);
   return result;
 }
 
-void *call_and_print_jit_symbol_value(LLVMContext &TheContext, llvm::Type *result_type, JITSymbol &jit_symbol) {
-  return call_and_print_jit_symbol_value(stdout, TheContext, result_type, jit_symbol);
+void *call_and_print_jit_symbol_value(llvm::Type *result_type, JITSymbol &jit_symbol) {
+  return call_and_print_jit_symbol_value(stdout, result_type, jit_symbol);
 }
 
 // ReturnNode* new_return(ASTContext* context, ExpNode* exp_node) {
@@ -461,28 +465,28 @@ arg_t *new_arg(ASTContext *context, char *arg_name, char *default_value) {
   return new_arg;
 }
 
-llvm::Type *toLLVLType(llvm::LLVMContext &LLVMContext, int type) {
+llvm::Type *toLLVLType(int type) {
   if (type == TYPE_DOUBLE) {
-    return llvm::Type::getDoubleTy(LLVMContext);
+    return llvm::Type::getDoubleTy(TheContext);
   } else if (type == TYPE_FLOAT) {
-    return llvm::Type::getFloatTy(LLVMContext);
+    return llvm::Type::getFloatTy(TheContext);
   } else if (type == TYPE_LONG) {
-    return llvm::Type::getInt64Ty(LLVMContext);
+    return llvm::Type::getInt64Ty(TheContext);
   } else if (type == TYPE_INT) {
-    return llvm::Type::getInt32Ty(LLVMContext);
+    return llvm::Type::getInt32Ty(TheContext);
   } else if (type == TYPE_SHORT) {
-    return llvm::Type::getInt16Ty(LLVMContext);
+    return llvm::Type::getInt16Ty(TheContext);
   } else if (type == TYPE_CHAR) {
-    return llvm::Type::getInt8Ty(LLVMContext);
+    return llvm::Type::getInt8Ty(TheContext);
   } else if (type == TYPE_VOID) {
-    return llvm::Type::getVoidTy(LLVMContext);
+    return llvm::Type::getVoidTy(TheContext);
   } else if (type == TYPE_VOID_POINTER) {
-    return llvm::Type::getInt8PtrTy(LLVMContext);
+    return llvm::Type::getInt8PtrTy(TheContext);
   }
 
   return nullptr;
 }
-llvm::Type *toLLVMType(llvm::LLVMContext &LLVMContext, llvm::Value *value) {
+llvm::Type *toLLVMType(llvm::Value *value) {
   llvm::Type *type = nullptr;
 
   if (!value) {
@@ -505,27 +509,27 @@ llvm::Type *toLLVMType(llvm::LLVMContext &LLVMContext, llvm::Value *value) {
 
   return type;
 }
-int toNonameType(llvm::LLVMContext &LLVMContext, llvm::Value *value) {
-  llvm::Type *type = toLLVMType(LLVMContext, value);
-  return toNonameType(LLVMContext, type);
+int toNonameType(llvm::Value *value) {
+  llvm::Type *type = toLLVMType(value);
+  return toNonameType(type);
 }
 
-int toNonameType(llvm::LLVMContext &LLVMContext, llvm::Type *type) {
-  if (llvm::Type::getDoubleTy(LLVMContext) == type) {
+int toNonameType(llvm::Type *type) {
+  if (llvm::Type::getDoubleTy(TheContext) == type) {
     return TYPE_DOUBLE;
-  } else if (llvm::Type::getFloatTy(LLVMContext) == type) {
+  } else if (llvm::Type::getFloatTy(TheContext) == type) {
     return TYPE_FLOAT;
-  } else if (llvm::Type::getInt64Ty(LLVMContext) == type) {
+  } else if (llvm::Type::getInt64Ty(TheContext) == type) {
     return TYPE_LONG;
-  } else if (llvm::Type::getInt32Ty(LLVMContext) == type) {
+  } else if (llvm::Type::getInt32Ty(TheContext) == type) {
     return TYPE_INT;
-  } else if (llvm::Type::getInt16Ty(LLVMContext) == type) {
+  } else if (llvm::Type::getInt16Ty(TheContext) == type) {
     return TYPE_SHORT;
-  } else if (llvm::Type::getInt8Ty(LLVMContext) == type) {
+  } else if (llvm::Type::getInt8Ty(TheContext) == type) {
     return TYPE_CHAR;
-  } else if (llvm::Type::getVoidTy(LLVMContext) == type) {
+  } else if (llvm::Type::getVoidTy(TheContext) == type) {
     return TYPE_VOID;
-  } else if (llvm::Type::getInt8PtrTy(LLVMContext) == type) {
+  } else if (llvm::Type::getInt8PtrTy(TheContext) == type) {
     return TYPE_VOID_POINTER;
   }
 
@@ -679,14 +683,14 @@ void *TopLevelExpNodeProcessorStrategy::process(ASTNode *node) {
     auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
     assert(ExprSymbol && "Function not found");
 
-    llvm::Type *result_type = top_level_exp_node->getReturnLLVMType(TheContext);
+    llvm::Type *result_type = top_level_exp_node->getReturnLLVMType();
     assert(result_type && "Result type is null");
 
     // result_type->print(dbgs(), true);
 
     // fprintf(stderr, "\n[type: %d]", result_type->getTypeID());
 
-    call_and_print_jit_symbol_value(stdout, TheContext, result_type, ExprSymbol);
+    call_and_print_jit_symbol_value(stdout, result_type, ExprSymbol);
 
     // Delete the anonymous expression module from the JIT.
     TheJIT->removeModule(module_handle);
@@ -739,6 +743,10 @@ NodeValue *NumberExpNode::getValue() {
     node = new NodeValue(*(short *)value);
   } else if (type == TYPE_CHAR) {
     node = new NodeValue(*(char *)value);
+  } else {
+    std::string error_msg("No such type " + std::to_string(type) +
+                          " is implemented for NodeValue *NumberExpNode::getValue()");
+    node = logErrorNV(new ErrorNode(getContext(), error_msg));
   }
 
   return node;
@@ -747,34 +755,43 @@ NodeValue *NumberExpNode::getValue() {
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
-std::vector<std::unique_ptr<Value>> NumberExpNode::codegen_elements(llvm::BasicBlock *bb) {
+std::vector<std::unique_ptr<Value>> NumberExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
   std::vector<std::unique_ptr<Value>> codegen;
   NodeValue *node = getValue();
 
   if (!node) {
-    logError("Invalid or undefined NodeValue");
+    *error = createError("Invalid or undefined NodeValue");
     return codegen;
   }
 
   Value *constant_value = node->constant_codegen(bb);
+
+  if (!constant_value) {
+    *error = createError("Invalid or undefined constant value");
+    return codegen;
+  }
+
   codegen.push_back(std::unique_ptr<Value>(constant_value));
   return codegen;
 }
-Value *NumberExpNode::codegen(llvm::BasicBlock *bb) { return codegen_elements_retlast(this, bb); }
+Value *NumberExpNode::codegen(llvm::BasicBlock *bb) {
+  Value *value = codegen_elements_retlast(this, bb);
+  if (!value) {
+    return logErrorLLVM("Could not resolve constant expression");
+  }
+  return value;
+}
 Value *StringExpNode::codegen(llvm::BasicBlock *bb) {
   NodeValue *node = getValue();
 
   if (!node) {
-    logError("Could not resolve string expression");
-    return nullptr;
+    return logErrorLLVM("Could not resolve string expression");
   }
 
   return node->constant_codegen(bb);
 }
-std::vector<std::unique_ptr<Value>> StringExpNode::codegen_elements(BasicBlock *bb) {
-  logError(
-      "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
-      "StringExpNode::codegen_elements");
+std::vector<std::unique_ptr<Value>> StringExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+  *error = createError("NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> StringExpNode::codegen_elements");
   return std::vector<std::unique_ptr<Value>>();
 }
 Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
@@ -787,17 +804,16 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
   NodeValue *node = getContext()->getVariable(name);
 
   if (!node) {
-    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
+    char msg[1024];
+    sprintf(msg, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
             getContext()->getName().c_str());
-    return nullptr;
+    return logErrorLLVM(msg);
   }
 
   return node->constant_codegen(bb);
 }
-std::vector<std::unique_ptr<Value>> VarExpNode::codegen_elements(BasicBlock *bb) {
-  logError(
-      "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
-      "VarExpNode::codegen_elements");
+std::vector<std::unique_ptr<Value>> VarExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+  *error = createError("NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> VarExpNode::codegen_elements");
   return std::vector<std::unique_ptr<Value>>();
 }
 }

@@ -26,7 +26,13 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
-  std::vector<std::unique_ptr<Value>> codegen_elements(node->codegen_elements());
+  Error* error = nullptr;
+  std::vector<std::unique_ptr<Value>> codegen_elements(node->codegen_elements(&error));
+
+  if (error) {
+    return logErrorLLVM(error->what().c_str());
+  }
+
   llvm::Value* last = nullptr;
   if (bb) {
     for (std::unique_ptr<Value>& ptr : codegen_elements) {
@@ -173,7 +179,7 @@ std::vector<std::unique_ptr<Value>> assign_codegen_util(AllocaInst* untyped_poit
   //  -->  ConstantInt* value_const = ConstantInt::get(TheContext, APInt(32,
   //  StringRef("100"), 10));
   Value* value_codegen = rhs->codegen();
-  int rhs_type = toNonameType(TheContext, value_codegen);
+  int rhs_type = toNonameType(value_codegen);
 
   // alocate the "typed" variable that will handle the Constant value
   //  -->  AllocaInst* typed_pointer_alloca = new

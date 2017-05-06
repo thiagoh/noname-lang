@@ -156,7 +156,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow
   return nullptr;
 }
 
-std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(llvm::BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   std::vector<std::unique_ptr<Value>> codegen;
   Value* result = nullptr;
   Value* L = lhs->codegen();
@@ -167,8 +167,8 @@ std::vector<std::unique_ptr<Value>> BinaryExpNode::codegen_elements(llvm::BasicB
     return codegen;
   }
 
-  int lhs_type = toNonameType(TheContext, L);
-  int rhs_type = toNonameType(TheContext, R);
+  int lhs_type = toNonameType(L);
+  int rhs_type = toNonameType(R);
   int result_type = get_adequate_result_type(lhs_type, rhs_type);
 
   /*

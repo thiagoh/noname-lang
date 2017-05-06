@@ -25,8 +25,7 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-AssignmentNode* new_declaration_node(ASTContext* context,
-                                     const std::string name) {
+AssignmentNode* new_declaration_node(ASTContext* context, const std::string name) {
   AssignmentNode* new_node = new AssignmentNode(context, name, NULL);
 
   NodeValue* temp_node = context->getVariable(name);
@@ -43,8 +42,7 @@ AssignmentNode* new_declaration_node(ASTContext* context,
   return new_node;
 }
 
-std::vector<std::unique_ptr<Value>> DeclarationNode::codegen_elements(
-    llvm::BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> DeclarationNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   AllocaInst* alloca_inst = declaration_codegen_util(this, bb);
 
   std::vector<std::unique_ptr<Value>> codegen;
@@ -52,9 +50,7 @@ std::vector<std::unique_ptr<Value>> DeclarationNode::codegen_elements(
 
   return codegen;
 }
-Value* DeclarationNode::codegen(llvm::BasicBlock* bb) {
-  return declaration_codegen_util(this, bb);
-}
+Value* DeclarationNode::codegen(llvm::BasicBlock* bb) { return declaration_codegen_util(this, bb); }
 void* DeclarationNode::eval() {
   NodeValue* node_value = nullptr;
   getContext()->store(name, node_value);

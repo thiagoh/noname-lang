@@ -112,7 +112,7 @@ ASTNode* FunctionDefNode::check() {
   return this;
 }
 
-llvm::Type* FunctionDefNode::getReturnLLVMType(LLVMContext& TheContext) {
+llvm::Type* FunctionDefNode::getReturnLLVMType() {
   if (!returnLLVMType) {
     fprintf(stderr, "Function %s has no return type set", name.c_str());
     exit(1);
@@ -160,7 +160,7 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
   return function;
 }
 llvm::Type* FunctionDefNode::getLLVMReturnInstType(llvm::Value* return_value) {
-  llvm::Type* type = toLLVMType(TheContext, return_value);
+  llvm::Type* type = toLLVMType(return_value);
   this->returnLLVMType = type;
   return type;
 }

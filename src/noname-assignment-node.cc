@@ -25,8 +25,7 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
-                                    ExpNode* exp) {
+AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* exp) {
   AssignmentNode* new_node = new AssignmentNode(context, name, exp);
   return new_node;
 }
@@ -38,23 +37,21 @@ void* AssignmentNode::eval() {
   getContext()->update(name, node_value);
 
   if (debug >= 2) {
-    fprintf(stdout, "\n############ updated %s on context %s \n\n",
-            name.c_str(), getContext()->getName().c_str());
+    fprintf(stdout, "\n############ updated %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
   }
 
   return node_value;
 }
-std::vector<std::unique_ptr<Value>> AssignmentNode::codegen_elements(
-    llvm::BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> AssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   std::vector<std::unique_ptr<Value>> codegen;
   AllocaInst* alloca_inst = getContext()->getAllocaInst(getName());
 
   if (!alloca_inst) {
+    *error = createError("AllocaInst is invalid or undefined");
     return codegen;
   }
 
-  std::vector<std::unique_ptr<Value>> assign_codegen =
-      assign_codegen_util(alloca_inst, this, bb);
+  std::vector<std::unique_ptr<Value>> assign_codegen = assign_codegen_util(alloca_inst, this, bb);
 
   codegen.push_back(std::unique_ptr<Value>(alloca_inst));
   for (auto&& uptr : assign_codegen) {
@@ -63,9 +60,7 @@ std::vector<std::unique_ptr<Value>> AssignmentNode::codegen_elements(
 
   return codegen;
 }
-Value* AssignmentNode::codegen(llvm::BasicBlock* bb) {
-  return codegen_elements_retlast(this, bb);
-}
+Value* AssignmentNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
 
 //----------------------------------------------//
 //----------- Processor Strategy ---------------//
