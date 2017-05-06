@@ -100,7 +100,7 @@ bool ASTContext::removeVariable(const std::string name) {
 NodeValue* ASTContext::updateVariable(const std::string name,
                                       NodeValue* node_value) {
   if (noname::debug >= 2) {
-    fprintf(stdout, "\n############ looking '%s' on context %s \n",
+    fprintf(stdout, "\n############ looking Variable '%s' on context %s \n",
             name.c_str(), this->getName().c_str());
   }
 
@@ -122,5 +122,63 @@ NodeValue* ASTContext::updateVariable(const std::string name,
 }
 NodeValue* ASTContext::update(const std::string name, NodeValue* node_value) {
   return updateVariable(name, node_value);
+}
+// AllocaInst
+llvm::AllocaInst* ASTContext::getAllocaInst(const std::string& name) {
+  itAllocaInst = mAllocaInst.find(name);
+  if (itAllocaInst != mAllocaInst.end()) {
+    return mAllocaInst[name];
+  }
+
+  ASTContext* parent = this->getParent();
+
+  if (parent) {
+    return parent->getAllocaInst(name);
+  }
+
+  return nullptr;
+}
+bool ASTContext::storeAllocaInst(const std::string name,
+                                       AllocaInst* alloca_inst) {
+  mAllocaInst[name] = alloca_inst;
+  return true;
+}
+bool ASTContext::store(const std::string name, AllocaInst* alloca_inst) {
+  return storeAllocaInst(name, alloca_inst);
+}
+bool ASTContext::removeAllocaInst(const std::string name) {
+  itAllocaInst = mAllocaInst.find(name);
+  if (itAllocaInst != mAllocaInst.end()) {
+    mAllocaInst.erase(itAllocaInst);
+    return true;
+  }
+  return false;
+}
+llvm::AllocaInst* ASTContext::updateAllocaInst(const std::string name,
+                                               AllocaInst* alloca_inst) {
+  if (noname::debug >= 2) {
+    fprintf(stdout, "\n############ looking AllocaInst '%s' on context %s \n",
+            name.c_str(), this->getName().c_str());
+  }
+
+  itAllocaInst = mAllocaInst.find(name);
+
+  if (itAllocaInst != mAllocaInst.end()) {
+    mAllocaInst[name] = alloca_inst;
+    return alloca_inst;
+  }
+
+  ASTContext* parent = this->getParent();
+
+  if (parent) {
+    return parent->update(name, alloca_inst);
+  }
+
+  std::string error_msg("AllocaInst '" + name + "' is not set");
+  return logErrorLLVMA(new LogicErrorNode(this, error_msg));
+}
+llvm::AllocaInst* ASTContext::update(const std::string name,
+                                     AllocaInst* alloca_inst) {
+  return updateAllocaInst(name, alloca_inst);
 }
 }

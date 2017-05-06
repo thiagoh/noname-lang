@@ -43,22 +43,23 @@ NodeValue* CallExpNode::getValue() {
   // function_node->setContext(temp_context);
 
   ExpNode* returnNode = function_node->getReturnNode();
-  std::vector<std::unique_ptr<ExpNode>>* value_args = &getArgs();
-  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args =
+  const std::vector<std::unique_ptr<ExpNode>>* value_args = &getArgs();
+  std::vector<std::unique_ptr<ExpNode>>::const_iterator it_value_args =
       value_args->begin();
-  std::vector<std::unique_ptr<arg_t>>* signature_args =
+
+  const std::vector<std::unique_ptr<arg_t>>* signature_args =
       &function_node->getArgs();
-  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args =
+  std::vector<std::unique_ptr<arg_t>>::const_iterator it_signature_args =
       signature_args->begin();
-  std::vector<std::unique_ptr<ASTNode>>* body_nodes =
+  const std::vector<std::unique_ptr<ASTNode>>* body_nodes =
       &function_node->getBodyNodes();
-  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes =
+  std::vector<std::unique_ptr<ASTNode>>::const_iterator it_body_nodes =
       body_nodes->begin();
 
   for (; it_signature_args != signature_args->end() ||
          it_value_args != value_args->end();) {
-    std::unique_ptr<ExpNode>& value_arg = *it_value_args;
-    std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
+    const std::unique_ptr<ExpNode>& value_arg = *it_value_args;
+    const std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
 
     call_exp_context->store(signature_arg->name, value_arg->getValue());
 
@@ -67,7 +68,7 @@ NodeValue* CallExpNode::getValue() {
   }
 
   for (; it_body_nodes != body_nodes->end();) {
-    std::unique_ptr<ASTNode>& body_node = *it_body_nodes;
+    const std::unique_ptr<ASTNode>& body_node = *it_body_nodes;
 
     body_node->eval();
 
@@ -117,25 +118,25 @@ Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
     return logErrorLLVM("Unknown function referenced");
   }
 
-  std::vector<std::unique_ptr<ExpNode>>& value_args = getArgs();
+  const std::vector<std::unique_ptr<ExpNode>>& value_args = getArgs();
 
   // If argument mismatch error.
   if (function->arg_size() != value_args.size()) {
     return logErrorLLVM("Incorrect # arguments passed");
   }
 
-  std::vector<std::unique_ptr<ExpNode>>::iterator it_value_args =
+  std::vector<std::unique_ptr<ExpNode>>::const_iterator it_value_args =
       value_args.begin();
-  std::vector<std::unique_ptr<arg_t>>& signature_args =
+  const std::vector<std::unique_ptr<arg_t>>& signature_args =
       function_def_node->getArgs();
-  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args =
+  std::vector<std::unique_ptr<arg_t>>::const_iterator it_signature_args =
       signature_args.begin();
   std::vector<llvm::Value*> args_value;
 
   for (; it_signature_args != signature_args.end() ||
          it_value_args != value_args.end();) {
-    std::unique_ptr<ExpNode>& value_arg = *it_value_args;
-    std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
+    const std::unique_ptr<ExpNode>& value_arg = *it_value_args;
+    const std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
 
     call_exp_context->store(signature_arg->name, value_arg->getValue());
 
@@ -193,5 +194,4 @@ void* CallExpNodeProcessorStrategy::process(ASTNode* node) {
   }
   return nullptr;
 }
-
 }

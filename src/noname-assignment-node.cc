@@ -46,17 +46,22 @@ void* AssignmentNode::eval() {
 }
 std::vector<std::unique_ptr<Value>> AssignmentNode::codegen_elements(
     llvm::BasicBlock* bb) {
-  // std::vector<std::unique_ptr<Value>> declaration_codegen =
-  // declaration_codegen_util(this, bb);
-  std::vector<std::unique_ptr<Value>> assign_codegen =
-      assign_codegen_util(this, bb);
-  // std::vector<std::unique_ptr<Value>> codegen(std::vector());
-  // codegen.insert(codegen.end(), declaration_codegen.begin(),
-  // declaration_codegen.end());
-  // codegen.insert(codegen.end(), assign_codegen.begin(),
-  // assign_codegen.end());
+  std::vector<std::unique_ptr<Value>> codegen;
+  AllocaInst* alloca_inst = getContext()->getAllocaInst(getName());
 
-  return assign_codegen;
+  if (!alloca_inst) {
+    return codegen;
+  }
+
+  std::vector<std::unique_ptr<Value>> assign_codegen =
+      assign_codegen_util(alloca_inst, this, bb);
+
+  codegen.push_back(std::unique_ptr<Value>(alloca_inst));
+  for (auto&& uptr : assign_codegen) {
+    codegen.push_back(std::move(uptr));
+  }
+
+  return codegen;
 }
 Value* AssignmentNode::codegen(llvm::BasicBlock* bb) {
   return codegen_elements_retlast(this, bb);
@@ -71,5 +76,4 @@ void* AssignmentNodeProcessorStrategy::process(ASTNode* node) {
   print_node_value(stdout, return_value);
   return nullptr;
 }
-
 }

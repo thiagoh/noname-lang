@@ -173,6 +173,7 @@ NodeValue* logErrorNV(ErrorNode* error_node);
 llvm::Value* logErrorLLVM(const char* str);
 llvm::Function* logErrorLLVMF(const char* str);
 llvm::Value* logErrorLLVM(ErrorNode* error_node);
+llvm::AllocaInst* logErrorLLVMA(ErrorNode* error_node);
 llvm::Function* logErrorLLVMF(ErrorNode* error_node);
 
 bool is_file_already_imported(const std::string& file_path);
@@ -380,10 +381,15 @@ class ASTContext {
  private:
   std::string name;
   ASTContext* parent;
+
   std::map<std::string, FunctionDefNode*> mFunctions;
   std::map<std::string, FunctionDefNode*>::iterator itFunctions;
+
   std::map<std::string, NodeValue*> mVariables;
   std::map<std::string, NodeValue*>::iterator itVariables;
+
+  std::map<std::string, AllocaInst*> mAllocaInst;
+  std::map<std::string, AllocaInst*>::iterator itAllocaInst;
 
  public:
   ASTContext(const std::string& name) : name(name), parent(NULL) {}
@@ -393,41 +399,57 @@ class ASTContext {
       : name(copy.name),
         parent(copy.parent),
         mFunctions(copy.mFunctions),
-        mVariables(copy.mVariables) {}
+        mVariables(copy.mVariables),
+        mAllocaInst(copy.mAllocaInst) {}
   ASTContext(const ASTContext& copy, ASTContext* parent)
       : name(copy.name),
         parent(parent),
         mFunctions(copy.mFunctions),
-        mVariables(copy.mVariables) {}
+        mVariables(copy.mVariables),
+        mAllocaInst(copy.mAllocaInst) {}
   ASTContext(const std::string& name, const ASTContext& copy,
              ASTContext* parent)
       : name(name),
         parent(parent),
         mFunctions(copy.mFunctions),
-        mVariables(copy.mVariables) {}
+        mVariables(copy.mVariables),
+        mAllocaInst(copy.mAllocaInst) {}
   virtual ~ASTContext() = default;
   ASTContext& operator=(const ASTContext& copy) {
     name = copy.name;
     parent = copy.parent;
     mFunctions = copy.mFunctions;
     mVariables = copy.mVariables;
+    mAllocaInst = copy.mAllocaInst;
     return *this;
   }
   std::string& getName() { return name; }
   ASTContext* getParent() { return parent; }
+
   // Functions
   FunctionDefNode* getFunction(const std::string& name);
   bool storeFunction(const std::string name, FunctionDefNode* function_nomde);
   bool store(const std::string name, FunctionDefNode* function_nomde);
+  bool removeFunction(const std::string name);
+
   // Variables
   NodeValue* getVariableShallow(const std::string& name);
   NodeValue* getVariable(const std::string& name);
   bool storeVariable(const std::string name, NodeValue* node_value);
   bool store(const std::string name, NodeValue* node_value);
-  bool removeFunction(const std::string name);
   bool removeVariable(const std::string name);
   NodeValue* updateVariable(const std::string name, NodeValue* node_value);
   NodeValue* update(const std::string name, NodeValue* node_value);
+
+  // AllocaInst
+  llvm::AllocaInst* getAllocaInst(const std::string& name);
+  bool storeAllocaInst(const std::string name, llvm::AllocaInst* alloca_inst);
+  bool store(const std::string name, llvm::AllocaInst* alloca_inst);
+  bool removeAllocaInst(const std::string name);
+  llvm::AllocaInst* updateAllocaInst(const std::string name,
+                                     llvm::AllocaInst* alloca_inst);
+  llvm::AllocaInst* update(const std::string name,
+                           llvm::AllocaInst* alloca_inst);
 };
 
 class NodeValue {
@@ -680,8 +702,10 @@ class FunctionDefNode : public ASTNode {
 
   ASTNode* check() override;
   const std::string& getName() const { return name; }
-  std::vector<std::unique_ptr<arg_t>>& getArgs() { return args; }
-  std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() { return bodyNodes; }
+  const std::vector<std::unique_ptr<arg_t>>& getArgs() const { return args; }
+  const std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() const {
+    return bodyNodes;
+  }
   ExpNode* getReturnNode() { return returnNode; }
   llvm::Type* getReturnLLVMType(LLVMContext& TheContext);
 
@@ -779,7 +803,7 @@ class CallExpNode : public ExpNode {
   };
 
   const std::string& getCallee() const { return callee; }
-  std::vector<std::unique_ptr<ExpNode>>& getArgs() { return args; }
+  const std::vector<std::unique_ptr<ExpNode>>& getArgs() const { return args; }
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_CALL_EXP; };

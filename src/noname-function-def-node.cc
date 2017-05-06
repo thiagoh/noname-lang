@@ -237,15 +237,15 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // Builder.SetInsertPoint(function_bb);
 
   ASTContext* function_def_node_context = getContext();
-  std::vector<std::unique_ptr<arg_t>>* signature_args = &getArgs();
-  std::vector<std::unique_ptr<arg_t>>::iterator it_signature_args =
+  const std::vector<std::unique_ptr<arg_t>>* signature_args = &getArgs();
+  std::vector<std::unique_ptr<arg_t>>::const_iterator it_signature_args =
       signature_args->begin();
-  std::vector<std::unique_ptr<ASTNode>>* body_nodes = &getBodyNodes();
-  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes =
+  const std::vector<std::unique_ptr<ASTNode>>* body_nodes = &getBodyNodes();
+  std::vector<std::unique_ptr<ASTNode>>::const_iterator it_body_nodes =
       body_nodes->begin();
 
   while (it_signature_args != signature_args->end()) {
-    std::unique_ptr<arg_t>& signature_arg = *it_signature_args++;
+    const std::unique_ptr<arg_t>& signature_arg = *it_signature_args++;
 
     NodeValue* arg_node_value = NULL;
 
@@ -257,7 +257,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   }
 
   while (it_body_nodes != body_nodes->end()) {
-    std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
+    const std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
     if (noname::debug >= 1) {
       fprintf(stderr, "\n[## codegen of body statement (type %s)]",

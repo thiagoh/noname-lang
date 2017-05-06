@@ -122,6 +122,11 @@ llvm::Value* logErrorLLVM(ErrorNode* error_node) {
   return nullptr;
 }
 
+llvm::AllocaInst* logErrorLLVMA(ErrorNode* error_node) {
+  logError(error_node->what().c_str());
+  return nullptr;
+}
+
 llvm::Function* logErrorLLVMF(ErrorNode* error_node) {
   logError(error_node->what().c_str());
   return nullptr;
