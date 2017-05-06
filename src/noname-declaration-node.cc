@@ -45,12 +45,15 @@ AssignmentNode* new_declaration_node(ASTContext* context,
 
 std::vector<std::unique_ptr<Value>> DeclarationNode::codegen_elements(
     llvm::BasicBlock* bb) {
-  return declaration_codegen(this, bb);
+  AllocaInst* alloca_inst = declaration_codegen_util(this, bb);
+
+  std::vector<std::unique_ptr<Value>> codegen;
+  codegen.push_back(std::unique_ptr<Value>(alloca_inst));
+
+  return codegen;
 }
 Value* DeclarationNode::codegen(llvm::BasicBlock* bb) {
-  std::vector<std::unique_ptr<Value>>* declaration_codegen =
-      declaration_codegen(this, bb);
-  return declaration_codegen[0];
+  return declaration_codegen_util(this, bb);
 }
 void* DeclarationNode::eval() {
   NodeValue* node_value = nullptr;

@@ -170,21 +170,6 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
 
   return function;
 }
-ASTNode* createAnnonymousFunctionDefNode(ASTContext* context,
-                                         ExpNode* exp_node) {
-  const std::string annon_name = "__anon_expr";
-  arglist_t* arg_list = new_arg_list(context);
-  stmtlist_t* stmt_list = new_stmt_list(context);
-  ExpNode* return_node = exp_node;
-
-  auto* function_def_node =
-      new_function_def(context, annon_name, arg_list, stmt_list, return_node);
-
-  release(arg_list);
-  release(stmt_list);
-
-  return function_def_node;
-}
 llvm::Type* FunctionDefNode::getLLVMReturnInstType(llvm::Value* return_value) {
   llvm::Type* type = nullptr;
 

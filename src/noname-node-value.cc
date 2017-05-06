@@ -41,31 +41,34 @@ NodeValue::NodeValue(long value) : type(TYPE_LONG), value(0) {
   memcpy(this->value, &value, sizeof(long));
 }
 
-Value* NodeValue::codegen(llvm::BasicBlock* bb) {
+Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullptr) {
   Value* codegen = nullptr;
 
   if (type == TYPE_DOUBLE) {
     APFloat ap_value(*(double*)value);
-    codegen = ConstantFP::get(TheContext, ap_value, 10);
+    codegen = ConstantFP::get(TheContext, ap_value);
   } else if (type == TYPE_FLOAT) {
     APFloat ap_value(*(float*)value);
-    codegen = ConstantFP::get(TheContext, ap_value, 10);
+    codegen = ConstantFP::get(TheContext, ap_value);
   } else if (type == TYPE_LONG) {
     APInt ap_value(CHAR_BIT * sizeof(long), *(long*)value, true);
-    codegen = ConstantInt::get(TheContext, ap_value, 10);
+    codegen = ConstantInt::get(TheContext, ap_value);
   } else if (type == TYPE_INT) {
     // APInt (unsigned numBits, uint64_t val, bool isSigned=false)
     APInt ap_value(CHAR_BIT * sizeof(int), *(int*)value, true);
-    codegen = ConstantInt::get(TheContext, ap_value, 10);
+    codegen = ConstantInt::get(TheContext, ap_value);
   } else if (type == TYPE_SHORT) {
     APInt ap_value(CHAR_BIT * sizeof(short), *(short*)value, true);
-    codegen = ConstantInt::get(TheContext, ap_value, 10);
+    codegen = ConstantInt::get(TheContext, ap_value);
   } else if (type == TYPE_CHAR) {
     APInt ap_value(CHAR_BIT * sizeof(char), *(char*)value, true);
-    codegen = ConstantInt::get(TheContext, ap_value, 10);
+    codegen = ConstantInt::get(TheContext, ap_value);
   }
 
   return codegen;
+}
+Value* NodeValue::constant_codegen(llvm::BasicBlock* bb) {
+  return constant_codegen_util(type, value, bb);
 }
 
 void* NodeValue::getValue(int as_type) {

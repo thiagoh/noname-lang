@@ -25,6 +25,8 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+std::string pow_function_name("_noname_function_pow");
+
 NodeValue* BinaryExpNode::getValue() {
   NodeValue* lhs_node_value = lhs->getValue();
   NodeValue* rhs_node_value = rhs->getValue();
@@ -146,7 +148,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
     return logErrorLLVM("Unknown function referenced");
   }
 
-  std::vector<std::unique_ptr<Value>> args_values;
+  std::vector<Value*> args_values;
   args_values.push_back(L);
   args_values.push_back(R);
 
@@ -156,20 +158,18 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R,
 }
 
 Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) {
-  NodeValue* lhs_node_value = lhs->getValue();
-  NodeValue* rhs_node_value = rhs->getValue();
 
-  int result_type = get_adequate_result_type(lhs_node_value, rhs_node_value);
-  void* lhs_value = lhs_node_value->getValue(result_type);
-  void* rhs_value = rhs_node_value->getValue(result_type);
   Value* result = nullptr;
-
-  Value* L = lhs_node_value->codegen();
-  Value* R = rhs_node_value->codegen();
+  Value* L = lhs->codegen();
+  Value* R = rhs->codegen();
 
   if (!L || !R) {
     return result;
   }
+
+  int lhs_type = fromLLVMValueToType(L);
+  int rhs_type = fromLLVMValueToType(R);
+  int result_type = get_adequate_result_type(lhs_type, rhs_type);
 
   /*
   how to insert into correct point
@@ -214,8 +214,6 @@ Value* BinaryExpNode::codegen(llvm::BasicBlock* bb) {
 
   } else if (result_type == TYPE_LONG || result_type == TYPE_INT ||
              result_type == TYPE_SHORT || result_type == TYPE_CHAR) {
-    int typed_lhs_value = *(int*)lhs_value;
-    int typed_rhs_value = *(int*)rhs_value;
 
     if (op == '+') {
       // result = Builder.CreateAdd(L, R, "addtmp");

@@ -41,8 +41,6 @@ PointerType* PointerTy_5;
 PointerType* PointerTy_6;
 PointerType* PointerTy_7;
 
-std::string pow_function_name("_noname_function_pow");
-
 void InitializeNonameEnvironment() {
   if (initialized) {
     return;
@@ -506,7 +504,10 @@ llvm::Type* toLLVLType(llvm::LLVMContext& LLVMContext, int type) {
 
   return nullptr;
 }
-
+int fromLLVMValueToType(llvm::Value* value) {
+  fprintf(stderr, "NOT IMPLEMENTED - int fromLLVMValueToType(llvm::Value* value)");
+  return 0;
+}
 VarExpNode* new_var_node(ASTContext* context, const std::string name) {
   VarExpNode* new_node = new VarExpNode(context, name);
   return new_node;
@@ -563,17 +564,30 @@ NodeValue* VarExpNode::getValue() {
   return node;
 }
 
+bool both_of_type(int lhs_type, int rhs_type, int type) {
+  return lhs_type == type && rhs_type == type;
+}
+
+bool any_of_type(int lhs_type, int rhs_type, int type) {
+  return (lhs_type == type || rhs_type == type);
+}
+
+bool match_to_types(int lhs_type, int rhs_type, int type1, int type2) {
+  return ((lhs_type == type1 && rhs_type == type2) ||
+          (lhs_type == type2 && rhs_type == type1));
+}
+
 bool both_of_type(NodeValue* lhs, NodeValue* rhs, int type) {
-  return lhs && rhs && lhs->getType() == type && rhs->getType() == type;
+  return lhs && rhs && both_of_type(lhs->getType(), rhs->getType(), type);
 }
 
 bool any_of_type(NodeValue* lhs, NodeValue* rhs, int type) {
-  return lhs && rhs && (lhs->getType() == type || rhs->getType() == type);
+  return lhs && rhs && any_of_type(lhs->getType(), rhs->getType(), type);
 }
 
 bool match_to_types(NodeValue* lhs, NodeValue* rhs, int type1, int type2) {
-  return lhs && rhs && ((lhs->getType() == type1 && rhs->getType() == type2) ||
-                        (lhs->getType() == type2 && rhs->getType() == type1));
+  return lhs && rhs &&
+         match_to_types(lhs->getType(), rhs->getType(), type1, type2);
 }
 
 int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs) {
@@ -599,6 +613,34 @@ int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs) {
     return TYPE_SHORT;
   }
   if (any_of_type(lhs, rhs, TYPE_CHAR)) {
+    return TYPE_CHAR;
+  }
+  return -1;
+}
+
+int get_adequate_result_type(int lhs_type, int rhs_type) {
+  if (any_of_type(lhs_type, rhs_type, TYPE_DOUBLE)) {
+    return TYPE_DOUBLE;
+  }
+  if (both_of_type(lhs_type, rhs_type, TYPE_FLOAT)) {
+    return TYPE_FLOAT;
+  }
+  if (match_to_types(lhs_type, rhs_type, TYPE_FLOAT, TYPE_LONG)) {
+    return TYPE_DOUBLE;
+  }
+  if (any_of_type(lhs_type, rhs_type, TYPE_FLOAT)) {
+    return TYPE_FLOAT;
+  }
+  if (any_of_type(lhs_type, rhs_type, TYPE_LONG)) {
+    return TYPE_LONG;
+  }
+  if (any_of_type(lhs_type, rhs_type, TYPE_INT)) {
+    return TYPE_INT;
+  }
+  if (any_of_type(lhs_type, rhs_type, TYPE_SHORT)) {
+    return TYPE_SHORT;
+  }
+  if (any_of_type(lhs_type, rhs_type, TYPE_CHAR)) {
     return TYPE_CHAR;
   }
   return -1;
@@ -699,7 +741,7 @@ Value* NumberExpNode::codegen(llvm::BasicBlock* bb) {
     return nullptr;
   }
 
-  return node->codegen();
+  return node->constant_codegen(bb);
 }
 Value* StringExpNode::codegen(llvm::BasicBlock* bb) {
   NodeValue* node = this->getValue();
@@ -709,13 +751,14 @@ Value* StringExpNode::codegen(llvm::BasicBlock* bb) {
     return nullptr;
   }
 
-  return node->codegen();
+  return node->constant_codegen(bb);
 }
 std::vector<std::unique_ptr<Value>> StringExpNode::codegen_elements(
     BasicBlock* bb) {
   logError(
       "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
       "StringExpNode::codegen_elements");
+  return std::vector<std::unique_ptr<Value>>();
 }
 Value* VarExpNode::codegen(llvm::BasicBlock* bb) {
   //
@@ -732,13 +775,13 @@ Value* VarExpNode::codegen(llvm::BasicBlock* bb) {
     return nullptr;
   }
 
-  return node->codegen();
+  return node->constant_codegen(bb);
 }
 std::vector<std::unique_ptr<Value>> VarExpNode::codegen_elements(
     BasicBlock* bb) {
   logError(
       "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
       "VarExpNode::codegen_elements");
+  return std::vector<std::unique_ptr<Value>>();
 }
-
 }

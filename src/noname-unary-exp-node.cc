@@ -34,8 +34,7 @@ NodeValue* UnaryExpNode::getValue() {
 }
 
 Value* UnaryExpNode::codegen(llvm::BasicBlock* bb) {
-  NodeValue* rhs_node_value = rhs->getValue();
-  Value* R = rhs_node_value->codegen();
+  Value* R = rhs->codegen();
   fprintf(
       stdout,
       "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
@@ -46,5 +45,6 @@ std::vector<std::unique_ptr<Value>> UnaryExpNode::codegen_elements(
   logError(
       "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
       "UnaryExpNode::codegen_elements");
+  return std::vector<std::unique_ptr<Value>>();
 }
 }
