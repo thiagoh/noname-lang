@@ -215,6 +215,11 @@ std::vector<std::unique_ptr<Value>> declaration_codegen_util(
 std::vector<std::unique_ptr<Value>> assign_codegen_util(
     Assignment* assignment, llvm::BasicBlock* bb = nullptr);
 
+bool both_of_type(NodeValue* lhs, NodeValue* rhs, int type);
+bool any_of_type(NodeValue* lhs, NodeValue* rhs, int type);
+bool match_to_types(NodeValue* lhs, NodeValue* rhs, int type1, int type2);
+int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs);
+
 void release(explist_t* explist);
 void release(explist_node_t* explist_node);
 void release(stmtlist_t* stmtlist);
@@ -438,8 +443,6 @@ class ExpNode : public ASTNode {
     return node_value;
   };
 
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(
-      BasicBlock* bb = nullptr) = 0;
   virtual NodeValue* getValue() = 0;
 
   ProcessorStrategy* getProcessorStrategy() override {

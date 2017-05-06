@@ -563,16 +563,6 @@ NodeValue* VarExpNode::getValue() {
   return node;
 }
 
-// UNNECESSARY
-// void* UnaryExpNode::eval() { NodeValue* node_value = getValue(); }
-NodeValue* UnaryExpNode::getValue() {
-  NodeValue* rhs_value = rhs->getValue();
-  fprintf(
-      stdout,
-      "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
-  return rhs_value;
-}
-
 bool both_of_type(NodeValue* lhs, NodeValue* rhs, int type) {
   return lhs && rhs && lhs->getType() == type && rhs->getType() == type;
 }
@@ -721,7 +711,12 @@ Value* StringExpNode::codegen(llvm::BasicBlock* bb) {
 
   return node->codegen();
 }
-
+std::vector<std::unique_ptr<Value>> StringExpNode::codegen_elements(
+    BasicBlock* bb) {
+  logError(
+      "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
+      "StringExpNode::codegen_elements");
+}
 Value* VarExpNode::codegen(llvm::BasicBlock* bb) {
   //
   // TODO FIXME: create a cache for this
@@ -739,13 +734,11 @@ Value* VarExpNode::codegen(llvm::BasicBlock* bb) {
 
   return node->codegen();
 }
-
-Value* UnaryExpNode::codegen(llvm::BasicBlock* bb) {
-  NodeValue* rhs_node_value = rhs->getValue();
-  Value* R = rhs_node_value->codegen();
-  fprintf(
-      stdout,
-      "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
-  return R;
+std::vector<std::unique_ptr<Value>> VarExpNode::codegen_elements(
+    BasicBlock* bb) {
+  logError(
+      "NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> "
+      "VarExpNode::codegen_elements");
 }
+
 }
