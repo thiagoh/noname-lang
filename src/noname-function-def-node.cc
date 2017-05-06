@@ -25,11 +25,9 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-ASTNode* new_function_def(ASTContext* context, const std::string name,
-                          arglist_t* arg_list, stmtlist_t* stmt_list,
+ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* return_node) {
-  FunctionDefNode* new_node =
-      new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
+  FunctionDefNode* new_node = new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
 
   ASTNode* check_result = new_node->check();
 
@@ -45,10 +43,9 @@ ASTNode* new_function_def(ASTContext* context, const std::string name,
   return new_node;
 }
 
-FunctionDefNode::FunctionDefNode(
-    ASTContext* context, const std::string& name,
-    std::vector<std::unique_ptr<arg_t>>& args,
-    std::vector<std::unique_ptr<ASTNode>>& body_nodes, ExpNode* returnNode)
+FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name,
+                                 std::vector<std::unique_ptr<arg_t>>& args,
+                                 std::vector<std::unique_ptr<ASTNode>>& body_nodes, ExpNode* returnNode)
     : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
       name(name),
       args(std::move(args)),
@@ -57,10 +54,8 @@ FunctionDefNode::FunctionDefNode(
   ;
 }
 
-FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name,
-                                 arglist_t* head_arg_list,
-                                 stmtlist_t* head_stmt_list,
-                                 ExpNode* returnNode)
+FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list,
+                                 stmtlist_t* head_stmt_list, ExpNode* returnNode)
     : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
       name(name),
       args(std::vector<std::unique_ptr<arg_t>>()),
@@ -89,21 +84,18 @@ ASTNode* FunctionDefNode::check() {
   FunctionDefNode* function_node = context->getFunction(name);
   if (function_node) {
     char error_message[2048];
-    snprintf(error_message, 2048,
-             "Function '%s' already exists in this context. %s", name.c_str(),
+    snprintf(error_message, 2048, "Function '%s' already exists in this context. %s", name.c_str(),
              context->getName().c_str());
     return new LogicErrorNode(context, error_message);
   }
 
-  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes =
-      bodyNodes.begin();
+  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = bodyNodes.begin();
 
   for (; it_body_nodes != bodyNodes.end();) {
     std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
 
     if (isa<ImportNode>(*bodyNode.get())) {
-      return new InvalidStatement(context,
-                                  "Cannot import inside function definition");
+      return new InvalidStatement(context, "Cannot import inside function definition");
     }
 
     if (noname::debug >= 2) {
@@ -114,8 +106,7 @@ ASTNode* FunctionDefNode::check() {
   }
 
   if (returnNode && isa<ImportNode>(*returnNode)) {
-    return new InvalidStatement(context,
-                                "Cannot import inside function definition");
+    return new InvalidStatement(context, "Cannot import inside function definition");
   }
 
   return this;
@@ -155,11 +146,9 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
   // Make the function type:  double(double,double) etc.
   std::vector<llvm::Type*> arg_types(args.size(), Type::getVoidTy(TheContext));
 
-  FunctionType* function_type =
-      FunctionType::get(return_type, arg_types, false);
+  FunctionType* function_type = FunctionType::get(return_type, arg_types, false);
 
-  function = Function::Create(function_type, Function::ExternalLinkage, name,
-                              TheModule.get());
+  function = Function::Create(function_type, Function::ExternalLinkage, name, TheModule.get());
   function->setCallingConv(CallingConv::C);
 
   // Set names for all arguments.
@@ -238,11 +227,9 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
 
   ASTContext* function_def_node_context = getContext();
   const std::vector<std::unique_ptr<arg_t>>* signature_args = &getArgs();
-  std::vector<std::unique_ptr<arg_t>>::const_iterator it_signature_args =
-      signature_args->begin();
+  std::vector<std::unique_ptr<arg_t>>::const_iterator it_signature_args = signature_args->begin();
   const std::vector<std::unique_ptr<ASTNode>>* body_nodes = &getBodyNodes();
-  std::vector<std::unique_ptr<ASTNode>>::const_iterator it_body_nodes =
-      body_nodes->begin();
+  std::vector<std::unique_ptr<ASTNode>>::const_iterator it_body_nodes = body_nodes->begin();
 
   while (it_signature_args != signature_args->end()) {
     const std::unique_ptr<arg_t>& signature_arg = *it_signature_args++;
@@ -260,8 +247,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     const std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
     if (noname::debug >= 1) {
-      fprintf(stderr, "\n[## codegen of body statement (type %s)]",
-              ASTNode::toString(body_node->getKind()).c_str());
+      fprintf(stderr, "\n[## codegen of body statement (type %s)]", ASTNode::toString(body_node->getKind()).c_str());
     }
 
     Instruction* body_codegen_value = (Instruction*)body_node->codegen();

@@ -31,18 +31,15 @@ void* DeclarationAssignmentNode::eval() {
   getContext()->store(name, node_value);
 
   if (noname::debug >= 2) {
-    fprintf(stdout, "\n############ stored %s on context %s \n\n", name.c_str(),
-            getContext()->getName().c_str());
+    fprintf(stdout, "\n############ stored %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
   }
 
   return node_value;
 }
-std::vector<std::unique_ptr<Value>> DeclarationAssignmentNode::codegen_elements(
-    llvm::BasicBlock* bb) {
+std::vector<std::unique_ptr<Value>> DeclarationAssignmentNode::codegen_elements(llvm::BasicBlock* bb) {
   AllocaInst* untyped_poiter_alloca = declaration_codegen_util(this, bb);
 
-  std::vector<std::unique_ptr<Value>> assign_codegen =
-      assign_codegen_util(untyped_poiter_alloca, this, bb);
+  std::vector<std::unique_ptr<Value>> assign_codegen = assign_codegen_util(untyped_poiter_alloca, this, bb);
   std::vector<std::unique_ptr<Value>> codegen;
 
   codegen.push_back(std::unique_ptr<Value>(untyped_poiter_alloca));
@@ -54,7 +51,5 @@ std::vector<std::unique_ptr<Value>> DeclarationAssignmentNode::codegen_elements(
   return codegen;
 }
 
-Value* DeclarationAssignmentNode::codegen(llvm::BasicBlock* bb) {
-  return codegen_elements_retlast(this, bb);
-}
+Value* DeclarationAssignmentNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
 }
