@@ -25,6 +25,26 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+ASTNode* new_function_def(ASTContext* context, const std::string name,
+                          arglist_t* arg_list, stmtlist_t* stmt_list,
+                          ExpNode* return_node) {
+  FunctionDefNode* new_node =
+      new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
+
+  ASTNode* check_result = new_node->check();
+
+  if (check_result && isa<ErrorNode>(*check_result)) {
+    return check_result;
+  }
+
+  context->store(name, new_node);
+  if (noname::debug >= 1) {
+    fprintf(stdout, "\n[new_function_def %s]", context->getName().c_str());
+  }
+
+  return new_node;
+}
+
 FunctionDefNode::FunctionDefNode(
     ASTContext* context, const std::string& name,
     std::vector<std::unique_ptr<arg_t>>& args,
@@ -295,5 +315,31 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   }
 
   return function;
+}
+
+//----------------------------------------------//
+//----------- Processor Strategy ---------------//
+//----------------------------------------------//
+
+void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
+  FunctionDefNode* function_def_node = (FunctionDefNode*)node;
+  auto* function_ir = function_def_node->codegen();
+
+  if (!function_ir) {
+    fprintf(stderr, "\nFunction could not be defined");
+  }
+  if (function_ir) {
+    if (noname::debug >= 1) {
+      fprintf(stderr, "\nRead function definition:");
+      function_ir->dump();
+    }
+    TheJIT->writeToFile(TheModule.get());
+    TheJIT->addModule(std::move(TheModule));
+    InitializeModuleAndPassManager();
+  }
+
+  NodeValue* return_value = (NodeValue*)function_def_node->eval();
+  print_node_value(stdout, return_value);
+  return nullptr;
 }
 }
