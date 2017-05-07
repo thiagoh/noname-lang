@@ -25,9 +25,7 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-NodeValue::NodeValue(const std::string& value) : type(TYPE_STRING), value(0) {
-  this->value = new std::string(value);
-}
+NodeValue::NodeValue(const std::string& value) : type(TYPE_STRING), value(0) { this->value = new std::string(value); }
 NodeValue::NodeValue(int value) : type(TYPE_INT), value(0) {
   this->value = new int;
   memcpy(this->value, &value, sizeof(int));
@@ -63,13 +61,15 @@ Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullp
   } else if (type == TYPE_CHAR) {
     APInt ap_value(CHAR_BIT * sizeof(char), *(char*)value, true);
     codegen = ConstantInt::get(TheContext, ap_value);
+  } else {
+    char msg[1024];
+    sprintf(msg, "Invalid constant value type. Type: %d", type);
+    return logErrorLLVM(msg);
   }
 
   return codegen;
 }
-Value* NodeValue::constant_codegen(llvm::BasicBlock* bb) {
-  return constant_codegen_util(type, value, bb);
-}
+Value* NodeValue::constant_codegen(llvm::BasicBlock* bb) { return constant_codegen_util(type, value, bb); }
 
 void* NodeValue::getValue(int as_type) {
   // string

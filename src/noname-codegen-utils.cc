@@ -43,6 +43,8 @@ Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
         bb->getInstList().push_back((llvm::Instruction*)last);
       }
     }
+  } else {
+    last = codegen_elements.back().release();
   }
 
   return last;
