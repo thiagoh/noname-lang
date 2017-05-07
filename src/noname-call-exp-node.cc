@@ -25,6 +25,77 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+void CallExpNode::initializeArgs(explist_t* head_exp_list) {
+  if (head_exp_list) {
+    explist_node_t* explist_node_t = head_exp_list->first;
+    do {
+      if (explist_node_t && explist_node_t->node) {
+        args.push_back(std::unique_ptr<ExpNode>(std::move(explist_node_t->node)));
+        explist_node_t = explist_node_t->next;
+      }
+    } while (explist_node_t);
+    // TODO: free all the expressions not just the head_exp_list one
+    // free(head_exp_list);
+  }
+}
+
+CallExpNode::CallExpNode(ASTContext* context, const std::string& callee, explist_t* head_exp_list)
+    : ExpNode(context, AST_NODE_TYPE_CALL_EXP),
+      callee(callee),
+      called_function(nullptr),
+      args(std::vector<std::unique_ptr<ExpNode>>()) {
+  initializeArgs(head_exp_list);
+
+  called_function = getCalledFunction();
+  if (!called_function) {
+    // TODO
+    logError("Function not defined");
+  }
+}
+CallExpNode::CallExpNode(ASTContext* context, llvm::Function* called_function, explist_t* head_exp_list)
+    : ExpNode(context, AST_NODE_TYPE_CALL_EXP),
+      callee(""),
+      called_function(called_function),
+      args(std::vector<std::unique_ptr<ExpNode>>()) {
+  initializeArgs(head_exp_list);
+
+  if (!called_function) {
+    // TODO
+    logError("Function not defined");
+    return;
+  }
+
+  callee = called_function->getName().str();
+}
+
+CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list) {
+  CallExpNode* new_node = new CallExpNode(context, name, arg_exp_list);
+  return new_node;
+}
+
+CallExpNode* new_call_node(ASTContext* context, llvm::Function* function, explist_t* arg_exp_list) {
+  CallExpNode* new_node = new CallExpNode(context, function, arg_exp_list);
+  return new_node;
+}
+
+llvm::Function* CallExpNode::getCalledFunction() {
+  if (!called_function) {
+    FunctionDefNode* function_def_node = getContext()->getFunction(getCallee());
+
+    if (!function_def_node) {
+      return nullptr;
+    }
+
+    // Look up the name in the global module table.
+    called_function = function_def_node->getFunctionDefinition();
+  }
+
+  if (!called_function) {
+    return nullptr;
+  }
+
+  return called_function;
+}
 NodeValue* CallExpNode::getValue() {
   ASTContext* call_exp_context = getContext();
   FunctionDefNode* function_node = call_exp_context->getFunction(getCallee());
@@ -88,6 +159,7 @@ NodeValue* CallExpNode::getValue() {
 
   return nullptr;
 }
+
 std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   std::vector<std::unique_ptr<Value>> codegen;
   ASTContext* call_exp_context = getContext();
@@ -102,7 +174,7 @@ std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error,
   }
 
   // Look up the name in the global module table.
-  Function* function = function_def_node->getFunctionDefinition();
+  Function* function = getCalledFunction();
   if (!function) {
     char msg[1024];
     sprintf(msg, "Unknown function '%s' referenced", getCallee().c_str());

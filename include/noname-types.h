@@ -210,7 +210,8 @@ ASTNode* new_top_level_exp_node(ExpNode* node);
 VarExpNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
-CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* exp_list);
+CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list = nullptr);
+CallExpNode* new_call_node(ASTContext* context, llvm::Function* function, explist_t* arg_exp_list = nullptr);
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* returnNode);
 
@@ -669,13 +670,12 @@ class FunctionDefNode : public ASTNode {
 class TopLevelExpNode : public ExpNode {
  private:
   ExpNode* exp_node;
+  CallExpNode* call_exp_node;
   FunctionDefNode* anonymous_def_node;
 
  public:
-  TopLevelExpNode(ASTContext* context, ExpNode* exp_node, FunctionDefNode* anonymous_def_node)
-      : ExpNode(context, AST_NODE_TYPE_TOP_LEVEL_EXP_NODE),
-        exp_node(exp_node),
-        anonymous_def_node(anonymous_def_node) {}
+  TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExpNode* call_exp_node,
+                  FunctionDefNode* anonymous_def_node);
   virtual ~TopLevelExpNode() = default;
 
   void* eval() override { return exp_node->eval(); };
@@ -699,26 +699,12 @@ class TopLevelExpNode : public ExpNode {
 class CallExpNode : public ExpNode {
  private:
   std::string callee;
+  llvm::Function* called_function;
   std::vector<std::unique_ptr<ExpNode>> args;
 
  public:
-  CallExpNode(ASTContext* context, const std::string& callee, std::vector<std::unique_ptr<ExpNode>>& args)
-      : ExpNode(context, AST_NODE_TYPE_CALL_EXP), callee(callee), args(std::move(args)) {}
-  CallExpNode(ASTContext* context, const std::string& callee, explist_t* head_exp_list)
-      : ExpNode(context, AST_NODE_TYPE_CALL_EXP), callee(callee), args(std::vector<std::unique_ptr<ExpNode>>()) {
-    if (head_exp_list) {
-      explist_node_t* explist_node_t = head_exp_list->first;
-      do {
-        if (explist_node_t && explist_node_t->node) {
-          args.push_back(std::unique_ptr<ExpNode>(std::move(explist_node_t->node)));
-          explist_node_t = explist_node_t->next;
-        }
-      } while (explist_node_t);
-
-      // TODO: free all the expressions not just the head_exp_list one
-      // free(head_exp_list);
-    }
-  }
+  CallExpNode(ASTContext* context, const std::string& callee, explist_t* head_exp_list = nullptr);
+  CallExpNode(ASTContext* context, llvm::Function* called_function, explist_t* head_exp_list = nullptr);
 
   // virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
@@ -728,11 +714,15 @@ class CallExpNode : public ExpNode {
   ProcessorStrategy* getProcessorStrategy() override { return callNodeProcessorStrategy; };
 
   const std::string& getCallee() const { return callee; }
+  llvm::Function* getCalledFunction();
   const std::vector<std::unique_ptr<ExpNode>>& getArgs() const { return args; }
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_CALL_EXP; };
   static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_CALL_EXP; }
+
+ private:
+  void initializeArgs(explist_t* head_exp_list);
 };
 
 class AssignmentNode : public ExpNode {

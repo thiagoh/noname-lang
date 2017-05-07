@@ -540,11 +540,6 @@ VarExpNode *new_var_node(ASTContext *context, const std::string name) {
   return new_node;
 }
 
-CallExpNode *new_call_node(ASTContext *context, const std::string name, explist_t *exp_list) {
-  CallExpNode *new_node = new CallExpNode(context, name, exp_list);
-  return new_node;
-}
-
 ImportNode *new_import(ASTContext *context, std::string filename) {
   fprintf(stderr, "\n[new_import %s]", filename.c_str());
   ImportNode *new_node = new ImportNode(context, filename);

@@ -25,6 +25,13 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+TopLevelExpNode::TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExpNode* call_exp_node,
+                                 FunctionDefNode* anonymous_def_node)
+    : ExpNode(context, AST_NODE_TYPE_TOP_LEVEL_EXP_NODE),
+      exp_node(exp_node),
+      call_exp_node(call_exp_node),
+      anonymous_def_node(anonymous_def_node) {}
+
 ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* exp_node) {
   const std::string annon_name = "__anon_expr";
   arglist_t* arg_list = new_arg_list(context);
@@ -40,7 +47,7 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* exp_node)
 }
 
 ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
-  auto* context = exp_node->getContext();
+  ASTContext* context = exp_node->getContext();
 
   ASTNode* anonymous_def_node = createAnnonymousFunctionDefNode(context, exp_node);
 
@@ -48,7 +55,14 @@ ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
     return anonymous_def_node;
   }
 
-  TopLevelExpNode* new_node = new TopLevelExpNode(context, exp_node, (FunctionDefNode*)anonymous_def_node);
+  ASTNode* call_exp_node = new_call_node(context, (llvm::Function*)anonymous_def_node);
+
+  if (call_exp_node && isa<ErrorNode>(*call_exp_node)) {
+    return call_exp_node;
+  }
+
+  TopLevelExpNode* new_node =
+      new TopLevelExpNode(context, exp_node, (CallExpNode*)call_exp_node, (FunctionDefNode*)anonymous_def_node);
 
   return new_node;
 }
@@ -56,18 +70,20 @@ std::vector<std::unique_ptr<Value>> TopLevelExpNode::codegen_elements(Error** er
   std::vector<std::unique_ptr<Value>> codegen;
 
   if (!anonymous_def_node) {
-    *error = createError("\n\n############ could not resolve top level expression");
+    *error = createError("Could not resolve top level expression");
     return codegen;
   }
 
-  Value* value = anonymous_def_node->codegen();
+  Instruction* function_def = (Instruction*)anonymous_def_node->codegen();
+  Instruction* call_inst = (Instruction*)call_exp_node->codegen();
 
-  if (!isa<CallInst>(value)) {
-    *error = createError("TopLevelExpNode should be a CallInst");
-    return codegen;
-  }
+  // if (!isa<CallInst>(value)) {
+  //   *error = createError("TopLevelExpNode should be a CallInst");
+  //   return codegen;
+  // }
 
-  codegen.push_back(std::unique_ptr<Value>((Instruction*)value));
+  codegen.push_back(std::unique_ptr<Value>(function_def));
+  codegen.push_back(std::unique_ptr<Value>(call_inst));
   return codegen;
 }
 Value* TopLevelExpNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
