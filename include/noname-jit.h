@@ -58,9 +58,7 @@ class NonameJIT {
   typedef CompileLayerT::ModuleSetHandleT ModuleHandleT;
 
   NonameJIT()
-      : TM(EngineBuilder().selectTarget()),
-        DL(TM->createDataLayout()),
-        CompileLayer(ObjectLayer, SimpleCompiler(*TM)) {
+      : TM(EngineBuilder().selectTarget()), DL(TM->createDataLayout()), CompileLayer(ObjectLayer, SimpleCompiler(*TM)) {
     llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
   }
 
@@ -72,31 +70,26 @@ class NonameJIT {
     // JIT.
     auto Resolver = createLambdaResolver(
         [&](const std::string &Name) {
-          if (auto Sym = findMangledSymbol(Name))
-            return Sym.toRuntimeDyldSymbol();
+          if (auto Sym = findMangledSymbol(Name)) return Sym.toRuntimeDyldSymbol();
           return RuntimeDyld::SymbolInfo(nullptr);
         },
         [](const std::string &S) { return nullptr; });
 
     Modules.push_back(module.get());
 
-    auto module_handle = CompileLayer.addModuleSet(
-        singletonSet(std::move(module)), make_unique<SectionMemoryManager>(),
-        std::move(Resolver));
+    auto module_handle = CompileLayer.addModuleSet(singletonSet(std::move(module)), make_unique<SectionMemoryManager>(),
+                                                   std::move(Resolver));
 
     ModuleHandles.push_back(module_handle);
     return module_handle;
   }
 
   void removeModule(ModuleHandleT module_handle) {
-    ModuleHandles.erase(
-        std::find(ModuleHandles.begin(), ModuleHandles.end(), module_handle));
+    ModuleHandles.erase(std::find(ModuleHandles.begin(), ModuleHandles.end(), module_handle));
     CompileLayer.removeModuleSet(module_handle);
   }
 
-  JITSymbol findSymbol(const std::string Name) {
-    return findMangledSymbol(mangle(Name));
-  }
+  JITSymbol findSymbol(const std::string Name) { return findMangledSymbol(mangle(Name)); }
 
   // TODO FIXME
   void writeToFile(const Module *mod) {
@@ -159,12 +152,16 @@ class NonameJIT {
     // Search modules in reverse order: from last added to first added.
     // This is the opposite of the usual search order for dlsym, but makes more
     // sense in a REPL where we want to bind to the newest available definition.
-    for (auto H : make_range(ModuleHandles.rbegin(), ModuleHandles.rend()))
-      if (auto Sym = CompileLayer.findSymbolIn(H, Name, true)) return Sym;
+    for (auto H : make_range(ModuleHandles.rbegin(), ModuleHandles.rend())) {
+      if (auto Sym = CompileLayer.findSymbolIn(H, Name, true)) {
+        return Sym;
+      }
+    }
 
     // If we can't find the symbol in the JIT, try looking in the host process.
-    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name))
+    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name)) {
       return JITSymbol(SymAddr, JITSymbolFlags::Exported);
+    }
 
     return nullptr;
   }

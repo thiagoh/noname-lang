@@ -1,8 +1,10 @@
 #ifndef _NONAME_TYPES_H
 #define _NONAME_TYPES_H
 
+#include "llvm/ExecutionEngine/Orc/JITSymbol.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -189,6 +191,13 @@ int noname_read(char* buf, int* result, int max_size);
 
 void print_node_value(NodeValue* nodeValue);
 void print_node_value(FILE* file, NodeValue* nodeValue);
+
+void* call_jit_symbol(llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
+void print_jit_symbol_value(FILE* file, llvm::Type* result_type, void* result);
+void print_jit_symbol_value(llvm::Type* result_type, void* result);
+void* call_and_print_jit_symbol_value(FILE* file, llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
+void* call_and_print_jit_symbol_value(llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
+
 stmtlist_t* new_stmt_list(ASTContext* context);
 stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* node);
 stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_exp_list, ASTNode* node);
@@ -211,7 +220,7 @@ VarExpNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list = nullptr);
-CallExpNode* new_call_node(ASTContext* context, llvm::Function* function, explist_t* arg_exp_list = nullptr);
+CallExpNode* new_call_node(ASTContext* context, FunctionDefNode* function_def_node, explist_t* arg_exp_list = nullptr);
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* returnNode);
 
@@ -699,12 +708,12 @@ class TopLevelExpNode : public ExpNode {
 class CallExpNode : public ExpNode {
  private:
   std::string callee;
-  llvm::Function* called_function;
+  FunctionDefNode* called_function;
   std::vector<std::unique_ptr<ExpNode>> args;
 
  public:
   CallExpNode(ASTContext* context, const std::string& callee, explist_t* head_exp_list = nullptr);
-  CallExpNode(ASTContext* context, llvm::Function* called_function, explist_t* head_exp_list = nullptr);
+  CallExpNode(ASTContext* context, FunctionDefNode* called_function, explist_t* head_exp_list = nullptr);
 
   // virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
@@ -714,7 +723,7 @@ class CallExpNode : public ExpNode {
   ProcessorStrategy* getProcessorStrategy() override { return callNodeProcessorStrategy; };
 
   const std::string& getCallee() const { return callee; }
-  llvm::Function* getCalledFunction();
+  FunctionDefNode* getCalledFunction();
   const std::vector<std::unique_ptr<ExpNode>>& getArgs() const { return args; }
 
   // int getType() const override { return getClassType(); };

@@ -55,7 +55,7 @@ ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
     return anonymous_def_node;
   }
 
-  ASTNode* call_exp_node = new_call_node(context, (llvm::Function*)anonymous_def_node);
+  ASTNode* call_exp_node = new_call_node(context, (FunctionDefNode*)anonymous_def_node);
 
   if (call_exp_node && isa<ErrorNode>(*call_exp_node)) {
     return call_exp_node;
@@ -75,7 +75,7 @@ std::vector<std::unique_ptr<Value>> TopLevelExpNode::codegen_elements(Error** er
   }
 
   Instruction* function_def = (Instruction*)anonymous_def_node->codegen();
-  Instruction* call_inst = (Instruction*)call_exp_node->codegen();
+  // Instruction* call_inst = (Instruction*)call_exp_node->codegen();
 
   // if (!isa<CallInst>(value)) {
   //   *error = createError("TopLevelExpNode should be a CallInst");
@@ -83,10 +83,69 @@ std::vector<std::unique_ptr<Value>> TopLevelExpNode::codegen_elements(Error** er
   // }
 
   codegen.push_back(std::unique_ptr<Value>(function_def));
-  codegen.push_back(std::unique_ptr<Value>(call_inst));
+  // codegen.push_back(std::unique_ptr<Value>(call_inst));
   return codegen;
 }
-Value* TopLevelExpNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
+Value* TopLevelExpNode::codegen(llvm::BasicBlock* bb) {
+  Value* value = codegen_elements_retlast(this, bb);
+  return value;
+}
+
+void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
+  TopLevelExpNode* top_level_exp_node = (TopLevelExpNode*)node;
+
+  // http://llvm.org/docs/doxygen/html/classllvm_1_1ExecutionEngine.html#a97bbf524ee03354bb73dce9614b0e959
+
+  Error* error = nullptr;
+
+  std::vector<std::unique_ptr<Value>> codegen(top_level_exp_node->codegen_elements(&error));
+  // auto* top_level_node_ir = top_level_exp_node->codegen();
+
+  if (error) {
+    return logErrorLLVM(error->what().c_str());
+  }
+
+  if (codegen.size() <= 0) {
+    fprintf(stderr, "\nTop level expression could not be evaluated");
+  } else {
+    if (noname::debug >= 1) {
+      fprintf(stderr, "\n[read top level expression]");
+    }
+
+    // for (auto&& ptr : codegen) {
+    //   ptr->dump();
+    // }
+
+    llvm::Type* result_type = toLLVMType(codegen.back().get());
+    assert(result_type && "Result type is null");
+
+    TheModule->dump();
+
+    // JIT the module containing the anonymous expression, keeping a handle so
+    // we can free it later.
+    TheJIT->writeToFile(TheModule.get());
+    auto module_handle = TheJIT->addModule(std::move(TheModule));
+    InitializeModuleAndPassManager();
+
+    // Search the JIT for the __anon_expr symbol.
+    auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
+    assert(ExprSymbol && "Function not found");
+
+    // result_type->print(dbgs(), true);
+
+    // fprintf(stderr, "\n[type: %d]", result_type->getTypeID());
+
+    call_and_print_jit_symbol_value(stdout, result_type, ExprSymbol);
+
+    // Delete the anonymous expression module from the JIT.
+    TheJIT->removeModule(module_handle);
+  }
+
+  top_level_exp_node->release();
+
+  return nullptr;
+}
+
 void* TopLevelExpNode::release() {
   if (anonymous_def_node) {
     getContext()->removeFunction(anonymous_def_node->getName());

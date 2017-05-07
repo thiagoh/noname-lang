@@ -52,7 +52,7 @@ CallExpNode::CallExpNode(ASTContext* context, const std::string& callee, explist
     logError("Function not defined");
   }
 }
-CallExpNode::CallExpNode(ASTContext* context, llvm::Function* called_function, explist_t* head_exp_list)
+CallExpNode::CallExpNode(ASTContext* context, FunctionDefNode* called_function, explist_t* head_exp_list)
     : ExpNode(context, AST_NODE_TYPE_CALL_EXP),
       callee(""),
       called_function(called_function),
@@ -65,7 +65,7 @@ CallExpNode::CallExpNode(ASTContext* context, llvm::Function* called_function, e
     return;
   }
 
-  callee = called_function->getName().str();
+  callee = called_function->getName();
 }
 
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list) {
@@ -73,12 +73,12 @@ CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_
   return new_node;
 }
 
-CallExpNode* new_call_node(ASTContext* context, llvm::Function* function, explist_t* arg_exp_list) {
-  CallExpNode* new_node = new CallExpNode(context, function, arg_exp_list);
+CallExpNode* new_call_node(ASTContext* context, FunctionDefNode* function_def_node, explist_t* arg_exp_list) {
+  CallExpNode* new_node = new CallExpNode(context, function_def_node, arg_exp_list);
   return new_node;
 }
 
-llvm::Function* CallExpNode::getCalledFunction() {
+FunctionDefNode* CallExpNode::getCalledFunction() {
   if (!called_function) {
     FunctionDefNode* function_def_node = getContext()->getFunction(getCallee());
 
@@ -87,7 +87,7 @@ llvm::Function* CallExpNode::getCalledFunction() {
     }
 
     // Look up the name in the global module table.
-    called_function = function_def_node->getFunctionDefinition();
+    called_function = function_def_node;
   }
 
   if (!called_function) {
@@ -101,17 +101,11 @@ NodeValue* CallExpNode::getValue() {
   FunctionDefNode* function_node = call_exp_context->getFunction(getCallee());
 
   if (!function_node) {
-    fprintf(stderr,
-            "\n\nThe called function was: '%s' BUT it wan not found on the "
-            "context\n",
-            getCallee().c_str());
+    char msg[1024];
+    sprintf(msg, "\n\nThe called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
+    logError(msg);
     return nullptr;
   }
-
-  // ASTContext* function_context = function_node->getContext();
-  // ASTContext* temp_context = new ASTContext("temp_context", call_exp_context,
-  // function_context);
-  // function_node->setContext(temp_context);
 
   ExpNode* returnNode = function_node->getReturnNode();
   const std::vector<std::unique_ptr<ExpNode>>* value_args = &getArgs();
@@ -164,8 +158,8 @@ std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error,
   std::vector<std::unique_ptr<Value>> codegen;
   ASTContext* call_exp_context = getContext();
 
-  FunctionDefNode* function_def_node = call_exp_context->getFunction(getCallee());
-
+  // Look up the name in the global module table.
+  FunctionDefNode* function_def_node = getCalledFunction();
   if (!function_def_node) {
     char msg[1024];
     sprintf(msg, "The called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
@@ -173,8 +167,7 @@ std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error,
     return codegen;
   }
 
-  // Look up the name in the global module table.
-  Function* function = getCalledFunction();
+  Function* function = function_def_node->getFunctionDefinition();
   if (!function) {
     char msg[1024];
     sprintf(msg, "Unknown function '%s' referenced", getCallee().c_str());
@@ -185,23 +178,24 @@ std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error,
   const std::vector<std::unique_ptr<ExpNode>>& value_args = getArgs();
 
   // If argument mismatch error.
-  if (function->arg_size() != value_args.size()) {
+  if (function->arg_size() != (size_t)value_args.size()) {
     char msg[1024];
     sprintf(msg, "Incorrect # arguments passed for function '%s'", getCallee().c_str());
     *error = createError(msg);
     return codegen;
   }
 
+  iterator_range<Argument*> signature_args = function->args();
+  llvm::Argument* it_signature_args = signature_args.begin();
+
   std::vector<std::unique_ptr<ExpNode>>::const_iterator it_value_args = value_args.begin();
-  const std::vector<std::unique_ptr<arg_t>>& signature_args = function_def_node->getArgs();
-  std::vector<std::unique_ptr<arg_t>>::const_iterator it_signature_args = signature_args.begin();
   std::vector<llvm::Value*> args_value;
 
   for (; it_signature_args != signature_args.end() || it_value_args != value_args.end();) {
     const std::unique_ptr<ExpNode>& value_arg = *it_value_args;
-    const std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
+    const Argument* signature_arg = it_signature_args;
 
-    call_exp_context->store(signature_arg->name, value_arg->getValue());
+    call_exp_context->store(signature_arg->getName().str(), value_arg->getValue());
 
     args_value.push_back(value_arg->codegen());
     if (!args_value.back()) {
@@ -230,13 +224,16 @@ std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error,
   call_inst->setCallingConv(CallingConv::C);
 
   if (noname::debug >= 1) {
-    call_inst->dump();
+    // call_inst->dump();
   }
 
   codegen.push_back(std::unique_ptr<Value>(call_inst));
   return codegen;
 }
-Value* CallExpNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
+Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
+  ;
+  return codegen_elements_retlast(this, bb);
+}
 
 //----------------------------------------------//
 //----------- Processor Strategy ---------------//

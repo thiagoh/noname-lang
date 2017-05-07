@@ -176,8 +176,8 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
 
   } else {
     if (noname::debug >= 1) {
+      fprintf(stderr, "\n[## return_value ]\n");
       return_value->dump();
-      return_value->print(dbgs(), true);
     }
 
     // Builder.CreateRet(return_value);
@@ -227,14 +227,11 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   while (it_body_nodes != body_nodes->end()) {
     const std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
-    if (noname::debug >= 1) {
-      fprintf(stderr, "\n[## codegen of body statement (type %s)]", ASTNode::toString(body_node->getKind()).c_str());
-    }
-
     Instruction* body_codegen_value = (Instruction*)body_node->codegen();
     function_bb->getInstList().push_back(body_codegen_value);
 
     if (noname::debug >= 1) {
+      fprintf(stderr, "\n[## codegen of body statement (type %s)]", ASTNode::toString(body_node->getKind()).c_str());
       body_codegen_value->dump();
     }
   }
@@ -243,10 +240,6 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     if (isa<CallInst>(return_value)) {
       function_bb->getInstList().push_back((Instruction*)return_value);
     }
-  }
-
-  if (noname::debug >= 1) {
-    fprintf(stderr, "\n[## adding return inst]");
   }
 
   if (!return_inst) {
@@ -263,7 +256,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   TheFPM->run(*function);
 
   if (noname::debug >= 1) {
-    function->dump();
+    // function->dump();
   }
 
   return function;

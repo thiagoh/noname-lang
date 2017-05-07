@@ -34,17 +34,13 @@ Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
   }
 
   llvm::Value* last = nullptr;
-  if (bb) {
-    for (std::unique_ptr<Value>& ptr : codegen_elements) {
-      // last = ptr.get();
-      // bb->getInstList().push_back(std::move(ptr));
-      last = ptr.release();
+  for (std::unique_ptr<Value>& ptr : codegen_elements) {
+    last = ptr.release();
+    if (bb) {
       if (isa<llvm::Instruction>(last)) {
         bb->getInstList().push_back((llvm::Instruction*)last);
       }
     }
-  } else {
-    last = codegen_elements.back().release();
   }
 
   return last;

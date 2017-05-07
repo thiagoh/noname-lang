@@ -653,49 +653,6 @@ void *ExpNodeProcessorStrategy::process(ASTNode *node) {
   return nullptr;
 }
 
-void *TopLevelExpNodeProcessorStrategy::process(ASTNode *node) {
-  TopLevelExpNode *top_level_exp_node = (TopLevelExpNode *)node;
-  // NodeValue* return_value = (NodeValue*)top_level_exp_node->eval();
-  // print_node_value(stdout, return_value);
-
-  auto *top_level_node_ir = top_level_exp_node->codegen();
-
-  if (!top_level_node_ir) {
-    fprintf(stderr, "\nTop level expression could not be evaluated");
-  } else {
-    if (noname::debug >= 1) {
-      fprintf(stderr, "\n[read top level expression]");
-      top_level_node_ir->dump();
-    }
-
-    // JIT the module containing the anonymous expression, keeping a handle so
-    // we can free it later.
-    TheJIT->writeToFile(TheModule.get());
-    auto module_handle = TheJIT->addModule(std::move(TheModule));
-    InitializeModuleAndPassManager();
-
-    // Search the JIT for the __anon_expr symbol.
-    auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
-    assert(ExprSymbol && "Function not found");
-
-    llvm::Type *result_type = top_level_exp_node->getReturnLLVMType();
-    assert(result_type && "Result type is null");
-
-    // result_type->print(dbgs(), true);
-
-    // fprintf(stderr, "\n[type: %d]", result_type->getTypeID());
-
-    call_and_print_jit_symbol_value(stdout, result_type, ExprSymbol);
-
-    // Delete the anonymous expression module from the JIT.
-    TheJIT->removeModule(module_handle);
-  }
-
-  top_level_exp_node->release();
-
-  return nullptr;
-}
-
 void *ImportNodeProcessorStrategy::process(ASTNode *node) {
   ImportNode *import_node = (ImportNode *)node;
 
