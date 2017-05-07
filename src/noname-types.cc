@@ -257,7 +257,8 @@ void print_jit_symbol_value(FILE *file, llvm::Type *result_type, void *result) {
     } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
       fprintf(file, "%c", *(char *)result);
     } else {
-      fprintf(file, "no such type found");
+      fprintf(file, "No such type found");
+      result_type->dump();
     }
   }
 }
@@ -491,6 +492,17 @@ llvm::Type *toLLVMType(llvm::Value *value) {
 
   if (!value) {
     type = llvm::Type::getVoidTy(TheContext);
+  } else if (isa<Function>(value)) {
+    Function *function = (Function *)value;
+    if (!function) {
+      logError("Could not find function");
+      return nullptr;
+    }
+    type = function->getReturnType();
+    if (!type) {
+      logError("Function returning invalid type");
+      return nullptr;
+    }
   } else if (isa<CallInst>(value)) {
     CallInst *call_inst = (CallInst *)value;
     Function *function = call_inst->getCalledFunction();
@@ -505,6 +517,9 @@ llvm::Type *toLLVMType(llvm::Value *value) {
     }
   } else {
     type = value->getType();
+    if (noname::debug >= 1) {
+      fprintf(stderr, "\n[## toLLVMType: %d]", type->getTypeID());
+    }
   }
 
   return type;
@@ -707,8 +722,8 @@ NodeValue *NumberExpNode::getValue() {
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
-std::vector<std::unique_ptr<Value>> NumberExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
-  std::vector<std::unique_ptr<Value>> codegen;
+std::vector<Value *> NumberExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+  std::vector<Value *> codegen;
   NodeValue *node = getValue();
 
   if (!node) {
@@ -723,7 +738,7 @@ std::vector<std::unique_ptr<Value>> NumberExpNode::codegen_elements(Error **erro
     return codegen;
   }
 
-  codegen.push_back(std::unique_ptr<Value>(constant_value));
+  codegen.push_back(constant_value);
   return codegen;
 }
 Value *NumberExpNode::codegen(llvm::BasicBlock *bb) {
@@ -742,9 +757,9 @@ Value *StringExpNode::codegen(llvm::BasicBlock *bb) {
 
   return node->constant_codegen(bb);
 }
-std::vector<std::unique_ptr<Value>> StringExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
-  *error = createError("NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> StringExpNode::codegen_elements");
-  return std::vector<std::unique_ptr<Value>>();
+std::vector<Value *> StringExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+  *error = createError("NOT IMPLEMENTED - std::vector<Value*> StringExpNode::codegen_elements");
+  return std::vector<Value *>();
 }
 Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
   //
@@ -764,8 +779,8 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 
   return node->constant_codegen(bb);
 }
-std::vector<std::unique_ptr<Value>> VarExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
-  *error = createError("NOT IMPLEMENTED - std::vector<std::unique_ptr<Value>> VarExpNode::codegen_elements");
-  return std::vector<std::unique_ptr<Value>>();
+std::vector<Value *> VarExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+  *error = createError("NOT IMPLEMENTED - std::vector<Value*> VarExpNode::codegen_elements");
+  return std::vector<Value *>();
 }
 }

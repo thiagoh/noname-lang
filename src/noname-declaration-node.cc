@@ -42,11 +42,11 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string name
   return new_node;
 }
 
-std::vector<std::unique_ptr<Value>> DeclarationNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+std::vector<Value*> DeclarationNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   AllocaInst* alloca_inst = declaration_codegen_util(this, bb);
 
-  std::vector<std::unique_ptr<Value>> codegen;
-  codegen.push_back(std::unique_ptr<Value>(alloca_inst));
+  std::vector<Value*> codegen;
+  codegen.push_back(alloca_inst);
 
   return codegen;
 }

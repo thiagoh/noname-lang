@@ -42,8 +42,8 @@ void* AssignmentNode::eval() {
 
   return node_value;
 }
-std::vector<std::unique_ptr<Value>> AssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
-  std::vector<std::unique_ptr<Value>> codegen;
+std::vector<Value*> AssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+  std::vector<Value*> codegen;
   AllocaInst* alloca_inst = getContext()->getAllocaInst(getName());
 
   if (!alloca_inst) {
@@ -51,11 +51,11 @@ std::vector<std::unique_ptr<Value>> AssignmentNode::codegen_elements(Error** err
     return codegen;
   }
 
-  std::vector<std::unique_ptr<Value>> assign_codegen = assign_codegen_util(alloca_inst, this, bb);
+  std::vector<Value*> assign_codegen = assign_codegen_util(alloca_inst, this, bb);
 
-  codegen.push_back(std::unique_ptr<Value>(alloca_inst));
-  for (auto&& uptr : assign_codegen) {
-    codegen.push_back(std::move(uptr));
+  codegen.push_back(alloca_inst);
+  for (auto& ptr : assign_codegen) {
+    codegen.push_back(std::move(ptr));
   }
 
   return codegen;

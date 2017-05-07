@@ -27,15 +27,15 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
   Error* error = nullptr;
-  std::vector<std::unique_ptr<Value>> codegen_elements(node->codegen_elements(&error));
+  std::vector<Value*> codegen_elements(node->codegen_elements(&error));
 
   if (error) {
     return logErrorLLVM(error->what().c_str());
   }
 
   llvm::Value* last = nullptr;
-  for (std::unique_ptr<Value>& ptr : codegen_elements) {
-    last = ptr.release();
+  for (Value* ptr : codegen_elements) {
+    last = ptr;
     if (bb) {
       if (isa<llvm::Instruction>(last)) {
         bb->getInstList().push_back((llvm::Instruction*)last);
@@ -156,8 +156,8 @@ CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock*
   return casted_inst;
 }
 
-std::vector<std::unique_ptr<Value>> assign_codegen_util(AllocaInst* untyped_poiter_alloca, AssignmentNode* assignment,
-                                                        llvm::BasicBlock* bb) {
+std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, AssignmentNode* assignment,
+                                        llvm::BasicBlock* bb) {
   /**
     * Instructions for this method can be found at:docs/declare-and-assign.cc
     */
@@ -200,11 +200,11 @@ std::vector<std::unique_ptr<Value>> assign_codegen_util(AllocaInst* untyped_poit
   //  -->  voidp_store->setAlignment(8);
   StoreInst* store_inst_untyped_var = store_untyped_var_codegen(rhs_type, cast_inst, alloca_inst, bb);
 
-  std::vector<std::unique_ptr<Value>> codegen;
-  codegen.push_back(std::unique_ptr<Value>(value_codegen));
-  codegen.push_back(std::unique_ptr<Value>(alloca_inst));
-  codegen.push_back(std::unique_ptr<Value>(store_inst_typed_var));
-  codegen.push_back(std::unique_ptr<Value>(store_inst_untyped_var));
+  std::vector<Value*> codegen;
+  codegen.push_back(value_codegen);
+  codegen.push_back(alloca_inst);
+  codegen.push_back(store_inst_typed_var);
+  codegen.push_back(store_inst_untyped_var);
 
   return codegen;
 }

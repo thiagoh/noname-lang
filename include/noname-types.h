@@ -227,8 +227,8 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
 // Codegen functions
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);
 llvm::AllocaInst* declaration_codegen_util(ASTNode* node, llvm::BasicBlock* bb = nullptr);
-std::vector<std::unique_ptr<Value>> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca,
-                                                        AssignmentNode* assignment, llvm::BasicBlock* bb = nullptr);
+std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, AssignmentNode* assignment,
+                                        llvm::BasicBlock* bb = nullptr);
 
 bool both_of_type(NodeValue* lhs, NodeValue* rhs, int type);
 bool any_of_type(NodeValue* lhs, NodeValue* rhs, int type);
@@ -304,8 +304,8 @@ class ASTNode {
   ASTNodeKind getKind() const { return kind; }
   virtual void* eval() { return nullptr; };
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) { return codegen_elements_retlast(this, bb); };
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) {
-    return std::vector<std::unique_ptr<Value>>();
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) {
+    return std::vector<Value*>();
   };
 
   virtual ASTNode* check() { return this; };
@@ -524,7 +524,7 @@ class NumberExpNode : public ExpNode {
   // virtual void* eval() override;
   NodeValue* getValue() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_NUMBER; };
@@ -544,7 +544,7 @@ class StringExpNode : public ExpNode {
   // virtual void* eval() override;
   virtual NodeValue* getValue() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_STRING; };
@@ -563,7 +563,7 @@ class VarExpNode : public ExpNode {
   // virtual void* eval() override;
   NodeValue* getValue() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_VARIABLE; };
@@ -585,7 +585,7 @@ class UnaryExpNode : public ExpNode {
   // virtual void* eval() override;
   NodeValue* getValue() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_UNARY_EXP; };
@@ -610,7 +610,7 @@ class BinaryExpNode : public ExpNode {
   // virtual void* eval() override;
   NodeValue* getValue() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_BINARY; };
@@ -689,7 +689,7 @@ class TopLevelExpNode : public ExpNode {
 
   void* eval() override { return exp_node->eval(); };
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   virtual NodeValue* getValue() override { return exp_node->getValue(); };
   void* release();
@@ -717,7 +717,7 @@ class CallExpNode : public ExpNode {
 
   // virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   NodeValue* getValue() override;
   ProcessorStrategy* getProcessorStrategy() override { return callNodeProcessorStrategy; };
@@ -752,7 +752,7 @@ class AssignmentNode : public ExpNode {
 
   virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   NodeValue* getValue() override;
   ProcessorStrategy* getProcessorStrategy() override { return assignmentNodeProcessorStrategy; };
@@ -775,7 +775,7 @@ class DeclarationAssignmentNode : public AssignmentNode {
 
   virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_DECLARATION_ASSIGNMENT; };
 
@@ -792,7 +792,7 @@ class DeclarationNode : public ASTNode {
 
   virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
-  virtual std::vector<std::unique_ptr<Value>> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
+  virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
   const std::string& getName() const { return name; }
 

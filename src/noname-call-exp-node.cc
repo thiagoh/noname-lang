@@ -154,8 +154,8 @@ NodeValue* CallExpNode::getValue() {
   return nullptr;
 }
 
-std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
-  std::vector<std::unique_ptr<Value>> codegen;
+std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+  std::vector<Value*> codegen;
   ASTContext* call_exp_context = getContext();
 
   // Look up the name in the global module table.
@@ -224,10 +224,11 @@ std::vector<std::unique_ptr<Value>> CallExpNode::codegen_elements(Error** error,
   call_inst->setCallingConv(CallingConv::C);
 
   if (noname::debug >= 1) {
-    // call_inst->dump();
+    fprintf(stdout, "\n[call_inst->dump]");
+    call_inst->dump();
   }
 
-  codegen.push_back(std::unique_ptr<Value>(call_inst));
+  codegen.push_back(call_inst);
   return codegen;
 }
 Value* CallExpNode::codegen(llvm::BasicBlock* bb) {

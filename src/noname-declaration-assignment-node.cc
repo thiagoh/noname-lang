@@ -36,20 +36,23 @@ void* DeclarationAssignmentNode::eval() {
 
   return node_value;
 }
-std::vector<std::unique_ptr<Value>> DeclarationAssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+std::vector<Value*> DeclarationAssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   AllocaInst* untyped_poiter_alloca = declaration_codegen_util(this, bb);
 
-  std::vector<std::unique_ptr<Value>> assign_codegen = assign_codegen_util(untyped_poiter_alloca, this, bb);
-  std::vector<std::unique_ptr<Value>> codegen;
+  std::vector<Value*> assign_codegen = assign_codegen_util(untyped_poiter_alloca, this, bb);
+  std::vector<Value*> codegen;
 
-  codegen.push_back(std::unique_ptr<Value>(untyped_poiter_alloca));
+  codegen.push_back(untyped_poiter_alloca);
   codegen.reserve(1 + assign_codegen.size());
-  for (auto&& uptr : assign_codegen) {
-    codegen.push_back(std::move(uptr));
+  for (auto& ptr : assign_codegen) {
+    codegen.push_back(std::move(ptr));
   }
 
   return codegen;
 }
 
-Value* DeclarationAssignmentNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
+Value* DeclarationAssignmentNode::codegen(llvm::BasicBlock* bb) {
+  ;
+  return codegen_elements_retlast(this, bb);
+}
 }

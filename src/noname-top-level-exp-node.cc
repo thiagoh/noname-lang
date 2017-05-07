@@ -66,8 +66,8 @@ ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
 
   return new_node;
 }
-std::vector<std::unique_ptr<Value>> TopLevelExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
-  std::vector<std::unique_ptr<Value>> codegen;
+std::vector<Value*> TopLevelExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+  std::vector<Value*> codegen;
 
   if (!anonymous_def_node) {
     *error = createError("Could not resolve top level expression");
@@ -75,15 +75,10 @@ std::vector<std::unique_ptr<Value>> TopLevelExpNode::codegen_elements(Error** er
   }
 
   Instruction* function_def = (Instruction*)anonymous_def_node->codegen();
+  codegen.push_back(function_def);
+
   // Instruction* call_inst = (Instruction*)call_exp_node->codegen();
-
-  // if (!isa<CallInst>(value)) {
-  //   *error = createError("TopLevelExpNode should be a CallInst");
-  //   return codegen;
-  // }
-
-  codegen.push_back(std::unique_ptr<Value>(function_def));
-  // codegen.push_back(std::unique_ptr<Value>(call_inst));
+  // codegen.push_back(call_inst);
   return codegen;
 }
 Value* TopLevelExpNode::codegen(llvm::BasicBlock* bb) {
@@ -98,8 +93,7 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
 
   Error* error = nullptr;
 
-  std::vector<std::unique_ptr<Value>> codegen(top_level_exp_node->codegen_elements(&error));
-  // auto* top_level_node_ir = top_level_exp_node->codegen();
+  std::vector<Value*> codegen(top_level_exp_node->codegen_elements(&error));
 
   if (error) {
     return logErrorLLVM(error->what().c_str());
@@ -112,14 +106,12 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
       fprintf(stderr, "\n[read top level expression]");
     }
 
-    // for (auto&& ptr : codegen) {
-    //   ptr->dump();
-    // }
-
-    llvm::Type* result_type = toLLVMType(codegen.back().get());
+    llvm::Type* result_type = toLLVMType(codegen.back());
     assert(result_type && "Result type is null");
 
-    TheModule->dump();
+    if (noname::debug >= 1) {
+      TheModule->dump();
+    }
 
     // JIT the module containing the anonymous expression, keeping a handle so
     // we can free it later.
@@ -130,10 +122,6 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
     // Search the JIT for the __anon_expr symbol.
     auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
     assert(ExprSymbol && "Function not found");
-
-    // result_type->print(dbgs(), true);
-
-    // fprintf(stderr, "\n[type: %d]", result_type->getTypeID());
 
     call_and_print_jit_symbol_value(stdout, result_type, ExprSymbol);
 
