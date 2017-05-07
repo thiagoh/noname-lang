@@ -60,6 +60,8 @@ void InitializeNonameEnvironment() {
   // std::unique_ptr<legacy::FunctionPassManager> TheFPM;
   // std::unique_ptr<NonameJIT> TheJIT;
 
+  // Now we going to create JIT
+
   PointerTy_1 = PointerType::get(IntegerType::get(TheContext, 32), 0);
   PointerTy_2 = PointerType::get(IntegerType::get(TheContext, 64), 0);
   PointerTy_3 = PointerType::get(IntegerType::get(TheContext, 16), 0);

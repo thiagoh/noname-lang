@@ -148,19 +148,19 @@ class NonameJIT {
     return vec;
   }
 
-  JITSymbol findMangledSymbol(const std::string &Name) {
+  JITSymbol findMangledSymbol(const std::string &symbol_name) {
     // Search modules in reverse order: from last added to first added.
     // This is the opposite of the usual search order for dlsym, but makes more
     // sense in a REPL where we want to bind to the newest available definition.
-    for (auto H : make_range(ModuleHandles.rbegin(), ModuleHandles.rend())) {
-      if (auto Sym = CompileLayer.findSymbolIn(H, Name, true)) {
-        return Sym;
+    for (auto module_handle : make_range(ModuleHandles.rbegin(), ModuleHandles.rend())) {
+      if (auto symbol = CompileLayer.findSymbolIn(module_handle, symbol_name, true)) {
+        return symbol;
       }
     }
 
     // If we can't find the symbol in the JIT, try looking in the host process.
-    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name)) {
-      return JITSymbol(SymAddr, JITSymbolFlags::Exported);
+    if (auto symbol_addr = RTDyldMemoryManager::getSymbolAddressInProcess(symbol_name)) {
+      return JITSymbol(symbol_addr, JITSymbolFlags::Exported);
     }
 
     return nullptr;
