@@ -79,7 +79,7 @@ Vagrant.configure("2") do |config|
     tar -xzvf cmake-3.7.2.tar.gz
     cd cmake-3.7.2
     ./configure
-    make
+    make -j $(nproc)
     make install
 
     # install oh my zsh
@@ -105,6 +105,18 @@ Vagrant.configure("2") do |config|
     wget http://releases.llvm.org/3.9.1/clang-tools-extra-3.9.1.src.tar.xz
     tar -xJvf clang-tools-extra-3.9.1.src.tar.xz
     mv clang-tools-extra-3.9.1.src extra
+
+    mv clang llvm/tools/
+    mv extra llvm/tools/clang/tools/
+    mv compiler-rt llvm/projects/
+    mv libcxx llvm/projects/
+    mv libcxxabi llvm/projects/
+
+    mkdir build
+    cd build
+    cmake -G "Unix Makefiles" ../llvm
+    make -j $(nproc)
+    make install
     
     # set Zsh to be the default shell interpreter 
     chsh -s /usr/bin/zsh

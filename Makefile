@@ -1,5 +1,4 @@
 CLASSDIR=.
-LIB= -ll
 SRC= noname.flex
 CSRC= 
 CGEN= noname-lex.cc noname-parse.cc src/lexer-utilities.cc src/noname-assignment-node.cc src/noname-ast-context.cc src/noname-binary-exp-node.cc src/noname-call-exp-node.cc src/noname-codegen-utils.cc src/noname-declaration-assignment-node.cc src/noname-declaration-node.cc src/noname-function-def-node.cc src/noname-main.cc src/noname-node-value.cc src/noname-top-level-exp-node.cc src/noname-types.cc src/noname-unary-exp-node.cc
@@ -19,8 +18,16 @@ CC=g++
 # CFLAGS= -g -Wall -Wno-unused -Wno-write-strings ${CPPINCLUDE}
 # `llvm-config --cxxflags --ldflags --system-libs --libs core`
 #CFLAGS= -g -std=c++11 `llvm-config --cxxflags` -Wall -Wno-unused -Wno-deprecated -Wno-write-strings ${CPPINCLUDE}
-CFLAGS= -g3 `llvm-config --cxxflags`  -Wall -Wno-unused -Wno-deprecated -Wno-write-strings ${CPPINCLUDE}
-LDFLAGS= -g3 `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -Wno-unused -Wno-deprecated ${CPPINCLUDE}
+##
+##
+## How to use llvm-config
+## llvm-config - Print LLVM compilation options
+## http://releases.llvm.org/2.6/docs/CommandGuide/html/llvm-config.html
+##
+LLVM_MODULES= core mcjit native
+CFLAGS= -g3 `llvm-config --cxxflags` -Wall -Wno-unused -Wno-deprecated -Wno-write-strings ${CPPINCLUDE}
+LDFLAGS= -g3 `llvm-config --ldflags`
+LDLIBS= `llvm-config --libfiles --system-libs --libs $(LLVM_MODULES)` -Wno-unused -Wno-deprecated ${CPPINCLUDE}
 FLEX= flex ${FLEX_FLAGS}
 BISON= bison ${BISON_FLAGS}
 DEPEND = ${CC} -MM `llvm-config --cxxflags` ${CPPINCLUDE}
@@ -34,18 +41,18 @@ ${OUTPUT}:lexer noname.nn
 	-./lexer noname.nn >test.output 2>&1 
 
 lexer: ${OBJS}
-	${CC} ${CFLAGS} ${OBJS} ${LIB} -o lexer
+	${CC} $(LDFLAGS) $(CFLAGS) $(OBJS) -o lexer $(LDLIBS)
 
 parser: ${OBJS}
-	${CC} ${CFLAGS} ${OBJS} ${LIB} -o parser
+	${CC} $(LDFLAGS) $(CFLAGS) $(OBJS) -o parser $(LDLIBS)
 
 noname: ${OBJS} noname-lex.cc 
-	${CC} ${LIB} ${LDFLAGS}  ${OBJS} -o noname -lm
+	${CC} $(LDFLAGS) $(CFLAGS) ${OBJS} -o noname $(LDLIBS)
 
 %.o: %.cc 
-	${CC} ${CFLAGS} -c -o $@ $<
+	${CC} ${CFLAGS} -o $@ -c $<
 
-flex: noname-lex.cc
+# flex: noname-lex.cc
 
 noname-lex.cc: noname.flex noname.tab.h
 	${FLEX} noname.flex
