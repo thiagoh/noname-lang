@@ -88,16 +88,22 @@ Vagrant.configure("2") do |config|
     # LLVM
     # http://releases.llvm.org/download.html
     wget http://releases.llvm.org/3.9.1/llvm-3.9.1.src.tar.xz
+    tar -xJvf llvm-3.9.1.src.tar.xz
     mv llvm-3.9.1.src llvm
     wget http://releases.llvm.org/3.9.1/cfe-3.9.1.src.tar.xz
+    tar -xJvf cfe-3.9.1.src.tar.xz
     mv cfe-3.9.1.src clang
     wget http://releases.llvm.org/3.9.1/compiler-rt-3.9.1.src.tar.xz
+    tar -xJvf compiler-rt-3.9.1.src.tar.xz
     mv compiler-rt-3.9.1.src compiler-rt
     wget http://releases.llvm.org/3.9.1/libcxx-3.9.1.src.tar.xz
+    tar -xJvf libcxx-3.9.1.src.tar.xz
     mv libcxx-3.9.1.src libcxx
     wget http://releases.llvm.org/3.9.1/libcxxabi-3.9.1.src.tar.xz
+    tar -xJvf libcxxabi-3.9.1.src.tar.xz
     mv libcxxabi-3.9.1.src libcxxabi
     wget http://releases.llvm.org/3.9.1/clang-tools-extra-3.9.1.src.tar.xz
+    tar -xJvf clang-tools-extra-3.9.1.src.tar.xz
     mv clang-tools-extra-3.9.1.src extra
     
     # set Zsh to be the default shell interpreter 
