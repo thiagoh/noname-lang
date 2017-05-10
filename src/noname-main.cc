@@ -79,13 +79,10 @@ void fatal_error(const char *msg) {
 }
 
 bool is_file_already_imported(const std::string &file_path) {
-  return std::find(imported_files.begin(), imported_files.end(), file_path) !=
-         imported_files.end();
+  return std::find(imported_files.begin(), imported_files.end(), file_path) != imported_files.end();
 }
 
-bool is_file_already_imported(const char *file_path) {
-  return is_file_already_imported(std::string(file_path));
-}
+bool is_file_already_imported(const char *file_path) { return is_file_already_imported(std::string(file_path)); }
 char *get_current_dir() {
   size_t size;
   char *buf;
@@ -117,8 +114,7 @@ char *get_current_dir() {
   return buf;
 }
 
-char *concat_strs(const char *format, const char *s1, const char *s2,
-                  int size) {
+char *concat_strs(const char *format, const char *s1, const char *s2, int size) {
   char *buf = new char[size];
   int bytes_pottentially_written = snprintf(buf, size, format, s1, s2);
 
@@ -232,13 +228,11 @@ void eval(ASTNode *node) {
   }
 
   if (yydebug >= 1) {
-    fprintf(stdout, "\n[### eval: %s]\n",
-            ASTNode::toString(node->getKind()).c_str());
+    fprintf(stdout, "\n[### eval: %s]\n", ASTNode::toString(node->getKind()).c_str());
   }
 
   if (yydebug >= 2) {
-    fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n",
-            isa<AssignmentNode>(*node) ? "true" : "false",
+    fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n", isa<AssignmentNode>(*node) ? "true" : "false",
             isa<DeclarationAssignmentNode>(*node) ? "true" : "false");
   }
 
@@ -257,8 +251,8 @@ void write_cursor() {
 }
 
 void division_by_zero(YYLTYPE &yylloc) {
-  fprintf(stderr, "Error: %d:%d - %d:%d. Division by zero", yylloc.first_line,
-          yylloc.first_column, yylloc.last_line, yylloc.last_column);
+  fprintf(stderr, "Error: %d:%d - %d:%d. Division by zero", yylloc.first_line, yylloc.first_column, yylloc.last_line,
+          yylloc.last_column);
 }
 }
 
@@ -267,17 +261,13 @@ int yylex(void) {
 
   if (yydebug > 1) {
     if (token == LONG_TOK) {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %ld\n", token,
-              map[token].c_str(), yylval.long_v);
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %ld\n", token, map[token].c_str(), yylval.long_v);
     } else if (token == DOUBLE_TOK) {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %lf\n", token,
-              map[token].c_str(), yylval.double_v);
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %lf\n", token, map[token].c_str(), yylval.double_v);
     } else if (token == IDENTIFIER) {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %s\n", token,
-              map[token].c_str(), yylval.id_v);
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %s\n", token, map[token].c_str(), yylval.id_v);
     } else {
-      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %c\n", token,
-              map[token].c_str(), (char)token);
+      fprintf(stdout, "\n#TOKEN %d[%s] yytext -> %c\n", token, map[token].c_str(), (char)token);
     }
   }
 
@@ -286,7 +276,12 @@ int yylex(void) {
 
 void yyerror(char const *s) { fprintf(stdout, "\nERROR: %s\n", s); }
 
-void exit_hook() { TheJIT->release(); }
+void exit_hook() {
+  TheJIT->release();
+  // def f() { return 32122; }; f();
+  llvm_shutdown();
+  fprintf(stderr, "\nEND");
+}
 
 int main(int argc, char **argv) {
   // http://llvm.org/docs/CommandLine.html#the-cl-getregisteredoptions-function
@@ -298,16 +293,12 @@ int main(int argc, char **argv) {
 
   // cl::opt<bool> force_arg("f", cl::desc("Enable binary output on
   // terminals"));
-  cl::opt<int> debug_arg1("app-debug",
-                          cl::desc("Enable application debug 1-4"));
+  cl::opt<int> debug_arg1("app-debug", cl::desc("Enable application debug 1-4"));
   cl::opt<int> debug_arg2("d", cl::desc("Enable application debug 1-4"));
-  cl::opt<int> yydebug_arg("yydebug",
-                           cl::desc("Enable yydebug (lexer and parser)"));
-  cl::opt<bool> quiet_arg1("quiet",
-                           cl::desc("Don't print informational messages"));
+  cl::opt<int> yydebug_arg("yydebug", cl::desc("Enable yydebug (lexer and parser)"));
+  cl::opt<bool> quiet_arg1("quiet", cl::desc("Don't print informational messages"));
   cl::opt<bool> quiet_arg2("q", cl::desc("Don't print informational messages"));
-  cl::opt<bool> quiet_arg3(
-      "no-verbose", cl::desc("Don't print informational messages"), cl::Hidden);
+  cl::opt<bool> quiet_arg3("no-verbose", cl::desc("Don't print informational messages"), cl::Hidden);
 
   cl::ParseCommandLineOptions(argc, argv,
                               " CommandLine compiler example\n\n"
@@ -390,6 +381,26 @@ int main(int argc, char **argv) {
   InitializeModuleAndPassManager();
 
   noname::InitializeNonameEnvironment();
-  
-  return yyparse();
+
+  int parse_output = yyparse();
+
+  TheJIT->release();
+
+  // def f() { return 32122; }; f();
+
+  llvm_shutdown();
+
+  fprintf(stderr, "\nEND");
+
+  delete context;
+
+  delete astNodeProcessorStrategy;
+  delete expNodeProcessorStrategy;
+  delete topLevelExpNodeProcessorStrategy;
+  delete functionDefNodeProcessorStrategy;
+  delete assignmentNodeProcessorStrategy;
+  delete callNodeProcessorStrategy;
+  delete importNodeProcessorStrategy;
+
+  return parse_output;
 }

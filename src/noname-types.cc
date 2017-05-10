@@ -560,18 +560,15 @@ VarExpNode *new_var_node(ASTContext *context, const std::string name) {
 ImportNode *new_import(ASTContext *context, std::string filename) {
   fprintf(stderr, "\n[new_import %s]", filename.c_str());
   ImportNode *new_node = new ImportNode(context, filename);
-
   return new_node;
 }
 
-NodeValue *StringExpNode::getValue() {
+std::unique_ptr<NodeValue> StringExpNode::getValue() {
   NodeValue *node = new NodeValue(value);
-  return node;
+  return std::unique_ptr<NodeValue>(node);
 }
 
-// UNNECESSARY
-// void* VarExpNode::eval() { NodeValue* node_value = getValue(); }
-NodeValue *VarExpNode::getValue() {
+std::unique_ptr<NodeValue> VarExpNode::getValue() {
   NodeValue *node = getContext()->getVariable(name);
 
   if (!node) {
@@ -579,7 +576,7 @@ NodeValue *VarExpNode::getValue() {
             getContext()->getName().c_str());
   }
 
-  return node;
+  return std::unique_ptr<NodeValue>(node);
 }
 
 bool both_of_type(int lhs_type, int rhs_type, int type) { return lhs_type == type && rhs_type == type; }
@@ -659,14 +656,16 @@ int get_adequate_result_type(int lhs_type, int rhs_type) {
 }
 
 void *ASTNodeProcessorStrategy::process(ASTNode *node) {
-  NodeValue *return_value = (NodeValue *)node->eval();
-  print_node_value(stdout, return_value);
+
+  fprintf(stderr, "\n[NOT IMPLEMENTED void *ASTNodeProcessorStrategy::process(ASTNode *node)]");
+  // std::unique_ptr<NodeValue> return_value(node->getValue());
+  // print_node_value(stdout, return_value.get());
   return nullptr;
 }
 void *ExpNodeProcessorStrategy::process(ASTNode *node) {
   ExpNode *exp_node = (ExpNode *)node;
-  NodeValue *return_value = (NodeValue *)exp_node->eval();
-  print_node_value(stdout, return_value);
+  std::unique_ptr<NodeValue> return_value(exp_node->getValue());
+  print_node_value(stdout, return_value.get());
   return nullptr;
 }
 
@@ -697,7 +696,7 @@ void *ImportNodeProcessorStrategy::process(ASTNode *node) {
   return nullptr;
 }
 
-NodeValue *NumberExpNode::getValue() {
+std::unique_ptr<NodeValue> NumberExpNode::getValue() {
   NodeValue *node = nullptr;
 
   if (type == TYPE_DOUBLE) {
@@ -718,7 +717,7 @@ NodeValue *NumberExpNode::getValue() {
     node = logErrorNV(new ErrorNode(getContext(), error_msg));
   }
 
-  return node;
+  return std::unique_ptr<NodeValue>(node);
 }
 
 //===----------------------------------------------------------------------===//
@@ -726,7 +725,7 @@ NodeValue *NumberExpNode::getValue() {
 //===----------------------------------------------------------------------===//
 std::vector<Value *> NumberExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
   std::vector<Value *> codegen;
-  NodeValue *node = getValue();
+  std::unique_ptr<NodeValue> node(getValue());
 
   if (!node) {
     *error = createError("Invalid or undefined NodeValue");
@@ -751,7 +750,7 @@ Value *NumberExpNode::codegen(llvm::BasicBlock *bb) {
   return value;
 }
 Value *StringExpNode::codegen(llvm::BasicBlock *bb) {
-  NodeValue *node = getValue();
+  std::unique_ptr<NodeValue> node(getValue());
 
   if (!node) {
     return logErrorLLVM("Could not resolve string expression");

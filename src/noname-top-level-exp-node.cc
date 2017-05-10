@@ -32,11 +32,10 @@ TopLevelExpNode::TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExp
       call_exp_node(call_exp_node),
       anonymous_def_node(anonymous_def_node) {}
 
-ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* exp_node) {
+ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* return_node) {
   const std::string annon_name = "__anon_expr";
   arglist_t* arg_list = new_arg_list(context);
   stmtlist_t* stmt_list = new_stmt_list(context);
-  ExpNode* return_node = exp_node;
 
   auto* function_def_node = new_function_def(context, annon_name, arg_list, stmt_list, return_node);
 

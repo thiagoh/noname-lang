@@ -68,6 +68,8 @@ CallExpNode::CallExpNode(ASTContext* context, FunctionDefNode* called_function, 
   callee = called_function->getName();
 }
 
+CallExpNode::~CallExpNode() { fprintf(stderr, "\nCallExpNode::~CallExpNode()"); }
+
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list) {
   CallExpNode* new_node = new CallExpNode(context, name, arg_exp_list);
   return new_node;
@@ -96,7 +98,7 @@ FunctionDefNode* CallExpNode::getCalledFunction() {
 
   return called_function;
 }
-NodeValue* CallExpNode::getValue() {
+std::unique_ptr<NodeValue> CallExpNode::getValue() {
   ASTContext* call_exp_context = getContext();
   FunctionDefNode* function_node = call_exp_context->getFunction(getCallee());
 
@@ -104,10 +106,10 @@ NodeValue* CallExpNode::getValue() {
     char msg[1024];
     sprintf(msg, "\n\nThe called function was: '%s' BUT it wan not found on the context\n", getCallee().c_str());
     logError(msg);
-    return nullptr;
+    return std::unique_ptr<NodeValue>(nullptr);
   }
 
-  ExpNode* returnNode = function_node->getReturnNode();
+  ExpNode* return_node = function_node->getReturnNode();
   const std::vector<std::unique_ptr<ExpNode>>* value_args = &getArgs();
   std::vector<std::unique_ptr<ExpNode>>::const_iterator it_value_args = value_args->begin();
 
@@ -120,7 +122,7 @@ NodeValue* CallExpNode::getValue() {
     const std::unique_ptr<ExpNode>& value_arg = *it_value_args;
     const std::unique_ptr<arg_t>& signature_arg = *it_signature_args;
 
-    call_exp_context->store(signature_arg->name, value_arg->getValue());
+    call_exp_context->store(signature_arg->name, value_arg->getValue().get());
 
     ++it_signature_args;
     ++it_value_args;
@@ -137,21 +139,18 @@ NodeValue* CallExpNode::getValue() {
     ++it_body_nodes;
   }
 
-  if (returnNode) {
+  if (return_node) {
     if (noname::debug >= 1) {
       fprintf(stdout, "\n[## evaluating return]\n");
     }
-    return returnNode->getValue();
+    return return_node->getValue();
   } else {
     if (noname::debug >= 1) {
       fprintf(stdout, "\n[## no return given]\n");
     }
   }
 
-  // delete temp_context;
-  // function_node->setContext(function_context);
-
-  return nullptr;
+  return std::unique_ptr<NodeValue>(nullptr);
 }
 
 std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
@@ -195,7 +194,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBloc
     const std::unique_ptr<ExpNode>& value_arg = *it_value_args;
     const Argument* signature_arg = it_signature_args;
 
-    call_exp_context->store(signature_arg->getName().str(), value_arg->getValue());
+    call_exp_context->store(signature_arg->getName().str(), std::move(value_arg->getValue().get()));
 
     args_value.push_back(value_arg->codegen());
     if (!args_value.back()) {
@@ -249,8 +248,8 @@ void* CallExpNodeProcessorStrategy::process(ASTNode* node) {
       fprintf(stdout, "\nThe called function was: '%s'\n", function_def_node->getName().c_str());
     }
 
-    NodeValue* return_value = (NodeValue*)call_exp_node->eval();
-    print_node_value(stdout, return_value);
+    std::unique_ptr<NodeValue> return_value(call_exp_node->getValue());
+    print_node_value(stdout, return_value.get());
 
   } else {
     fprintf(stderr, "\nError: The function %s was not found int the context\n", call_exp_node->getCallee().c_str());

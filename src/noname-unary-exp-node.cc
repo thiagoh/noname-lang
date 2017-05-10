@@ -25,8 +25,8 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-NodeValue* UnaryExpNode::getValue() {
-  NodeValue* rhs_value = rhs->getValue();
+std::unique_ptr<NodeValue> UnaryExpNode::getValue() {
+  std::unique_ptr<NodeValue> rhs_value = rhs->getValue();
   fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
   return rhs_value;
 }

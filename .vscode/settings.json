@@ -86,7 +86,8 @@
         "iosfwd": "cpp",
         "__mutex_base": "cpp",
         "shared_mutex": "cpp",
-        "__refstring": "cpp"
+        "__refstring": "cpp",
+        "ios": "cpp"
     },
     "[cpp]": {
         "editor.quickSuggestions": false,

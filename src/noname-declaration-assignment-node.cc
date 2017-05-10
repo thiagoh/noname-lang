@@ -26,15 +26,15 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
 void* DeclarationAssignmentNode::eval() {
-  NodeValue* node_value = getValue();
+  std::unique_ptr<NodeValue> node_value = getValue();
 
-  getContext()->store(name, node_value);
+  getContext()->store(name, std::move(node_value.get()));
 
   if (noname::debug >= 2) {
     fprintf(stdout, "\n############ stored %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
   }
 
-  return node_value;
+  return nullptr;
 }
 std::vector<Value*> DeclarationAssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   AllocaInst* untyped_poiter_alloca = declaration_codegen_util(this, bb);

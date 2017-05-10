@@ -27,10 +27,10 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 
 std::string pow_function_name("_noname_function_pow");
 
-NodeValue* BinaryExpNode::getValue() {
-  NodeValue* lhs_node_value = lhs->getValue();
-  NodeValue* rhs_node_value = rhs->getValue();
-  int result_type = get_adequate_result_type(lhs_node_value, rhs_node_value);
+std::unique_ptr<NodeValue> BinaryExpNode::getValue() {
+  std::unique_ptr<NodeValue> lhs_node_value = lhs->getValue();
+  std::unique_ptr<NodeValue> rhs_node_value = rhs->getValue();
+  int result_type = get_adequate_result_type(lhs_node_value.get(), rhs_node_value.get());
   void* lhs_value = lhs_node_value->getValue(result_type);
   void* rhs_value = rhs_node_value->getValue(result_type);
   NodeValue* result = nullptr;
@@ -137,7 +137,7 @@ NodeValue* BinaryExpNode::getValue() {
     }
   }
 
-  return result;
+  return std::unique_ptr<NodeValue>(std::move(result));
 }
 
 Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow_tmp") {

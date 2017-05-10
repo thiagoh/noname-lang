@@ -30,17 +30,17 @@ AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
   return new_node;
 }
 
-NodeValue* AssignmentNode::getValue() { return rhs->getValue(); }
+std::unique_ptr<NodeValue> AssignmentNode::getValue() { return rhs->getValue(); }
 void* AssignmentNode::eval() {
-  NodeValue* node_value = getValue();
+  std::unique_ptr<NodeValue> node_value = getValue();
 
-  getContext()->update(name, node_value);
+  getContext()->update(name, std::move(node_value.get()));
 
   if (debug >= 2) {
     fprintf(stdout, "\n############ updated %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
   }
 
-  return node_value;
+  return nullptr;
 }
 std::vector<Value*> AssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   std::vector<Value*> codegen;

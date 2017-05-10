@@ -95,6 +95,8 @@ class NonameJIT {
   void writeToFile(const Module *mod) {
     // then run llvm-dis output.bc
 
+    if (true) return;
+
     std::string sname = "bc-output/";
     sname += mod->getName().str();
     sname += ".bc";
@@ -107,7 +109,7 @@ class NonameJIT {
       fprintf(stdout, "\n[module write]");
     }
     llvm::WriteBitcodeToFile(mod, os);
-    // fclose(output_file);
+    fclose(output_file);
   }
 
   // TODO FIXME
