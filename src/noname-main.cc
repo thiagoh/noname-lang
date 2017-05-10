@@ -227,11 +227,11 @@ void eval(ASTNode *node) {
     return;
   }
 
-  if (yydebug >= 1) {
+  if (noname::debug >= 1) {
     fprintf(stdout, "\n[### eval: %s]\n", ASTNode::toString(node->getKind()).c_str());
   }
 
-  if (yydebug >= 2) {
+  if (noname::debug >= 2) {
     fprintf(stderr, "\n[is_of_type<AssignmentNode>(*node) -> %s %s]\n", isa<AssignmentNode>(*node) ? "true" : "false",
             isa<DeclarationAssignmentNode>(*node) ? "true" : "false");
   }

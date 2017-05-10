@@ -39,7 +39,9 @@ NodeValue::NodeValue(long value) : type(TYPE_LONG), value(0) {
   memcpy(this->value, &value, sizeof(long));
 }
 NodeValue::~NodeValue() {
-  fprintf(stderr, "\n[~NodeValue() called]");
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[~NodeValue() called]");
+  }
 }
 Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullptr) {
   Value* codegen = nullptr;

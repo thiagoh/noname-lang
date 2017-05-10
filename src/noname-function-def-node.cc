@@ -78,7 +78,9 @@ FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, a
   } while (stmtlist_node);
 }
 FunctionDefNode::~FunctionDefNode() {
-  fprintf(stderr, "\n[FunctionDefNode::~FunctionDefNode() for %s]", getName().c_str());
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[FunctionDefNode::~FunctionDefNode() for %s]", getName().c_str());
+  }
 }
 
 ASTNode* FunctionDefNode::check() {

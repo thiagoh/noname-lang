@@ -105,7 +105,7 @@ class NonameJIT {
     int output_filedescriptor = fileno(output_file);
 
     raw_fd_ostream os(output_filedescriptor, false, false);
-    if (yydebug >= 1) {
+    if (noname::debug >= 1) {
       fprintf(stdout, "\n[module write]");
     }
     llvm::WriteBitcodeToFile(mod, os);
@@ -116,7 +116,7 @@ class NonameJIT {
   void writeToFile() {
     // raw_fd_ostream os(output_filedescriptor, false, false);
     for (auto &mod : Modules) {
-      if (yydebug >= 1) {
+      if (noname::debug >= 1) {
         fprintf(stdout, "\n[module write]");
       }
       // llvm::WriteBitcodeToFile(mod, os);
@@ -126,7 +126,7 @@ class NonameJIT {
 
   // TODO FIXME
   void release() {
-    if (yydebug >= 1) {
+    if (noname::debug >= 1) {
       fprintf(stdout, "\n[release]");
     }
 
