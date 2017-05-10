@@ -25,22 +25,34 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-NodeValue::NodeValue(const std::string& value) : type(TYPE_STRING), value(0) { this->value = new std::string(value); }
+void initialize() {
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[NodeValue::NodeValue called]");
+  }
+}
+
+NodeValue::NodeValue(const std::string& value) : type(TYPE_STRING), value(0) {
+  initialize();
+  this->value = new std::string(value);
+}
 NodeValue::NodeValue(int value) : type(TYPE_INT), value(0) {
+  initialize();
   this->value = new int;
   memcpy(this->value, &value, sizeof(int));
 }
 NodeValue::NodeValue(double value) : type(TYPE_DOUBLE), value(0) {
+  initialize();
   this->value = new double;
   memcpy(this->value, &value, sizeof(double));
 }
 NodeValue::NodeValue(long value) : type(TYPE_LONG), value(0) {
+  initialize();
   this->value = new long;
   memcpy(this->value, &value, sizeof(long));
 }
 NodeValue::~NodeValue() {
   if (noname::debug >= 1) {
-    fprintf(stderr, "\n[~NodeValue() called]");
+    fprintf(stderr, "\n[NodeValue::~NodeValue() called]");
   }
 }
 Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullptr) {

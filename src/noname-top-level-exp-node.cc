@@ -32,6 +32,12 @@ TopLevelExpNode::TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExp
       call_exp_node(call_exp_node),
       anonymous_def_node(anonymous_def_node) {}
 
+TopLevelExpNode::~TopLevelExpNode() {
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[TopLevelExpNode::~TopLevelExpNode() called]");
+  }
+}
+
 ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* return_node) {
   const std::string annon_name = "__anon_expr";
   arglist_t* arg_list = new_arg_list(context);
@@ -74,10 +80,15 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error** error, llvm::Basic
   }
 
   Instruction* function_def = (Instruction*)anonymous_def_node->codegen();
-  codegen.push_back(function_def);
+  if (function_def) {
+    codegen.push_back(function_def);
+  }
 
   // Instruction* call_inst = (Instruction*)call_exp_node->codegen();
-  // codegen.push_back(call_inst);
+  // if (call_inst) {
+  //   codegen.push_back(call_inst);
+  // }
+
   return codegen;
 }
 Value* TopLevelExpNode::codegen(llvm::BasicBlock* bb) {

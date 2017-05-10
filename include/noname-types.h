@@ -688,7 +688,7 @@ class TopLevelExpNode : public ExpNode {
  public:
   TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExpNode* call_exp_node,
                   FunctionDefNode* anonymous_def_node);
-  virtual ~TopLevelExpNode() = default;
+  virtual ~TopLevelExpNode();
 
   void* eval() override { return exp_node->eval(); };
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;

@@ -189,7 +189,7 @@ void InitializeModuleAndPassManager() {
   // }
 
   // Open a new module.
-  std::string module_name("my-jit-module");
+  std::string module_name("my-jit-module-");
   module_name += std::to_string(mod_id++);
   TheModule = llvm::make_unique<Module>(module_name, TheContext);
   TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());

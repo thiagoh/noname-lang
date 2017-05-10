@@ -67,8 +67,11 @@ CallExpNode::CallExpNode(ASTContext* context, FunctionDefNode* called_function, 
 
   callee = called_function->getName();
 }
-
-CallExpNode::~CallExpNode() { fprintf(stderr, "\nCallExpNode::~CallExpNode()"); }
+CallExpNode::~CallExpNode() {
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[CallExpNode::~CallExpNode() called]");
+  }
+}
 
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list) {
   CallExpNode* new_node = new CallExpNode(context, name, arg_exp_list);

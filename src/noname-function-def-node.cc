@@ -148,13 +148,15 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
 
   llvm::Type* return_type = nullptr;
   if (!return_value) {
+    if (noname::debug >= 1) {
+      fprintf(stderr, "\n[Figuring out the return type of %s]", getName().c_str());
+    }
     ExpNode* return_node = getReturnNode();
 
     if (return_node) {
       return_value = return_node->codegen();
-      ReturnInst* return_inst = getLLVMReturnInst(return_value);
-      if (!return_inst) {
-        return logErrorLLVMF("ReturnInst is null");
+      if (!return_value) {
+        return logErrorLLVMF("Return value is null or undefined");
       }
     }
   }
@@ -172,6 +174,13 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
   int index = 0;
   for (auto& function_arg : function->args()) {
     function_arg.setName(args[index++]->name);
+  }
+
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n<<<<<<<##########################");
+    fprintf(stderr, "\n[Function %s created inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
+    function->dump();
+    fprintf(stderr, "##########################>>>>>>>>>");
   }
 
   return function;

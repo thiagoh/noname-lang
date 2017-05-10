@@ -93,9 +93,7 @@ class NonameJIT {
 
   // TODO FIXME
   void writeToFile(const Module *mod) {
-    // then run llvm-dis output.bc
-
-    if (true) return;
+    // if (true) return;
 
     std::string sname = "bc-output/";
     sname += mod->getName().str();
@@ -127,7 +125,7 @@ class NonameJIT {
   // TODO FIXME
   void release() {
     if (noname::debug >= 1) {
-      fprintf(stdout, "\n[release]");
+      fprintf(stdout, "\n[NonameJIT::release()]");
     }
 
     Modules.clear();
