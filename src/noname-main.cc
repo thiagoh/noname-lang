@@ -384,23 +384,36 @@ int main(int argc, char **argv) {
 
   int parse_output = yyparse();
 
-  TheJIT->release();
+  /*
+    def f() { return 32122; };
+    f();
+    f();
+    f();
+    f();
+    f();
+    f();
+    f();
+    f();
+    f();
+    f();
+    f();
 
-  // def f() { return 32122; }; f();
+    ENDWhile deleting: i64 %
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Use still stuck around after Def is destroyed:  ret i64 32122
+    Assertion failed: (use_empty() && "Uses remain when a value is destroyed!"), function ~Value, file /Users/thiagoh/dev/llvm-src/llvm-3.9/lib/IR/Value.cpp, line 85.
+   */
 
-  llvm_shutdown();
-
-  fprintf(stderr, "\nEND");
-
-  delete context;
-
-  delete astNodeProcessorStrategy;
-  delete expNodeProcessorStrategy;
-  delete topLevelExpNodeProcessorStrategy;
-  delete functionDefNodeProcessorStrategy;
-  delete assignmentNodeProcessorStrategy;
-  delete callNodeProcessorStrategy;
-  delete importNodeProcessorStrategy;
+  noname::ReleaseNonameEnvironment();
 
   return parse_output;
 }

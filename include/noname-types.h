@@ -214,6 +214,7 @@ arglist_t* new_arg_list(ASTContext* context, arg_t* arg);
 arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg);
 
 void InitializeNonameEnvironment();
+void ReleaseNonameEnvironment();
 ImportNode* new_import(ASTContext* context, std::string filename);
 ASTNode* new_top_level_exp_node(ExpNode* node);
 VarExpNode* new_var_node(ASTContext* context, const std::string name);

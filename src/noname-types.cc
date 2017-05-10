@@ -81,6 +81,25 @@ void InitializeNonameEnvironment() {
 
   initialized = true;
 }
+void ReleaseNonameEnvironment() {
+  TheJIT->release();
+
+  llvm_shutdown();
+
+  delete context;
+
+  delete astNodeProcessorStrategy;
+  delete expNodeProcessorStrategy;
+  delete topLevelExpNodeProcessorStrategy;
+  delete functionDefNodeProcessorStrategy;
+  delete assignmentNodeProcessorStrategy;
+  delete callNodeProcessorStrategy;
+  delete importNodeProcessorStrategy;
+
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[END OF PROGRAM]");
+  }
+}
 
 /// LogError* - These are little helper functions for error handling.
 Error *createError(const char *str) {
@@ -656,7 +675,6 @@ int get_adequate_result_type(int lhs_type, int rhs_type) {
 }
 
 void *ASTNodeProcessorStrategy::process(ASTNode *node) {
-
   fprintf(stderr, "\n[NOT IMPLEMENTED void *ASTNodeProcessorStrategy::process(ASTNode *node)]");
   // std::unique_ptr<NodeValue> return_value(node->getValue());
   // print_node_value(stdout, return_value.get());
