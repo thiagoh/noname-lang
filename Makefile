@@ -13,7 +13,7 @@ CPPINCLUDE= -I${CLASSDIR}/include -I/usr/local/opt/flex/include
 #TO ENAMBLE DEBUG => FLEX_FLAGS= -d -X -o noname-lex.cc
 FLEX_FLAGS= -X -P noname_yy -o noname-lex.cc
 BISON_FLAGS= -d -v -t -y -b noname --debug
-CC=g++
+CC=g++ -g3 -O0
 # CC=clang++
 # CFLAGS= -g -Wall -Wno-unused -Wno-write-strings ${CPPINCLUDE}
 # `llvm-config --cxxflags --ldflags --system-libs --libs core`
@@ -25,8 +25,8 @@ CC=g++
 ## http://releases.llvm.org/2.6/docs/CommandGuide/html/llvm-config.html
 ##
 LLVM_MODULES= core mcjit native
-CFLAGS= -g3 `llvm-config --cxxflags` -Wall -Wno-unused -Wno-deprecated -Wno-write-strings ${CPPINCLUDE}
-LDFLAGS= -g3 `llvm-config --ldflags`
+CFLAGS= `llvm-config --cxxflags` -Wall -Wno-unused -Wno-deprecated -Wno-write-strings ${CPPINCLUDE}
+LDFLAGS= `llvm-config --ldflags`
 LDLIBS= `llvm-config --libfiles --system-libs --libs $(LLVM_MODULES)` -Wno-unused -Wno-deprecated ${CPPINCLUDE}
 FLEX= flex ${FLEX_FLAGS}
 BISON= bison ${BISON_FLAGS}
