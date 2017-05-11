@@ -31,6 +31,9 @@ for file in $output_directory/*.bc; do
   llvm-dis $file -o $file.ll
 
   if [ $verbose -eq 1 ]; then
+    echo "###################"
+    echo "## CONTENT OF FILE $file.ll"
+    echo ""
     cat $file.ll
   fi
 
