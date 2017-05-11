@@ -91,45 +91,9 @@ class NonameJIT {
 
   JITSymbol findSymbol(const std::string Name) { return findMangledSymbol(mangle(Name)); }
 
-  // TODO FIXME
-  void writeToFile(const Module *mod) {
-    // if (true) return;
-
-    std::string sname = "bc-output/";
-    sname += mod->getName().str();
-    sname += ".bc";
-    const char *output_filename = sname.c_str();
-    FILE *output_file = fopen(output_filename, "w");
-    int output_filedescriptor = fileno(output_file);
-
-    raw_fd_ostream os(output_filedescriptor, false, false);
-    if (noname::debug >= 1) {
-      fprintf(stdout, "\n[module write]");
-    }
-    llvm::WriteBitcodeToFile(mod, os);
-    fclose(output_file);
-  }
-
-  // TODO FIXME
-  void writeToFile() {
-    // raw_fd_ostream os(output_filedescriptor, false, false);
-    for (auto &mod : Modules) {
-      if (noname::debug >= 1) {
-        fprintf(stdout, "\n[module write]");
-      }
-      // llvm::WriteBitcodeToFile(mod, os);
-      writeToFile(mod);
-    }
-  }
-
-  // TODO FIXME
-  void release() {
-    if (noname::debug >= 1) {
-      fprintf(stdout, "\n[NonameJIT::release()]");
-    }
-
-    Modules.clear();
-  }
+  void writeToFile(const Module *mod);
+  void writeToFile();
+  void release();
 
  private:
   std::string mangle(const std::string &Name) {

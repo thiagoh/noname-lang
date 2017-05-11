@@ -27,20 +27,19 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* return_node) {
-  FunctionDefNode* new_node = new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
+  FunctionDefNode* function_new_node = new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
 
-  ASTNode* check_result = new_node->check();
+  ASTNode* check_result = function_new_node->check();
 
   if (check_result && isa<ErrorNode>(*check_result)) {
     return check_result;
   }
 
-  context->store(name, new_node);
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[new_function_def %s]", context->getName().c_str());
   }
 
-  return new_node;
+  return function_new_node;
 }
 
 FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name,
@@ -86,8 +85,9 @@ FunctionDefNode::~FunctionDefNode() {
 ASTNode* FunctionDefNode::check() {
   ASTContext* context = getContext();
 
-  FunctionDefNode* function_node = context->getFunction(name);
-  if (function_node) {
+  Function* function = TheModule->getFunction(name);
+
+  if (function) {
     char error_message[2048];
     snprintf(error_message, 2048, "Function '%s' already exists in this context. %s", name.c_str(),
              context->getName().c_str());
@@ -294,15 +294,17 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
 
 void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
   FunctionDefNode* function_def_node = (FunctionDefNode*)node;
-  auto* function_ir = function_def_node->codegen();
+  Function* function = (Function*)function_def_node->codegen();
 
-  if (!function_ir) {
+  if (!function) {
     fprintf(stderr, "\nFunction could not be defined");
+    return nullptr;
   }
-  if (function_ir) {
+
+  if (function) {
     if (noname::debug >= 1) {
       fprintf(stderr, "\nRead function definition:");
-      function_ir->dump();
+      function->dump();
     }
     TheJIT->writeToFile(TheModule.get());
     TheJIT->addModule(std::move(TheModule));

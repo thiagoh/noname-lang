@@ -221,7 +221,7 @@ VarExpNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list = nullptr);
-CallExpNode* new_call_node(ASTContext* context, FunctionDefNode* function_def_node, explist_t* arg_exp_list = nullptr);
+CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* arg_exp_list = nullptr);
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* returnNode);
 
@@ -386,8 +386,8 @@ class ASTContext {
   std::string name;
   ASTContext* parent;
 
-  std::map<std::string, FunctionDefNode*> mFunctions;
-  std::map<std::string, FunctionDefNode*>::iterator itFunctions;
+  // std::map<std::string, FunctionDefNode*> mFunctions;
+  // std::map<std::string, FunctionDefNode*>::iterator itFunctions;
 
   std::map<std::string, NodeValue*> mVariables;
   std::map<std::string, NodeValue*>::iterator itVariables;
@@ -399,40 +399,21 @@ class ASTContext {
   ASTContext(const std::string& name) : name(name), parent(NULL) {}
   ASTContext(const std::string& name, ASTContext* parent) : name(name), parent(parent) {}
   ASTContext(const ASTContext& copy)
-      : name(copy.name),
-        parent(copy.parent),
-        mFunctions(copy.mFunctions),
-        mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
+      : name(copy.name), parent(copy.parent), mVariables(copy.mVariables), mAllocaInst(copy.mAllocaInst) {}
   ASTContext(const ASTContext& copy, ASTContext* parent)
-      : name(copy.name),
-        parent(parent),
-        mFunctions(copy.mFunctions),
-        mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
+      : name(copy.name), parent(parent), mVariables(copy.mVariables), mAllocaInst(copy.mAllocaInst) {}
   ASTContext(const std::string& name, const ASTContext& copy, ASTContext* parent)
-      : name(name),
-        parent(parent),
-        mFunctions(copy.mFunctions),
-        mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
+      : name(name), parent(parent), mVariables(copy.mVariables), mAllocaInst(copy.mAllocaInst) {}
   virtual ~ASTContext() = default;
   ASTContext& operator=(const ASTContext& copy) {
     name = copy.name;
     parent = copy.parent;
-    mFunctions = copy.mFunctions;
     mVariables = copy.mVariables;
     mAllocaInst = copy.mAllocaInst;
     return *this;
   }
   std::string& getName() { return name; }
   ASTContext* getParent() { return parent; }
-
-  // Functions
-  FunctionDefNode* getFunction(const std::string& name);
-  bool storeFunction(const std::string name, FunctionDefNode* function_nomde);
-  bool store(const std::string name, FunctionDefNode* function_nomde);
-  bool removeFunction(const std::string name);
 
   // Variables
   NodeValue* getVariableShallow(const std::string& name);
@@ -683,11 +664,10 @@ class TopLevelExpNode : public ExpNode {
  private:
   ExpNode* exp_node;
   CallExpNode* call_exp_node;
-  FunctionDefNode* anonymous_def_node;
+  Function* anonymous_function;
 
  public:
-  TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExpNode* call_exp_node,
-                  FunctionDefNode* anonymous_def_node);
+  TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExpNode* call_exp_node, Function* anonymous_function);
   virtual ~TopLevelExpNode();
 
   void* eval() override { return exp_node->eval(); };
@@ -696,7 +676,7 @@ class TopLevelExpNode : public ExpNode {
 
   virtual std::unique_ptr<NodeValue> getValue() override { return exp_node->getValue(); };
   void* release();
-  llvm::Type* getReturnLLVMType() { return anonymous_def_node->getReturnLLVMType(); }
+  llvm::Type* getReturnLLVMType() { return anonymous_function->getReturnType(); }
   ProcessorStrategy* getProcessorStrategy() override { return topLevelExpNodeProcessorStrategy; };
 
   static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_TOP_LEVEL_EXP_NODE; }
@@ -706,22 +686,23 @@ class TopLevelExpNode : public ExpNode {
 class CallExpNode : public ExpNode {
  private:
   std::string callee;
-  FunctionDefNode* called_function;
+  llvm::Function* called_function;
   std::vector<std::unique_ptr<ExpNode>> args;
 
  public:
   CallExpNode(ASTContext* context, const std::string& callee, explist_t* head_exp_list = nullptr);
-  CallExpNode(ASTContext* context, FunctionDefNode* called_function, explist_t* head_exp_list = nullptr);
+  CallExpNode(ASTContext* context, llvm::Function* called_function, explist_t* head_exp_list = nullptr);
   virtual ~CallExpNode() override;
+
   // virtual void* eval() override;
+  virtual std::unique_ptr<NodeValue> getValue() override { return std::unique_ptr<NodeValue>(nullptr); };
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
   virtual std::vector<Value*> codegen_elements(Error** error, llvm::BasicBlock* bb = nullptr) override;
 
-  virtual std::unique_ptr<NodeValue> getValue() override;
   virtual ProcessorStrategy* getProcessorStrategy() override { return callNodeProcessorStrategy; };
 
   const std::string& getCallee() const { return callee; }
-  FunctionDefNode* getCalledFunction();
+  llvm::Function* getCalledFunction();
   const std::vector<std::unique_ptr<ExpNode>>& getArgs() const { return args; }
 
   // int getType() const override { return getClassType(); };

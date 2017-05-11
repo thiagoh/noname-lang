@@ -382,9 +382,17 @@ int main(int argc, char **argv) {
 
   noname::InitializeNonameEnvironment();
 
+  /**
+    * 
+    * How to load LLVM bitcode file from an ifstream?
+    * 
+    * http://stackoverflow.com/questions/22239801/how-to-load-llvm-bitcode-file-from-an-ifstream
+    */
+
   int parse_output = yyparse();
 
   /*
+    
     def f() { return 32122; };
     f();
     f();

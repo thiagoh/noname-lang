@@ -26,17 +26,17 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
 TopLevelExpNode::TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExpNode* call_exp_node,
-                                 FunctionDefNode* anonymous_def_node)
+                                 Function* anonymous_function)
     : ExpNode(context, AST_NODE_TYPE_TOP_LEVEL_EXP_NODE),
       exp_node(exp_node),
       call_exp_node(call_exp_node),
-      anonymous_def_node(anonymous_def_node) {}
-
-TopLevelExpNode::~TopLevelExpNode() {
-  if (noname::debug >= 1) {
-    fprintf(stderr, "\n[TopLevelExpNode::~TopLevelExpNode() called]");
+      anonymous_function(anonymous_function) {
+  if (noname::debug >= 2) {
+    fprintf(stderr, "\n[TopLevelExpNode::TopLevelExpNode() called]");
   }
 }
+
+TopLevelExpNode::~TopLevelExpNode() {}
 
 ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* return_node) {
   const std::string annon_name = "__anon_expr";
@@ -54,35 +54,38 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* return_no
 ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
   ASTContext* context = exp_node->getContext();
 
-  ASTNode* anonymous_def_node = createAnnonymousFunctionDefNode(context, exp_node);
+  std::unique_ptr<ASTNode> function_ptr(createAnnonymousFunctionDefNode(context, exp_node));
 
-  if (anonymous_def_node && isa<ErrorNode>(*anonymous_def_node)) {
-    return anonymous_def_node;
+  if (function_ptr && isa<ErrorNode>(*function_ptr.get())) {
+    return function_ptr.release();
   }
 
-  ASTNode* call_exp_node = new_call_node(context, (FunctionDefNode*)anonymous_def_node);
+  Function* anonymous_function = ((FunctionDefNode*)function_ptr.get())->getFunctionDefinition();
+
+  if (!anonymous_function) {
+    return new ErrorNode(context, "Function could not be defined");
+  }
+
+  ASTNode* call_exp_node = new_call_node(context, anonymous_function);
 
   if (call_exp_node && isa<ErrorNode>(*call_exp_node)) {
     return call_exp_node;
   }
 
-  TopLevelExpNode* new_node =
-      new TopLevelExpNode(context, exp_node, (CallExpNode*)call_exp_node, (FunctionDefNode*)anonymous_def_node);
+  TopLevelExpNode* top_level_exp_node =
+      new TopLevelExpNode(context, exp_node, (CallExpNode*)call_exp_node, anonymous_function);
 
-  return new_node;
+  return top_level_exp_node;
 }
 std::vector<Value*> TopLevelExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   std::vector<Value*> codegen;
 
-  if (!anonymous_def_node) {
+  if (!anonymous_function) {
     *error = createError("Could not resolve top level expression");
     return codegen;
   }
 
-  Instruction* function_def = (Instruction*)anonymous_def_node->codegen();
-  if (function_def) {
-    codegen.push_back(function_def);
-  }
+  codegen.push_back(anonymous_function);
 
   // Instruction* call_inst = (Instruction*)call_exp_node->codegen();
   // if (call_inst) {
@@ -144,12 +147,5 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
   return nullptr;
 }
 
-void* TopLevelExpNode::release() {
-  if (anonymous_def_node) {
-    getContext()->removeFunction(anonymous_def_node->getName());
-    delete anonymous_def_node;
-  }
-
-  return nullptr;
-}
+void* TopLevelExpNode::release() { return nullptr; }
 }
