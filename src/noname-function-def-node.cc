@@ -33,7 +33,8 @@ FunctionSignature::FunctionSignature(const FunctionSignature& copy)
 
 Function* FunctionSignature::codegen() {
   if (noname::debug >= 1) {
-    fprintf(stderr, "\n[FunctionSignature::codegen for %s]", getName().c_str());
+    fprintf(stdout, "\n[FunctionSignature::codegen for %s]", getName().c_str());
+    fflush(stdout);
   }
 
   std::vector<llvm::Type*> function_args_types(args_defs.size(), Type::getVoidTy(TheContext));
@@ -49,10 +50,9 @@ Function* FunctionSignature::codegen() {
   }
 
   if (noname::debug >= 1) {
-    fprintf(stderr, "\n<<<<<<<##########################");
-    fprintf(stderr, "\n[FunctionSignature %s created unlinked from modules]", getName().c_str());
+    fprintf(stdout, "\n[FunctionSignature %s created unlinked from modules]", getName().c_str());
+    fflush(stdout);
     function->dump();
-    fprintf(stderr, "##########################>>>>>>>>>");
   }
 
   return function;
@@ -72,6 +72,7 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
 
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[new_function_def %s]", context->getName().c_str());
+    fflush(stdout);
   }
 
   return function_new_node;
@@ -81,7 +82,8 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(const std::string& n
                                                             std::vector<FunctionArgument*> args_defs) {
   llvm::Type* return_type = nullptr;
   if (noname::debug >= 1) {
-    fprintf(stderr, "\n[Figuring out the return type of %s]", getName().c_str());
+    fprintf(stdout, "\n[Figuring out the return type of %s]", name.c_str());
+    fflush(stdout);
   }
   Value* return_value = nullptr;
   if (return_node) {
@@ -145,7 +147,8 @@ FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, a
 }
 FunctionDefNode::~FunctionDefNode() {
   if (noname::debug >= 1) {
-    fprintf(stderr, "\n[FunctionDefNode::~FunctionDefNode() for %s]", getName().c_str());
+    fprintf(stdout, "\n[FunctionDefNode::~FunctionDefNode() for %s]", getName().c_str());
+    fflush(stdout);
   }
 }
 
@@ -154,10 +157,10 @@ ASTNode* FunctionDefNode::check() {
   Function* function = TheModule->getFunction(getName());
 
   if (function) {
-    char error_message[2048];
-    snprintf(error_message, 2048, "Function '%s' already exists in this context. %s", getName().c_str(),
+    char msg[2048];
+    snprintf(msg, 2048, "Function '%s' already exists in this context. %s", getName().c_str(),
              context->getName().c_str());
-    return new LogicErrorNode(context, error_message);
+    return new LogicErrorNode(context, msg);
   }
 
   std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes.begin();
@@ -172,6 +175,7 @@ ASTNode* FunctionDefNode::check() {
     if (noname::debug >= 2) {
       fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
               ASTNode::toString(bodyNode.get()->getKind()).c_str());
+      fflush(stdout);
     }
     ++it_body_nodes;
   }
@@ -185,7 +189,8 @@ ASTNode* FunctionDefNode::check() {
 
 Function* FunctionDefNode::getFunctionDefinition() {
   if (noname::debug >= 1) {
-    fprintf(stderr, "\n[FunctionDefNode::getFunctionDefinition for %s]", getName().c_str());
+    fprintf(stdout, "\n[FunctionDefNode::getFunctionDefinition for %s]", getName().c_str());
+    fflush(stdout);
   }
 
   // First, see if the function has already been added to the current module.
@@ -193,38 +198,18 @@ Function* FunctionDefNode::getFunctionDefinition() {
 
   if (function) {
     if (noname::debug >= 1) {
-      fprintf(stderr, "\n[Function %s found]", getName().c_str());
+      fprintf(stdout, "\n[Function %s found]", getName().c_str());
+      fflush(stdout);
     }
     return function;
   }
 
   if (noname::debug >= 1) {
-    fprintf(stderr, "\n[Function %s NOT found]", getName().c_str());
+    fprintf(stdout, "\n[Function %s NOT found]", getName().c_str());
+    fflush(stdout);
   }
 
   function = function_signature->codegen();
-
-  // std::vector<llvm::Type*> arg_types(args.size(), Type::getVoidTy(TheContext));
-
-  // FunctionType* function_type = FunctionType::get(return_type, arg_types, false);
-
-  // function = Function::Create(function_type, Function::ExternalLinkage, name, TheModule.get());
-  // function->setCallingConv(CallingConv::C);
-
-  TheModule->getFunctionList().push_back(function);
-
-  // // Set names for all arguments.
-  // int index = 0;
-  // for (auto& function_arg : function->args()) {
-  //   function_arg.setName(args[index++]->name);
-  // }
-
-  if (noname::debug >= 1) {
-    fprintf(stderr, "\n<<<<<<<##########################");
-    fprintf(stderr, "\n[Function %s created inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
-    function->dump();
-    fprintf(stderr, "##########################>>>>>>>>>");
-  }
 
   return function;
 }
@@ -233,14 +218,16 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
   // Finish off the function by creating the ReturnInst
   if (!return_value) {
     if (noname::debug >= 2) {
-      fprintf(stderr, "\n[## no return_value nullptr]\n");
+      fprintf(stdout, "\n[## no return_value nullptr]\n");
+      fflush(stdout);
     }
     // Builder.CreateRetVoid();
     return_inst = ReturnInst::Create(TheContext);
 
   } else {
     if (noname::debug >= 2) {
-      fprintf(stderr, "\n[## return_value]\n");
+      fprintf(stdout, "\n[## return_value]\n");
+      fflush(stdout);
       return_value->dump();
     }
 
@@ -251,7 +238,8 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
   return return_inst;
 }
 Value* FunctionDefNode::codegen(BasicBlock* bb) {
-  // fprintf(stderr, "\n[## codegen of %s ]", name.c_str());
+  // fprintf(stdout, "\n[## codegen of %s ]", name.c_str());
+  // fflush(stdout);
 
   ExpNode* return_node = getReturnNode();
   Value* return_value = nullptr;
@@ -262,8 +250,18 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   ReturnInst* return_inst = getLLVMReturnInst(return_value);
 
   if (!function) {
-    fprintf(stderr, "\nError: function %s not defined", getName().c_str());
+    fprintf(stdout, "\nError: function %s not defined", getName().c_str());
+    fflush(stdout);
     return nullptr;
+  }
+
+  // Define function inside Module
+  TheModule->getFunctionList().push_back(function);
+
+  if (noname::debug >= 1) {
+    fprintf(stdout, "\n[Function %s declared inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
+    fflush(stdout);
+    function->dump();
   }
 
   // Create a new basic block to start insertion into.
@@ -294,7 +292,8 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     function_bb->getInstList().push_back(body_codegen_value);
 
     if (noname::debug >= 1) {
-      fprintf(stderr, "\n[## codegen of body statement (type %s)]", ASTNode::toString(body_node->getKind()).c_str());
+      fprintf(stdout, "\n[## codegen of body statement (type %s)]", ASTNode::toString(body_node->getKind()).c_str());
+      fflush(stdout);
       body_codegen_value->dump();
     }
   }
@@ -306,7 +305,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   }
 
   if (!return_inst) {
-    // function->eraseFromParent();
+    function->eraseFromParent();
     return nullptr;
   }
 
@@ -319,7 +318,9 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   TheFPM->run(*function);
 
   if (noname::debug >= 1) {
-    // function->dump();
+    fprintf(stdout, "\n[Function %s defined inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
+    fflush(stdout);
+    function->dump();
   }
 
   return function;
@@ -334,13 +335,15 @@ void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
   Function* function = (Function*)function_def_node->codegen();
 
   if (!function) {
-    fprintf(stderr, "\nFunction could not be defined");
+    fprintf(stdout, "\nFunction could not be defined");
+    fflush(stdout);
     return nullptr;
   }
 
   if (function) {
     if (noname::debug >= 1) {
-      fprintf(stderr, "\nRead function definition:");
+      fprintf(stdout, "\nRead function definition:");
+      fflush(stdout);
       function->dump();
     }
     if (false) {

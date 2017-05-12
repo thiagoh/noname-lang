@@ -117,6 +117,7 @@ void NonameJIT::writeToFile(const Module *mod) {
   raw_fd_ostream os(output_filedescriptor, true, true);
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[module write]");
+    fflush(stdout);
   }
   llvm::WriteBitcodeToFile(mod, os);
   // fflush(output_file);
@@ -129,6 +130,7 @@ void NonameJIT::writeToFile() {
   for (auto &mod : Modules) {
     if (noname::debug >= 1) {
       fprintf(stdout, "\n[module write]");
+      fflush(stdout);
     }
     writeToFile(mod);
   }

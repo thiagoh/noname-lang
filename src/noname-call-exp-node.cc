@@ -74,7 +74,7 @@ CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* a
   return new_node;
 }
 llvm::Function* CallExpNode::getCalledFunction(Error** error) {
-    ASTContext* call_exp_context = getContext();
+  ASTContext* call_exp_context = getContext();
   llvm::Function* function = TheModule->getFunction(getCallee());
 
   if (!function) {
@@ -88,6 +88,7 @@ llvm::Function* CallExpNode::getCalledFunction(Error** error) {
     }
 
     function = function_signature->codegen();
+    TheModule->getFunctionList().push_back(function);
   }
 
   return function;

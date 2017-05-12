@@ -54,28 +54,45 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* return_no
 ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
   CreateNewModuleAndInitialize();
 
-  ASTContext* context = exp_node->getContext();
+  ASTContext* top_level_context = exp_node->getContext();
+  CallExpNode* called_function_exp_node = (CallExpNode*)exp_node;
 
-  std::unique_ptr<ASTNode> function_ptr(createAnnonymousFunctionDefNode(context, exp_node));
+  /*
+  Error* error = nullptr;
+  Function* called_function_declaration = called_function_exp_node->getCalledFunction(&error);
+
+  if (error) {
+    // TODO
+    return new ErrorNode(top_level_context, "Called function could not be declared");
+  }
+
+  if (!called_function_declaration) {
+    return new ErrorNode(top_level_context, "Called function could not be declared");
+  }
+
+  TheModule->getFunctionList().push_back(called_function_declaration);
+  */
+
+  std::unique_ptr<ASTNode> function_ptr(createAnnonymousFunctionDefNode(top_level_context, exp_node));
 
   if (function_ptr && isa<ErrorNode>(*function_ptr.get())) {
     return function_ptr.release();
   }
 
-  Function* anonymous_function = ((FunctionDefNode*)function_ptr.get())->getFunctionDefinition();
+  Function* anonymous_function = (Function*)((FunctionDefNode*)function_ptr.get())->codegen();
 
   if (!anonymous_function) {
-    return new ErrorNode(context, "Function could not be defined");
+    return new ErrorNode(top_level_context, "Function could not be defined");
   }
 
-  ASTNode* call_exp_node = new_call_node(context, anonymous_function);
+  ASTNode* call_exp_node = new_call_node(top_level_context, anonymous_function);
 
   if (call_exp_node && isa<ErrorNode>(*call_exp_node)) {
     return call_exp_node;
   }
 
   TopLevelExpNode* top_level_exp_node =
-      new TopLevelExpNode(context, exp_node, (CallExpNode*)call_exp_node, anonymous_function);
+      new TopLevelExpNode(top_level_context, exp_node, (CallExpNode*)call_exp_node, anonymous_function);
 
   return top_level_exp_node;
 }
@@ -119,14 +136,11 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
   } else {
     if (noname::debug >= 1) {
       fprintf(stderr, "\n[read top level expression]");
+      TheModule->dump();
     }
 
     llvm::Type* result_type = toLLVMType(codegen.back());
     assert(result_type && "Result type is null");
-
-    if (noname::debug >= 1) {
-      TheModule->dump();
-    }
 
     // JIT the module containing the anonymous expression, keeping a handle so
     // we can free it later.
