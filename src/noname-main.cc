@@ -1,22 +1,6 @@
 // #define NDEBUG
 // #include "assert.h"
 
-// #include "llvm/ADT/APFloat.h"
-// #include "llvm/ADT/STLExtras.h"
-// #include "llvm/IR/BasicBlock.h"
-// #include "llvm/IR/Constants.h"
-// #include "llvm/IR/DerivedTypes.h"
-// #include "llvm/IR/Function.h"
-// #include "llvm/IR/IRBuilder.h"
-// #include "llvm/IR/LLVMContext.h"
-// #include "llvm/IR/LegacyPassManager.h"
-// #include "llvm/IR/Module.h"
-// #include "llvm/IR/Type.h"
-// #include "llvm/IR/Verifier.h"
-// #include "llvm/Support/TargetSelect.h"
-// #include "llvm/Target/TargetMachine.h"
-// #include "llvm/Transforms/Scalar.h"
-// #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm-c/BitWriter.h"
 #include "llvm/Bitcode/ReaderWriter.h"
@@ -182,8 +166,13 @@ int noname_read(char *buf, int *result, int max_size) {
 //===----------------------------------------------------------------------===//
 
 void CreateNewModuleAndInitialize() {
-
   if (TheModule) {
+    if (noname::debug >= 1) {
+      fprintf(stdout, "\n[print module '%s']", TheModule->getName().str().c_str());
+      fflush(stdout);
+      TheModule->dump();
+    }
+
     TheJIT->writeToFile(TheModule.get());
     TheJIT->addModule(std::move(TheModule));
     InitializeModuleAndPassManager();

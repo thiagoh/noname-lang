@@ -89,6 +89,13 @@ llvm::Function* CallExpNode::getCalledFunction(Error** error) {
 
     function = function_signature->codegen();
     TheModule->getFunctionList().push_back(function);
+
+    if (noname::debug >= 1) {
+      fprintf(stdout, "\n[CallExpNode::getCalledFunction function '%s' declared inside the module '%s']",
+              getCallee().c_str(), TheModule->getName().str().c_str());
+      fflush(stdout);
+      TheModule->dump();
+    }
   }
 
   return function;
@@ -149,11 +156,9 @@ std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBloc
 
   if (called_function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
     // Cannot assign a name to void values!
-    // call_inst = Builder.CreateCall(called_function, args_value);
     call_inst = CallInst::Create(called_function, args_value);
     call_inst->setTailCall(false);
   } else {
-    // call_inst = Builder.CreateCall(called_function, args_value, "__call_exp");
     call_inst = CallInst::Create(called_function, args_value, "__call_exp");
   }
 

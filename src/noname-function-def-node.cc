@@ -259,7 +259,8 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   TheModule->getFunctionList().push_back(function);
 
   if (noname::debug >= 1) {
-    fprintf(stdout, "\n[Function %s declared inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
+    fprintf(stdout, "\n[Function %s declared inside Module %s]", getName().c_str(),
+            TheModule->getName().str().c_str());
     fflush(stdout);
     function->dump();
   }

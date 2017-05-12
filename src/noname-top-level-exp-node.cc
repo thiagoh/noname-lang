@@ -135,7 +135,9 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
     fprintf(stderr, "\nTop level expression could not be evaluated");
   } else {
     if (noname::debug >= 1) {
-      fprintf(stderr, "\n[read top level expression]");
+      fprintf(stdout, "\n[read top level expression]");
+      fprintf(stdout, "\n[print module '%s']", TheModule->getName().str().c_str());
+      fflush(stdout);
       TheModule->dump();
     }
 
