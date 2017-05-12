@@ -27,14 +27,14 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
   Error* error = nullptr;
-  std::vector<Value*> codegen_elements(node->codegen_elements(&error));
+  std::vector<Value*> elements(node->get_codegen_elements(&error, bb));
 
   if (error) {
     return logErrorLLVM(error->what().c_str());
   }
 
   llvm::Value* last = nullptr;
-  for (Value* ptr : codegen_elements) {
+  for (Value* ptr : elements) {
     last = ptr;
     if (bb) {
       if (isa<llvm::Instruction>(last)) {
@@ -46,7 +46,7 @@ Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
   return last;
 }
 
-AllocaInst* declaration_codegen_util(ASTNode* node, llvm::BasicBlock* bb) {
+AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb) {
   std::string alloca_name = "untyped_poiter_alloca_";
   /**
    * user level untyped variable
@@ -156,7 +156,7 @@ CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock*
   return casted_inst;
 }
 
-std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, AssignmentNode* assignment,
+std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, const AssignmentNode* assignment,
                                         llvm::BasicBlock* bb) {
   /**
     * Instructions for this method can be found at:docs/declare-and-assign.cc

@@ -28,8 +28,16 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 FunctionSignature::FunctionSignature(const std::string& name, std::vector<FunctionArgument*> args_defs,
                                      llvm::Type* return_type)
     : name(name), args_defs(args_defs), return_type(return_type) {}
+
 FunctionSignature::FunctionSignature(const FunctionSignature& copy)
     : name(copy.name), args_defs(copy.args_defs), return_type(copy.return_type) {}
+
+FunctionSignature::~FunctionSignature() {
+  if (noname::debug >= 1) {
+    fprintf(stdout, "\n[FunctionSignature::~FunctionSignature() for %s]", getName().c_str());
+    fflush(stdout);
+  }
+}
 
 Function* FunctionSignature::codegen() {
   if (noname::debug >= 1) {
@@ -60,6 +68,11 @@ Function* FunctionSignature::codegen() {
 
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* return_node) {
+  if (noname::debug >= 1) {
+    fprintf(stdout, "\n[new_function_def for funtcion '%s']", name.c_str());
+    fflush(stdout);
+  }
+
   FunctionDefNode* function_new_node = new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
 
   ASTNode* check_result = function_new_node->check();
@@ -69,11 +82,6 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
   }
 
   context->store(name, new FunctionSignature(*function_new_node->getFunctionSignature()));
-
-  if (noname::debug >= 1) {
-    fprintf(stdout, "\n[new_function_def %s]", context->getName().c_str());
-    fflush(stdout);
-  }
 
   return function_new_node;
 }
@@ -146,13 +154,15 @@ FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, a
   }
 }
 FunctionDefNode::~FunctionDefNode() {
+  delete return_node;
+  delete function_signature;
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[FunctionDefNode::~FunctionDefNode() for %s]", getName().c_str());
     fflush(stdout);
   }
 }
 
-ASTNode* FunctionDefNode::check() {
+ASTNode* FunctionDefNode::check() const {
   ASTContext* context = getContext();
   Function* function = TheModule->getFunction(getName());
 
@@ -163,10 +173,10 @@ ASTNode* FunctionDefNode::check() {
     return new LogicErrorNode(context, msg);
   }
 
-  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes.begin();
+  std::vector<std::unique_ptr<ASTNode>>::const_iterator it_body_nodes = body_nodes.begin();
 
   for (; it_body_nodes != body_nodes.end();) {
-    std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
+    const std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes++;
 
     if (isa<ImportNode>(*bodyNode.get())) {
       return new InvalidStatement(context, "Cannot import inside function definition");
@@ -177,14 +187,13 @@ ASTNode* FunctionDefNode::check() {
               ASTNode::toString(bodyNode.get()->getKind()).c_str());
       fflush(stdout);
     }
-    ++it_body_nodes;
   }
 
   if (return_node && isa<ImportNode>(*return_node)) {
     return new InvalidStatement(context, "Cannot import inside function definition");
   }
 
-  return this;
+  return nullptr;
 }
 
 Function* FunctionDefNode::getFunctionDefinition() {
@@ -247,7 +256,6 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     return_value = return_node->codegen();
   }
   Function* function = getFunctionDefinition();
-  ReturnInst* return_inst = getLLVMReturnInst(return_value);
 
   if (!function) {
     fprintf(stdout, "\nError: function %s not defined", getName().c_str());
@@ -298,10 +306,18 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     }
   }
 
+  ReturnInst* return_inst = nullptr;
   if (return_value) {
     if (isa<CallInst>(return_value)) {
-      function_bb->getInstList().push_back((Instruction*)return_value);
+      if (noname::debug >= 1) {
+        fprintf(stdout, "\n[CallInst prepended due to return being a call node]");
+        fflush(stdout);
+      }
+      function_bb->getInstList().push_back(dyn_cast<CallInst>(return_value));
     }
+    return_inst = getLLVMReturnInst(return_value);
+  } else {
+    return_inst = getLLVMReturnInst(return_value);
   }
 
   if (!return_inst) {

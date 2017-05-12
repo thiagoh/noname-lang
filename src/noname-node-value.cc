@@ -87,7 +87,7 @@ Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullp
 }
 Value* NodeValue::constant_codegen(llvm::BasicBlock* bb) { return constant_codegen_util(type, value, bb); }
 
-void* NodeValue::getValue(int as_type) {
+void* NodeValue::getValue(int as_type) const {
   // string
   if (as_type == TYPE_STRING && type != TYPE_STRING) {
     return nullptr;

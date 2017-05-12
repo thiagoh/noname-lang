@@ -33,7 +33,7 @@ std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
 
 bool initialized = false;
-Type* VoidTy;
+Type *VoidTy;
 PointerType *PointerTy_1;
 PointerType *PointerTy_2;
 PointerType *PointerTy_3;
@@ -584,12 +584,12 @@ ImportNode *new_import(ASTContext *context, std::string filename) {
   return new_node;
 }
 
-std::unique_ptr<NodeValue> StringExpNode::getValue() {
+std::unique_ptr<NodeValue> StringExpNode::getValue() const {
   NodeValue *node = new NodeValue(value);
   return std::unique_ptr<NodeValue>(node);
 }
 
-std::unique_ptr<NodeValue> VarExpNode::getValue() {
+std::unique_ptr<NodeValue> VarExpNode::getValue() const {
   NodeValue *node = getContext()->getVariable(name);
 
   if (!node) {
@@ -716,7 +716,7 @@ void *ImportNodeProcessorStrategy::process(ASTNode *node) {
   return nullptr;
 }
 
-std::unique_ptr<NodeValue> NumberExpNode::getValue() {
+std::unique_ptr<NodeValue> NumberExpNode::getValue() const {
   NodeValue *node = nullptr;
 
   if (type == TYPE_DOUBLE) {
@@ -732,9 +732,9 @@ std::unique_ptr<NodeValue> NumberExpNode::getValue() {
   } else if (type == TYPE_CHAR) {
     node = new NodeValue(*(char *)value);
   } else {
-    std::string error_msg("No such type " + std::to_string(type) +
-                          " is implemented for NodeValue *NumberExpNode::getValue()");
-    node = logErrorNV(new ErrorNode(getContext(), error_msg));
+    std::string msg("No such type " + std::to_string(type) +
+                    " is implemented for NodeValue *NumberExpNode::getValue()");
+    node = logErrorNV(new ErrorNode(getContext(), msg));
   }
 
   return std::unique_ptr<NodeValue>(node);
@@ -743,7 +743,7 @@ std::unique_ptr<NodeValue> NumberExpNode::getValue() {
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
-std::vector<Value *> NumberExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+std::vector<Value *> NumberExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
   std::unique_ptr<NodeValue> node(getValue());
 
@@ -778,7 +778,7 @@ Value *StringExpNode::codegen(llvm::BasicBlock *bb) {
 
   return node->constant_codegen(bb);
 }
-std::vector<Value *> StringExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+std::vector<Value *> StringExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) const {
   *error = createError("NOT IMPLEMENTED - std::vector<Value*> StringExpNode::codegen_elements");
   return std::vector<Value *>();
 }
@@ -800,7 +800,7 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 
   return node->constant_codegen(bb);
 }
-std::vector<Value *> VarExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) {
+std::vector<Value *> VarExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) const {
   *error = createError("NOT IMPLEMENTED - std::vector<Value*> VarExpNode::codegen_elements");
   return std::vector<Value *>();
 }

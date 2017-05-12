@@ -30,7 +30,7 @@ AssignmentNode* new_assignment_node(ASTContext* context, const std::string name,
   return new_node;
 }
 
-std::unique_ptr<NodeValue> AssignmentNode::getValue() { return rhs->getValue(); }
+std::unique_ptr<NodeValue> AssignmentNode::getValue() const { return rhs->getValue(); }
 void* AssignmentNode::eval() {
   std::unique_ptr<NodeValue> node_value = getValue();
 
@@ -42,7 +42,7 @@ void* AssignmentNode::eval() {
 
   return nullptr;
 }
-std::vector<Value*> AssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+std::vector<Value*> AssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
   AllocaInst* alloca_inst = getContext()->getAllocaInst(getName());
 

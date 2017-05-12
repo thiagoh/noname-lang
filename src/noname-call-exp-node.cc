@@ -73,7 +73,7 @@ CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* a
   CallExpNode* new_node = new CallExpNode(context, function, arg_exp_list);
   return new_node;
 }
-llvm::Function* CallExpNode::getCalledFunction(Error** error) {
+llvm::Function* CallExpNode::getCalledFunction(Error** error) const {
   ASTContext* call_exp_context = getContext();
   llvm::Function* function = TheModule->getFunction(getCallee());
 
@@ -88,22 +88,24 @@ llvm::Function* CallExpNode::getCalledFunction(Error** error) {
     }
 
     function = function_signature->codegen();
-    // TheModule->getFunctionList().push_back(function);
+    TheModule->getFunctionList().push_back(function);
 
-    // if (noname::debug >= 1) {
-    //   fprintf(stdout, "\n[CallExpNode::getCalledFunction function '%s' declared inside the module '%s']",
-    //           getCallee().c_str(), TheModule->getName().str().c_str());
-    //   fflush(stdout);
-    //   TheModule->dump();
-    // }
+    if (noname::debug >= 1) {
+      fprintf(stdout, "\n[CallExpNode::getCalledFunction function '%s' declared inside the module '%s']",
+              getCallee().c_str(), TheModule->getName().str().c_str());
+      fflush(stdout);
+      TheModule->dump();
+    }
   }
 
   return function;
 }
 
-std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
   ASTContext* call_exp_context = getContext();
+
+  Function* called_function = nullptr;
 
   if (!called_function) {
     called_function = getCalledFunction(error);
@@ -153,19 +155,19 @@ std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBloc
   }
 
   llvm::CallInst* call_inst = nullptr;
-
   if (called_function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
     // Cannot assign a name to void values!
     call_inst = CallInst::Create(called_function, args_value);
-    call_inst->setTailCall(false);
   } else {
     call_inst = CallInst::Create(called_function, args_value, "__call_exp");
   }
 
+  call_inst->setTailCall(false);
   call_inst->setCallingConv(CallingConv::C);
 
   if (noname::debug >= 1) {
-    fprintf(stdout, "\n[call_inst->dump]");
+    fprintf(stdout, "\n[call_inst->dump calling '%s']", called_function->getName().str().c_str());
+    fflush(stdout);
     call_inst->dump();
   }
 

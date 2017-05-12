@@ -27,7 +27,7 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 
 std::string pow_function_name("_noname_function_pow");
 
-std::unique_ptr<NodeValue> BinaryExpNode::getValue() {
+std::unique_ptr<NodeValue> BinaryExpNode::getValue() const {
   std::unique_ptr<NodeValue> lhs_node_value = lhs->getValue();
   std::unique_ptr<NodeValue> rhs_node_value = rhs->getValue();
   int result_type = get_adequate_result_type(lhs_node_value.get(), rhs_node_value.get());
@@ -140,7 +140,7 @@ std::unique_ptr<NodeValue> BinaryExpNode::getValue() {
   return std::unique_ptr<NodeValue>(std::move(result));
 }
 
-Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow_tmp") {
+Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow_tmp") const {
   Function* pow_function = TheModule->getFunction(pow_function_name);
 
   if (!pow_function) {
@@ -156,7 +156,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow
   return nullptr;
 }
 
-std::vector<Value*> BinaryExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+std::vector<Value*> BinaryExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
   Value* result = nullptr;
   Value* L = lhs->codegen();

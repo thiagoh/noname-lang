@@ -25,7 +25,7 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-std::unique_ptr<NodeValue> UnaryExpNode::getValue() {
+std::unique_ptr<NodeValue> UnaryExpNode::getValue() const {
   std::unique_ptr<NodeValue> rhs_value = rhs->getValue();
   fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::getValue ###########\n\n");
   return rhs_value;
@@ -36,7 +36,7 @@ Value* UnaryExpNode::codegen(llvm::BasicBlock* bb) {
   fprintf(stdout, "\n\n############ IMPLEMENT ME: UnaryExpNode::codegen ###########\n\n");
   return R;
 }
-std::vector<Value*> UnaryExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
+std::vector<Value*> UnaryExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
   logError(
       "NOT IMPLEMENTED - std::vector<Value*> "
       "UnaryExpNode::codegen_elements");
