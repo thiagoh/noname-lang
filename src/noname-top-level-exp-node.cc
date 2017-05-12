@@ -54,6 +54,10 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* return_no
 ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
   CreateNewModuleAndInitialize();
 
+  if (true) {
+    return new TopLevelExpNode(nullptr, nullptr, nullptr, nullptr);
+  }
+
   ASTContext* top_level_context = exp_node->getContext();
   CallExpNode* called_function_exp_node = (CallExpNode*)exp_node;
 
@@ -99,6 +103,58 @@ ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
 std::vector<Value*> TopLevelExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   std::vector<Value*> codegen;
 
+  if (true) {
+    llvm::Function* called_function = nullptr;
+    {
+      std::vector<llvm::Type*> called_function_args_types(0, Type::getVoidTy(TheContext));
+      FunctionType* called_function_type =
+          FunctionType::get(Type::getInt64Ty(TheContext), called_function_args_types, false);
+      called_function = Function::Create(called_function_type, Function::ExternalLinkage, "f");
+      called_function->dump();
+    }
+    {
+      std::vector<llvm::Type*> called_function_args_types(0, Type::getVoidTy(TheContext));
+      FunctionType* called_function_type =
+          FunctionType::get(Type::getInt64Ty(TheContext), called_function_args_types, false);
+      called_function = Function::Create(called_function_type, Function::ExternalLinkage, "f");
+      called_function->dump();
+    }
+    {
+      std::vector<llvm::Type*> called_function_args_types(0, Type::getVoidTy(TheContext));
+      FunctionType* called_function_type =
+          FunctionType::get(Type::getInt64Ty(TheContext), called_function_args_types, false);
+      called_function = Function::Create(called_function_type, Function::ExternalLinkage, "f");
+      called_function->dump();
+    }
+
+    std::vector<llvm::Value*> args_value;
+    llvm::CallInst* call_inst = CallInst::Create(called_function, args_value);
+    llvm::ReturnInst* return_inst = ReturnInst::Create(TheContext, call_inst);
+    llvm::Type* return_type = toLLVMType(call_inst);
+
+    std::vector<llvm::Type*> function_args_types(0, Type::getVoidTy(TheContext));
+    FunctionType* function_type = FunctionType::get(return_type, function_args_types, false);
+    llvm::Function* function = Function::Create(function_type, Function::ExternalLinkage, "__anon_expr");
+    function->setCallingConv(CallingConv::C);
+
+    // Define function inside Module
+    TheModule->getFunctionList().push_back(called_function);
+    // Define function inside Module
+    TheModule->getFunctionList().push_back(function);
+
+    BasicBlock* function_bb = BasicBlock::Create(TheContext, "entry", function);
+    function_bb->getInstList().push_back(call_inst);
+    function_bb->getInstList().push_back(return_inst);
+
+    // // Validate the generated code, checking for consistency.
+    verifyFunction(*function);
+
+    // // Run the optimizer on the function.
+    TheFPM->run(*function);
+    codegen.push_back(function);
+    return codegen;
+  }
+
   if (!anonymous_function) {
     *error = createError("Could not resolve top level expression");
     return codegen;
@@ -113,10 +169,7 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error** error, llvm::Basic
 
   return codegen;
 }
-Value* TopLevelExpNode::codegen(llvm::BasicBlock* bb) {
-  Value* value = codegen_elements_retlast(this, bb);
-  return value;
-}
+Value* TopLevelExpNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
 
 void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
   TopLevelExpNode* top_level_exp_node = (TopLevelExpNode*)node;

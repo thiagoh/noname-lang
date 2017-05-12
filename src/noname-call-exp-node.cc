@@ -88,14 +88,14 @@ llvm::Function* CallExpNode::getCalledFunction(Error** error) {
     }
 
     function = function_signature->codegen();
-    TheModule->getFunctionList().push_back(function);
+    // TheModule->getFunctionList().push_back(function);
 
-    if (noname::debug >= 1) {
-      fprintf(stdout, "\n[CallExpNode::getCalledFunction function '%s' declared inside the module '%s']",
-              getCallee().c_str(), TheModule->getName().str().c_str());
-      fflush(stdout);
-      TheModule->dump();
-    }
+    // if (noname::debug >= 1) {
+    //   fprintf(stdout, "\n[CallExpNode::getCalledFunction function '%s' declared inside the module '%s']",
+    //           getCallee().c_str(), TheModule->getName().str().c_str());
+    //   fflush(stdout);
+    //   TheModule->dump();
+    // }
   }
 
   return function;
