@@ -25,6 +25,39 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+FunctionSignature::FunctionSignature(const std::string& name, std::vector<FunctionArgument*> args_defs,
+                                     llvm::Type* return_type)
+    : name(name), args_defs(args_defs), return_type(return_type) {}
+FunctionSignature::FunctionSignature(const FunctionSignature& copy)
+    : name(copy.name), args_defs(copy.args_defs), return_type(copy.return_type) {}
+
+Function* FunctionSignature::codegen() {
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[FunctionSignature::codegen for %s]", getName().c_str());
+  }
+
+  std::vector<llvm::Type*> function_args_types(args_defs.size(), Type::getVoidTy(TheContext));
+  FunctionType* function_type = FunctionType::get(return_type, function_args_types, false);
+
+  Function* function = Function::Create(function_type, Function::ExternalLinkage, name);
+  function->setCallingConv(CallingConv::C);
+
+  // Set names for all arguments.
+  int index = 0;
+  for (auto& function_arg : function->args()) {
+    function_arg.setName(args_defs[index++]->name);
+  }
+
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n<<<<<<<##########################");
+    fprintf(stderr, "\n[FunctionSignature %s created unlinked from modules]", getName().c_str());
+    function->dump();
+    fprintf(stderr, "##########################>>>>>>>>>");
+  }
+
+  return function;
+}
+
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
                           ExpNode* return_node) {
   FunctionDefNode* function_new_node = new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
@@ -35,6 +68,8 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
     return check_result;
   }
 
+  context->store(name, new FunctionSignature(*function_new_node->getFunctionSignature()));
+
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[new_function_def %s]", context->getName().c_str());
   }
@@ -42,39 +77,71 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
   return function_new_node;
 }
 
-FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name,
-                                 std::vector<std::unique_ptr<arg_t>>& args,
-                                 std::vector<std::unique_ptr<ASTNode>>& body_nodes, ExpNode* return_node)
+FunctionSignature* FunctionDefNode::createFunctionSignature(const std::string& name,
+                                                            std::vector<FunctionArgument*> args_defs) {
+  llvm::Type* return_type = nullptr;
+  if (noname::debug >= 1) {
+    fprintf(stderr, "\n[Figuring out the return type of %s]", getName().c_str());
+  }
+  Value* return_value = nullptr;
+  if (return_node) {
+    return_value = return_node->codegen();
+    if (!return_value) {
+      logError("Return value is null or undefined");
+      return nullptr;
+    }
+  }
+  return_type = toLLVMType(return_value);
+
+  return new FunctionSignature(name, args_defs, return_type);
+}
+
+FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, std::vector<FunctionArgument*> args_defs,
+                                 std::vector<std::unique_ptr<ASTNode>> body_nodes, ExpNode* return_node)
     : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
-      name(name),
-      args(std::move(args)),
-      bodyNodes(std::move(body_nodes)),
-      return_node(std::move(return_node)) {
-  ;
+      body_nodes(std::move(body_nodes)),
+      return_node(std::move(return_node)),
+      function_signature(nullptr) {
+  function_signature = createFunctionSignature(name, args_defs);
+  if (!function_signature) {
+    logError("FunctionDefNode could not be defined");
+    return;
+  }
 }
 
 FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list,
                                  stmtlist_t* head_stmt_list, ExpNode* return_node)
     : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
-      name(name),
-      args(std::vector<std::unique_ptr<arg_t>>()),
-      bodyNodes(std::vector<std::unique_ptr<ASTNode>>()),
-      return_node(std::move(return_node)) {
+      body_nodes(std::vector<std::unique_ptr<ASTNode>>()),
+      return_node(std::move(return_node)),
+      function_signature(nullptr) {
+  std::vector<FunctionArgument*> args_defs;
+
   arglist_node_t* arglist_node = head_arg_list->first;
   stmtlist_node_t* stmtlist_node = head_stmt_list->first;
   do {
     if (arglist_node && arglist_node->arg) {
-      args.push_back(std::unique_ptr<arg_t>(arglist_node->arg));
+      FunctionArgument* function_argument =
+          new FunctionArgument(std::string(arglist_node->arg->name), VoidTy, arglist_node->arg->default_value);
+
+      args_defs.push_back(function_argument);
+
       arglist_node = arglist_node->next;
     }
   } while (arglist_node);
 
   do {
     if (stmtlist_node && stmtlist_node->node) {
-      bodyNodes.push_back(std::unique_ptr<ASTNode>(stmtlist_node->node));
+      body_nodes.push_back(std::unique_ptr<ASTNode>(stmtlist_node->node));
       stmtlist_node = stmtlist_node->next;
     }
   } while (stmtlist_node);
+
+  function_signature = createFunctionSignature(name, args_defs);
+  if (!function_signature) {
+    logError("FunctionDefNode could not be defined");
+    return;
+  }
 }
 FunctionDefNode::~FunctionDefNode() {
   if (noname::debug >= 1) {
@@ -84,19 +151,18 @@ FunctionDefNode::~FunctionDefNode() {
 
 ASTNode* FunctionDefNode::check() {
   ASTContext* context = getContext();
-
-  Function* function = TheModule->getFunction(name);
+  Function* function = TheModule->getFunction(getName());
 
   if (function) {
     char error_message[2048];
-    snprintf(error_message, 2048, "Function '%s' already exists in this context. %s", name.c_str(),
+    snprintf(error_message, 2048, "Function '%s' already exists in this context. %s", getName().c_str(),
              context->getName().c_str());
     return new LogicErrorNode(context, error_message);
   }
 
-  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = bodyNodes.begin();
+  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes.begin();
 
-  for (; it_body_nodes != bodyNodes.end();) {
+  for (; it_body_nodes != body_nodes.end();) {
     std::unique_ptr<ASTNode>& bodyNode = *it_body_nodes;
 
     if (isa<ImportNode>(*bodyNode.get())) {
@@ -117,23 +183,13 @@ ASTNode* FunctionDefNode::check() {
   return this;
 }
 
-llvm::Type* FunctionDefNode::getReturnLLVMType() {
-  if (!returnLLVMType) {
-    fprintf(stderr, "Function %s has no return type set", name.c_str());
-    exit(1);
-    return llvm::Type::getVoidTy(TheContext);
-  }
-
-  return returnLLVMType;
-}
-
-Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
+Function* FunctionDefNode::getFunctionDefinition() {
   if (noname::debug >= 1) {
     fprintf(stderr, "\n[FunctionDefNode::getFunctionDefinition for %s]", getName().c_str());
   }
 
   // First, see if the function has already been added to the current module.
-  Function* function = TheModule->getFunction(name);
+  Function* function = TheModule->getFunction(getName());
 
   if (function) {
     if (noname::debug >= 1) {
@@ -146,35 +202,22 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
     fprintf(stderr, "\n[Function %s NOT found]", getName().c_str());
   }
 
-  llvm::Type* return_type = nullptr;
-  if (!return_value) {
-    if (noname::debug >= 1) {
-      fprintf(stderr, "\n[Figuring out the return type of %s]", getName().c_str());
-    }
-    ExpNode* return_node = getReturnNode();
+  function = function_signature->codegen();
 
-    if (return_node) {
-      return_value = return_node->codegen();
-      if (!return_value) {
-        return logErrorLLVMF("Return value is null or undefined");
-      }
-    }
-  }
-  return_type = getLLVMReturnInstType(return_value);
+  // std::vector<llvm::Type*> arg_types(args.size(), Type::getVoidTy(TheContext));
 
-  // Make the function type:  double(double,double) etc.
-  std::vector<llvm::Type*> arg_types(args.size(), Type::getVoidTy(TheContext));
+  // FunctionType* function_type = FunctionType::get(return_type, arg_types, false);
 
-  FunctionType* function_type = FunctionType::get(return_type, arg_types, false);
+  // function = Function::Create(function_type, Function::ExternalLinkage, name, TheModule.get());
+  // function->setCallingConv(CallingConv::C);
 
-  function = Function::Create(function_type, Function::ExternalLinkage, name, TheModule.get());
-  function->setCallingConv(CallingConv::C);
+  TheModule->getFunctionList().push_back(function);
 
-  // Set names for all arguments.
-  int index = 0;
-  for (auto& function_arg : function->args()) {
-    function_arg.setName(args[index++]->name);
-  }
+  // // Set names for all arguments.
+  // int index = 0;
+  // for (auto& function_arg : function->args()) {
+  //   function_arg.setName(args[index++]->name);
+  // }
 
   if (noname::debug >= 1) {
     fprintf(stderr, "\n<<<<<<<##########################");
@@ -184,11 +227,6 @@ Function* FunctionDefNode::getFunctionDefinition(Value* return_value) {
   }
 
   return function;
-}
-llvm::Type* FunctionDefNode::getLLVMReturnInstType(llvm::Value* return_value) {
-  llvm::Type* type = toLLVMType(return_value);
-  this->returnLLVMType = type;
-  return type;
 }
 llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
   ReturnInst* return_inst = nullptr;
@@ -220,11 +258,11 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   if (return_node) {
     return_value = return_node->codegen();
   }
+  Function* function = getFunctionDefinition();
   ReturnInst* return_inst = getLLVMReturnInst(return_value);
-  Function* function = getFunctionDefinition(return_value);
 
   if (!function) {
-    fprintf(stderr, "\nError: function %s not defined", name.c_str());
+    fprintf(stderr, "\nError: function %s not defined", getName().c_str());
     return nullptr;
   }
 
@@ -233,14 +271,11 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // Builder.SetInsertPoint(function_bb);
 
   ASTContext* function_def_node_context = getContext();
-  const std::vector<std::unique_ptr<arg_t>>* signature_args = &getArgs();
-  std::vector<std::unique_ptr<arg_t>>::const_iterator it_signature_args = signature_args->begin();
-  const std::vector<std::unique_ptr<ASTNode>>* body_nodes = &getBodyNodes();
-  std::vector<std::unique_ptr<ASTNode>>::const_iterator it_body_nodes = body_nodes->begin();
+  std::vector<FunctionArgument*>& signature_args = getFunctionArguments();
+  std::vector<FunctionArgument*>::iterator it_signature_args = signature_args.begin();
 
-  while (it_signature_args != signature_args->end()) {
-    const std::unique_ptr<arg_t>& signature_arg = *it_signature_args++;
-
+  while (it_signature_args != signature_args.end()) {
+    FunctionArgument* signature_arg = *it_signature_args++;
     NodeValue* arg_node_value = NULL;
 
     if (signature_arg->default_value) {
@@ -250,8 +285,10 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     function_def_node_context->store(signature_arg->name, arg_node_value);
   }
 
-  while (it_body_nodes != body_nodes->end()) {
-    const std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
+  std::vector<std::unique_ptr<ASTNode>>& body_nodes = getBodyNodes();
+  std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes.begin();
+  while (it_body_nodes != body_nodes.end()) {
+    std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
     Instruction* body_codegen_value = (Instruction*)body_node->codegen();
     function_bb->getInstList().push_back(body_codegen_value);
@@ -306,9 +343,11 @@ void* FunctionDefNodeProcessorStrategy::process(ASTNode* node) {
       fprintf(stderr, "\nRead function definition:");
       function->dump();
     }
-    TheJIT->writeToFile(TheModule.get());
-    TheJIT->addModule(std::move(TheModule));
-    InitializeModuleAndPassManager();
+    if (false) {
+      TheJIT->writeToFile(TheModule.get());
+      TheJIT->addModule(std::move(TheModule));
+      InitializeModuleAndPassManager();
+    }
   }
 
   // std::unique_ptr<NodeValue> return_value(function_def_node->getValue());

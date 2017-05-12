@@ -57,78 +57,29 @@ class NonameJIT {
   typedef IRCompileLayer<ObjLayerT> CompileLayerT;
   typedef CompileLayerT::ModuleSetHandleT ModuleHandleT;
 
-  NonameJIT()
-      : TM(EngineBuilder().selectTarget()), DL(TM->createDataLayout()), CompileLayer(ObjectLayer, SimpleCompiler(*TM)) {
-    llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
-  }
+  NonameJIT();
+  virtual ~NonameJIT();
 
-  TargetMachine &getTargetMachine() { return *TM; }
+  TargetMachine &getTargetMachine();
 
-  ModuleHandleT addModule(std::unique_ptr<Module> module) {
-    // We need a memory manager to allocate memory and resolve symbols for this
-    // new module. Create one that resolves symbols by looking back into the
-    // JIT.
-    auto Resolver = createLambdaResolver(
-        [&](const std::string &Name) {
-          if (auto Sym = findMangledSymbol(Name)) return Sym.toRuntimeDyldSymbol();
-          return RuntimeDyld::SymbolInfo(nullptr);
-        },
-        [](const std::string &S) { return nullptr; });
+  CompileLayerT::ModuleSetHandleT addModule(std::unique_ptr<Module> module);
 
-    Modules.push_back(module.get());
+  void removeModule(ModuleHandleT module_handle);
 
-    auto module_handle = CompileLayer.addModuleSet(singletonSet(std::move(module)), make_unique<SectionMemoryManager>(),
-                                                   std::move(Resolver));
-
-    ModuleHandles.push_back(module_handle);
-    return module_handle;
-  }
-
-  void removeModule(ModuleHandleT module_handle) {
-    ModuleHandles.erase(std::find(ModuleHandles.begin(), ModuleHandles.end(), module_handle));
-    CompileLayer.removeModuleSet(module_handle);
-  }
-
-  JITSymbol findSymbol(const std::string Name) { return findMangledSymbol(mangle(Name)); }
+  JITSymbol findSymbol(const std::string Name);
+  llvm::Function* getFunction(const std::string Name);
 
   void writeToFile(const Module *mod);
   void writeToFile();
   void release();
 
  private:
-  std::string mangle(const std::string &Name) {
-    std::string MangledName;
-    {
-      raw_string_ostream MangledNameStream(MangledName);
-      Mangler::getNameWithPrefix(MangledNameStream, Name, DL);
-    }
-    return MangledName;
-  }
+  std::string mangle(const std::string &Name);
 
   template <typename T>
-  static std::vector<T> singletonSet(T t) {
-    std::vector<T> vec;
-    vec.push_back(std::move(t));
-    return vec;
-  }
+  static std::vector<T> singletonSet(T t);
 
-  JITSymbol findMangledSymbol(const std::string &symbol_name) {
-    // Search modules in reverse order: from last added to first added.
-    // This is the opposite of the usual search order for dlsym, but makes more
-    // sense in a REPL where we want to bind to the newest available definition.
-    for (auto module_handle : make_range(ModuleHandles.rbegin(), ModuleHandles.rend())) {
-      if (auto symbol = CompileLayer.findSymbolIn(module_handle, symbol_name, true)) {
-        return symbol;
-      }
-    }
-
-    // If we can't find the symbol in the JIT, try looking in the host process.
-    if (auto symbol_addr = RTDyldMemoryManager::getSymbolAddressInProcess(symbol_name)) {
-      return JITSymbol(symbol_addr, JITSymbolFlags::Exported);
-    }
-
-    return nullptr;
-  }
+  JITSymbol findMangledSymbol(const std::string &symbol_name);
 
   std::unique_ptr<TargetMachine> TM;
   const DataLayout DL;

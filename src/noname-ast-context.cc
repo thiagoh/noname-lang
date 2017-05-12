@@ -25,6 +25,29 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+// Function Signatures
+FunctionSignature* ASTContext::getFunctionSignature(const std::string& name) {
+  itFunctionSignatures = mFunctionSignatures.find(name);
+  if (itFunctionSignatures != mFunctionSignatures.end()) {
+    return mFunctionSignatures[name];
+  }
+
+  ASTContext* parent = this->getParent();
+
+  if (parent) {
+    return parent->getFunctionSignature(name);
+  }
+
+  return nullptr;
+};
+bool ASTContext::storeFunctionSignature(const std::string name, FunctionSignature* function_signature) {
+  mFunctionSignatures[name] = function_signature;
+  return true;
+}
+bool ASTContext::store(const std::string name, FunctionSignature* function_signature) {
+  return storeFunctionSignature(name, function_signature);
+}
+
 // Variables
 NodeValue* ASTContext::getVariableShallow(const std::string& name) {
   itVariables = mVariables.find(name);
@@ -34,7 +57,6 @@ NodeValue* ASTContext::getVariableShallow(const std::string& name) {
 
   return nullptr;
 };
-
 NodeValue* ASTContext::getVariable(const std::string& name) {
   itVariables = mVariables.find(name);
   if (itVariables != mVariables.end()) {

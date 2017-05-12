@@ -73,18 +73,40 @@ CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* a
   CallExpNode* new_node = new CallExpNode(context, function, arg_exp_list);
   return new_node;
 }
+llvm::Function* CallExpNode::getCalledFunction(Error** error) {
+    ASTContext* call_exp_context = getContext();
+  llvm::Function* function = TheModule->getFunction(getCallee());
+
+  if (!function) {
+    FunctionSignature* function_signature = call_exp_context->getFunctionSignature(getCallee());
+
+    if (!function_signature) {
+      char msg[1024];
+      sprintf(msg, "Could not find function signature '%s' referenced", getCallee().c_str());
+      *error = createError(msg);
+      return nullptr;
+    }
+
+    function = function_signature->codegen();
+  }
+
+  return function;
+}
+
 std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) {
   std::vector<Value*> codegen;
   ASTContext* call_exp_context = getContext();
 
   if (!called_function) {
-    called_function = TheModule->getFunction(getCallee());
+    called_function = getCalledFunction(error);
   }
 
   if (!called_function) {
-    char msg[1024];
-    sprintf(msg, "Unknown function '%s' referenced", getCallee().c_str());
-    *error = createError(msg);
+    if (!error) {  // error may be already set
+      char msg[1024];
+      sprintf(msg, "Unknown function '%s' referenced", getCallee().c_str());
+      *error = createError(msg);
+    }
     return codegen;
   }
 

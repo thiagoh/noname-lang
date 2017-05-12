@@ -181,6 +181,15 @@ int noname_read(char *buf, int *result, int max_size) {
 // Top-Level parsing and JIT Driver
 //===----------------------------------------------------------------------===//
 
+void CreateNewModuleAndInitialize() {
+
+  if (TheModule) {
+    TheJIT->writeToFile(TheModule.get());
+    TheJIT->addModule(std::move(TheModule));
+    InitializeModuleAndPassManager();
+  }
+}
+
 void InitializeModuleAndPassManager() {
   // if (TheModule) {
   //   fprintf(stdout, "\n[module write]");
@@ -394,7 +403,15 @@ int main(int argc, char **argv) {
   /*
     
     def f() { return 32122; };
-    f();
+    def f1() { return 111; };
+    def f2() { return 222; };
+    def f3() { return 333; };
+    def f4() { return 444; };
+    def f5() { return 555; };
+    def f6() { return 666; };
+    def f7() { return 777; };
+    def f8() { return 888; };
+    f8();
     f();
     f();
     f();

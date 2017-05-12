@@ -33,6 +33,7 @@ std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
 
 bool initialized = false;
+Type* VoidTy;
 PointerType *PointerTy_1;
 PointerType *PointerTy_2;
 PointerType *PointerTy_3;
@@ -62,6 +63,7 @@ void InitializeNonameEnvironment() {
 
   // Now we going to create JIT
 
+  VoidTy = Type::getVoidTy(TheContext);
   PointerTy_1 = PointerType::get(IntegerType::get(TheContext, 32), 0);
   PointerTy_2 = PointerType::get(IntegerType::get(TheContext, 64), 0);
   PointerTy_3 = PointerType::get(IntegerType::get(TheContext, 16), 0);

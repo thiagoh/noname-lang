@@ -80,6 +80,7 @@ class ImportNode;
 class BinaryExpNode;
 class VarExpNode;
 class CallExpNode;
+class FunctionSignature;
 class FunctionDefNode;
 class DeclarationNode;
 class AssignmentNode;
@@ -102,6 +103,7 @@ extern ProcessorStrategy* assignmentNodeProcessorStrategy;
 extern ProcessorStrategy* callNodeProcessorStrategy;
 extern ProcessorStrategy* importNodeProcessorStrategy;
 
+extern Type* VoidTy;
 extern PointerType* PointerTy_1;
 extern PointerType* PointerTy_2;
 extern PointerType* PointerTy_3;
@@ -213,8 +215,11 @@ arglist_t* new_arg_list(ASTContext* context);
 arglist_t* new_arg_list(ASTContext* context, arg_t* arg);
 arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg);
 
+void CreateNewModuleAndInitialize();
 void InitializeNonameEnvironment();
 void ReleaseNonameEnvironment();
+void InitializeModuleAndPassManager();
+
 ImportNode* new_import(ASTContext* context, std::string filename);
 ASTNode* new_top_level_exp_node(ExpNode* node);
 VarExpNode* new_var_node(ASTContext* context, const std::string name);
@@ -249,8 +254,6 @@ llvm::Type* toLLVLType(int type);
 llvm::Type* toLLVMType(llvm::Value* return_value);
 int toNonameType(llvm::Value* value);
 int toNonameType(llvm::Type* type);
-
-extern void InitializeModuleAndPassManager();
 
 class Error {
  private:
@@ -386,8 +389,8 @@ class ASTContext {
   std::string name;
   ASTContext* parent;
 
-  // std::map<std::string, FunctionDefNode*> mFunctions;
-  // std::map<std::string, FunctionDefNode*>::iterator itFunctions;
+  std::map<std::string, FunctionSignature*> mFunctionSignatures;
+  std::map<std::string, FunctionSignature*>::iterator itFunctionSignatures;
 
   std::map<std::string, NodeValue*> mVariables;
   std::map<std::string, NodeValue*>::iterator itVariables;
@@ -399,21 +402,40 @@ class ASTContext {
   ASTContext(const std::string& name) : name(name), parent(NULL) {}
   ASTContext(const std::string& name, ASTContext* parent) : name(name), parent(parent) {}
   ASTContext(const ASTContext& copy)
-      : name(copy.name), parent(copy.parent), mVariables(copy.mVariables), mAllocaInst(copy.mAllocaInst) {}
+      : name(copy.name),
+        parent(copy.parent),
+        mFunctionSignatures(copy.mFunctionSignatures),
+        mVariables(copy.mVariables),
+        mAllocaInst(copy.mAllocaInst) {}
   ASTContext(const ASTContext& copy, ASTContext* parent)
-      : name(copy.name), parent(parent), mVariables(copy.mVariables), mAllocaInst(copy.mAllocaInst) {}
+      : name(copy.name),
+        parent(parent),
+        mFunctionSignatures(copy.mFunctionSignatures),
+        mVariables(copy.mVariables),
+        mAllocaInst(copy.mAllocaInst) {}
   ASTContext(const std::string& name, const ASTContext& copy, ASTContext* parent)
-      : name(name), parent(parent), mVariables(copy.mVariables), mAllocaInst(copy.mAllocaInst) {}
+      : name(name),
+        parent(parent),
+        mFunctionSignatures(copy.mFunctionSignatures),
+        mVariables(copy.mVariables),
+        mAllocaInst(copy.mAllocaInst) {}
   virtual ~ASTContext() = default;
   ASTContext& operator=(const ASTContext& copy) {
     name = copy.name;
     parent = copy.parent;
     mVariables = copy.mVariables;
+    mFunctionSignatures = copy.mFunctionSignatures;
     mAllocaInst = copy.mAllocaInst;
     return *this;
   }
   std::string& getName() { return name; }
   ASTContext* getParent() { return parent; }
+
+  // Functions
+  FunctionSignature* getFunctionSignature(const std::string& name);
+  bool storeFunctionSignature(const std::string name, FunctionSignature* function_signature);
+  bool store(const std::string name, FunctionSignature* function_signature);
+  bool removeFunctionSignature(const std::string name);
 
   // Variables
   NodeValue* getVariableShallow(const std::string& name);
@@ -622,33 +644,75 @@ class ImportNode : public ASTNode {
 };
 ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* exp_node);
 
+class FunctionArgument {
+  friend class FunctionSignature;
+  friend class FunctionDefNode;
+
+ private:
+  std::string name;
+  llvm::Type* type;
+  ExpNode* default_value;
+
+ public:
+  FunctionArgument(const std::string name, llvm::Type* type, ExpNode* default_value = nullptr)
+      : name(name), type(type), default_value(default_value) {}
+};
+
+// FunctionDefNode - Node class for function definition.
+class FunctionSignature {
+  friend class FunctionDefNode;
+
+ private:
+  std::string name;
+  std::vector<FunctionArgument*> args_defs;
+  llvm::Type* return_type;
+
+ public:
+  FunctionSignature(const std::string& name, std::vector<FunctionArgument*> args_defs, llvm::Type* return_type);
+  FunctionSignature(const FunctionSignature& copy);
+  const std::string& getName() const { return name; }
+  std::vector<FunctionArgument*>& getArgsDefs() { return args_defs; }
+  llvm::Type* getReturnType() {
+    if (!return_type) {
+      fprintf(stderr, "FunctionSignature %s has no return type set", name.c_str());
+      exit(1);
+      return llvm::Type::getVoidTy(TheContext);
+    }
+
+    return return_type;
+  }
+
+  llvm::Function* codegen();
+};
+
 // FunctionDefNode - Node class for function definition.
 class FunctionDefNode : public ASTNode {
  private:
-  std::string name;
-  std::vector<std::unique_ptr<arg_t>> args;
-  std::vector<std::unique_ptr<ASTNode>> bodyNodes;
+  std::vector<std::unique_ptr<ASTNode>> body_nodes;
   ExpNode* return_node;
-  llvm::Type* returnLLVMType;
+  FunctionSignature* function_signature;
 
  public:
-  FunctionDefNode(ASTContext* context, const std::string& name, std::vector<std::unique_ptr<arg_t>>& args,
-                  std::vector<std::unique_ptr<ASTNode>>& body_nodes, ExpNode* return_node);
+  FunctionDefNode(ASTContext* context, const std::string& name, std::vector<FunctionArgument*> args_defs,
+                  std::vector<std::unique_ptr<ASTNode>> body_nodes, ExpNode* return_node = nullptr);
   FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list, stmtlist_t* head_stmt_list,
-                  ExpNode* return_node);
+                  ExpNode* return_node = nullptr);
   virtual ~FunctionDefNode();
 
   // virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
 
   ASTNode* check() override;
-  const std::string& getName() const { return name; }
-  const std::vector<std::unique_ptr<arg_t>>& getArgs() const { return args; }
-  const std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() const { return bodyNodes; }
   ExpNode* getReturnNode() { return return_node; }
-  llvm::Type* getReturnLLVMType();
 
-  Function* getFunctionDefinition(Value* return_value = nullptr);
+  const std::string& getName() const { return function_signature->getName(); }
+  std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() { return body_nodes; }
+
+  std::vector<FunctionArgument*>& getFunctionArguments() { return function_signature->args_defs; }
+  llvm::Type* getReturnLLVMType() { return function_signature->getReturnType(); }
+  FunctionSignature* getFunctionSignature() { return function_signature; }
+
+  Function* getFunctionDefinition();
   ProcessorStrategy* getProcessorStrategy() override { return functionDefNodeProcessorStrategy; };
 
   // int getType() const override { return getClassType(); };
@@ -656,8 +720,8 @@ class FunctionDefNode : public ASTNode {
   static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_DEF_FUNCTION; }
 
  private:
+  FunctionSignature* createFunctionSignature(const std::string& name, std::vector<FunctionArgument*> args_defs);
   llvm::ReturnInst* getLLVMReturnInst(Value* return_value);
-  llvm::Type* getLLVMReturnInstType(llvm::Value* return_value);
 };
 
 class TopLevelExpNode : public ExpNode {
@@ -702,7 +766,7 @@ class CallExpNode : public ExpNode {
   virtual ProcessorStrategy* getProcessorStrategy() override { return callNodeProcessorStrategy; };
 
   const std::string& getCallee() const { return callee; }
-  llvm::Function* getCalledFunction();
+  llvm::Function* getCalledFunction(Error** error);
   const std::vector<std::unique_ptr<ExpNode>>& getArgs() const { return args; }
 
   // int getType() const override { return getClassType(); };

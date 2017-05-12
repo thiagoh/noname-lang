@@ -52,6 +52,8 @@ ASTNode* createAnnonymousFunctionDefNode(ASTContext* context, ExpNode* return_no
 }
 
 ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
+  CreateNewModuleAndInitialize();
+
   ASTContext* context = exp_node->getContext();
 
   std::unique_ptr<ASTNode> function_ptr(createAnnonymousFunctionDefNode(context, exp_node));
