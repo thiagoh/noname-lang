@@ -42,7 +42,7 @@ void* AssignmentNode::eval() {
 
   return nullptr;
 }
-std::vector<Value*> AssignmentNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
+std::vector<Value*> AssignmentNode::codegen_elements(noname::Error& error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
   AllocaInst* alloca_inst = getContext()->getAllocaInst(getName());
 

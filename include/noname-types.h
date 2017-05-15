@@ -22,7 +22,9 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
+#include "noname-ast-context.h"
 #include "noname-utils.h"
+#include "noname-error.h"
 #include "lexer-utilities.h"
 #include <stdio.h>
 #include <algorithm>
@@ -60,15 +62,6 @@ enum yytokentype {
 };
 #endif
 
-// #define TYPE_CHAR 32
-// #define TYPE_SHORT 33
-// #define TYPE_INT 34
-// #define TYPE_FLOAT 35
-// #define TYPE_LONG 36
-// #define TYPE_DOUBLE 37
-// #define TYPE_STRING 38
-
-class Error;
 class ASTNode;
 class ASTContext;
 class ErrorNode;
@@ -165,113 +158,10 @@ typedef struct stmtlist_t stmtlist_t;
 typedef struct stmtlist_node_t stmtlist_node_t;
 typedef struct arg_t arg_t;
 
-ASTNode* logError(const char* str);
-FunctionDefNode* logErrorF(const char* str);
-AssignmentNode* logErrorV(const char* str);
-ASTNode* logError(ErrorNode* error_node);
-NodeValue* logErrorNV(ErrorNode* error_node);
-
-/// LogError* - These are little helper functions for error handling.
-void createError(Error& error, const char* str);
-ASTNode* logError(const char* str);
-FunctionDefNode* logErrorF(const char* str);
-AssignmentNode* logErrorV(const char* str);
-llvm::Value* logErrorLLVM(const char* str);
-llvm::Function* logErrorLLVMF(const char* str);
-ASTNode* logError(ErrorNode* error_node);
-NodeValue* logErrorNV(ErrorNode* error_node);
-llvm::Value* logErrorLLVM(ErrorNode* error_node);
-llvm::AllocaInst* logErrorLLVMA(ErrorNode* error_node);
-llvm::Function* logErrorLLVMF(ErrorNode* error_node);
-
-bool is_file_already_imported(const std::string& file_path);
-bool is_file_already_imported(const char* file_path);
-char* get_current_dir();
-char* concat_strs(const char* format, const char* s1, const char* s2, int size);
-char* get_file_path(const char* filename);
-int noname_read(char* buf, int* result, int max_size);
-
-void print_node_value(NodeValue* nodeValue);
-void print_node_value(FILE* file, NodeValue* nodeValue);
-
-void* call_jit_symbol(llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
-void print_jit_symbol_value(FILE* file, llvm::Type* result_type, void* result);
-void print_jit_symbol_value(llvm::Type* result_type, void* result);
-void* call_and_print_jit_symbol_value(FILE* file, llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
-void* call_and_print_jit_symbol_value(llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
-
-stmtlist_t* new_stmt_list(ASTContext* context);
-stmtlist_t* new_stmt_list(ASTContext* context, ASTNode* node);
-stmtlist_t* new_stmt_list(ASTContext* context, stmtlist_t* head_exp_list, ASTNode* node);
-
-explist_t* new_exp_list(ASTContext* context);
-explist_t* new_exp_list(ASTContext* context, ExpNode* node);
-explist_t* new_exp_list(ASTContext* context, explist_t* head_exp_list, ExpNode* node);
-arg_t* new_arg(ASTContext* context, char* arg, ExpNode* defaultValue);
-arg_t* new_arg(ASTContext* context, char* arg, double defaultValue);
-arg_t* new_arg(ASTContext* context, char* arg, long defaultValue);
-arg_t* new_arg(ASTContext* context, char* arg, char* defaultValue);
-arglist_t* new_arg_list(ASTContext* context);
-arglist_t* new_arg_list(ASTContext* context, arg_t* arg);
-arglist_t* new_arg_list(ASTContext* context, arglist_t* head_arg_list, arg_t* arg);
-
 void CreateNewModuleAndInitialize();
 void InitializeNonameEnvironment();
 void ReleaseNonameEnvironment();
 void InitializeModuleAndPassManager();
-
-ImportNode* new_import(ASTContext* context, std::string filename);
-ASTNode* new_top_level_exp_node(ExpNode* node);
-VarExpNode* new_var_node(ASTContext* context, const std::string name);
-AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
-AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
-CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list = nullptr);
-CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* arg_exp_list = nullptr);
-ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
-                          ExpNode* returnNode);
-
-// Codegen functions
-Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);
-llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb = nullptr);
-std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, const AssignmentNode* assignment,
-                                        llvm::BasicBlock* bb = nullptr);
-
-bool both_of_type(NodeValue* lhs, NodeValue* rhs, int type);
-bool any_of_type(NodeValue* lhs, NodeValue* rhs, int type);
-bool match_to_types(NodeValue* lhs, NodeValue* rhs, int type1, int type2);
-int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs);
-int get_adequate_result_type(int lhs_type, int rhs_type);
-
-void release(explist_t* explist);
-void release(explist_node_t* explist_node);
-void release(stmtlist_t* stmtlist);
-void release(stmtlist_node_t* stmtlist_node);
-void release(arg_t* arg);
-void release(arglist_t* arglist);
-void release(arglist_node_t* arglist_node);
-
-llvm::Type* toLLVLType(int type);
-llvm::Type* toLLVMType(llvm::Value* return_value);
-int toNonameType(llvm::Value* value);
-int toNonameType(llvm::Type* type);
-
-class Error {
- private:
-  std::string _what;
-  int _code;
-
- public:
-  Error() : _what(""), _code(0) {}
-  Error(const std::string& what) : _what(what), _code(1) {}
-  Error(const Error& error) : _what(error._what), _code(error._code) {}
-  const std::string what() const { return _what; }
-  void what(int code, const std::string& what) {
-    this->_what = what;
-    this->_code = code;
-  }
-  void what(const std::string& what) { this->what(1, what); }
-  int code() const { return this->_code; }
-};
 
 class ASTNode {
  public:
@@ -419,77 +309,6 @@ class InvalidStatement : public LogicErrorNode {
  public:
   InvalidStatement(ASTContext* context) : LogicErrorNode(context, "Invalid statement inside current scope") {}
   InvalidStatement(ASTContext* context, const std::string& what) : LogicErrorNode(context, what) {}
-};
-
-class ASTContext {
- private:
-  std::string name;
-  ASTContext* parent;
-
-  std::map<std::string, FunctionSignature*> mFunctionSignatures;
-  std::map<std::string, FunctionSignature*>::iterator itFunctionSignatures;
-
-  std::map<std::string, NodeValue*> mVariables;
-  std::map<std::string, NodeValue*>::iterator itVariables;
-
-  std::map<std::string, AllocaInst*> mAllocaInst;
-  std::map<std::string, AllocaInst*>::iterator itAllocaInst;
-
- public:
-  ASTContext(const std::string& name) : name(name), parent(NULL) {}
-  ASTContext(const std::string& name, ASTContext* parent) : name(name), parent(parent) {}
-  ASTContext(const ASTContext& copy)
-      : name(copy.name),
-        parent(copy.parent),
-        mFunctionSignatures(copy.mFunctionSignatures),
-        mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
-  ASTContext(const ASTContext& copy, ASTContext* parent)
-      : name(copy.name),
-        parent(parent),
-        mFunctionSignatures(copy.mFunctionSignatures),
-        mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
-  ASTContext(const std::string& name, const ASTContext& copy, ASTContext* parent)
-      : name(name),
-        parent(parent),
-        mFunctionSignatures(copy.mFunctionSignatures),
-        mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
-  virtual ~ASTContext() = default;
-  ASTContext& operator=(const ASTContext& copy) {
-    name = copy.name;
-    parent = copy.parent;
-    mVariables = copy.mVariables;
-    mFunctionSignatures = copy.mFunctionSignatures;
-    mAllocaInst = copy.mAllocaInst;
-    return *this;
-  }
-  std::string& getName() { return name; }
-  ASTContext* getParent() { return parent; }
-
-  // Functions
-  FunctionSignature* getFunctionSignature(const std::string& name);
-  bool storeFunctionSignature(const std::string name, FunctionSignature* function_signature);
-  bool store(const std::string name, FunctionSignature* function_signature);
-  bool removeFunctionSignature(const std::string name);
-
-  // Variables
-  NodeValue* getVariableShallow(const std::string& name);
-  NodeValue* getVariable(const std::string& name);
-  bool storeVariable(const std::string name, NodeValue* node_value);
-  bool store(const std::string name, NodeValue* node_value);
-  bool removeVariable(const std::string name);
-  NodeValue* updateVariable(const std::string name, NodeValue* node_value);
-  NodeValue* update(const std::string name, NodeValue* node_value);
-
-  // AllocaInst
-  llvm::AllocaInst* getAllocaInst(const std::string& name);
-  bool storeAllocaInst(const std::string name, llvm::AllocaInst* alloca_inst);
-  bool store(const std::string name, llvm::AllocaInst* alloca_inst);
-  bool removeAllocaInst(const std::string name);
-  llvm::AllocaInst* updateAllocaInst(const std::string name, llvm::AllocaInst* alloca_inst);
-  llvm::AllocaInst* update(const std::string name, llvm::AllocaInst* alloca_inst);
 };
 
 class NodeValue {
