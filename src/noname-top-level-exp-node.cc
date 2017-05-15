@@ -67,10 +67,10 @@ ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
   CallExpNode* called_function_exp_node = (CallExpNode*)exp_node;
 
   /*
-  Error* error = nullptr;
-  Function* called_function_declaration = called_function_exp_node->getCalledFunction(&error);
+  Error error;
+  Function* called_function_declaration = called_function_exp_node->getCalledFunction(error);
 
-  if (error) {
+  if (error.code()) {
     // TODO
     return new ErrorNode(top_level_context, "Called function could not be declared");
   }
@@ -105,7 +105,7 @@ ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
 
   return top_level_exp_node;
 }
-std::vector<Value*> TopLevelExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
+std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
 
   if (simple_version) {
@@ -167,7 +167,7 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error** error, llvm::Basic
   }
 
   if (!anonymous_function) {
-    *error = createError("Could not resolve top level expression");
+    createError(error, "Could not resolve top level expression");
     return codegen;
   }
 
@@ -187,12 +187,11 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
 
   // http://llvm.org/docs/doxygen/html/classllvm_1_1ExecutionEngine.html#a97bbf524ee03354bb73dce9614b0e959
 
-  Error* error = nullptr;
+  Error error;
+  std::vector<Value*> elements(top_level_exp_node->get_codegen_elements(error));
 
-  std::vector<Value*> elements(top_level_exp_node->get_codegen_elements(&error));
-
-  if (error) {
-    return logErrorLLVM(error->what().c_str());
+  if (error.code()) {
+    return logErrorLLVM(error.what().c_str());
   }
 
   if (elements.size() <= 0) {

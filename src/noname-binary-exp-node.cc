@@ -156,7 +156,7 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow
   return nullptr;
 }
 
-std::vector<Value*> BinaryExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
+std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
   Value* result = nullptr;
   Value* L = lhs->codegen();

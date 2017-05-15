@@ -42,12 +42,12 @@ void* AssignmentNode::eval() {
 
   return nullptr;
 }
-std::vector<Value*> AssignmentNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
+std::vector<Value*> AssignmentNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
   AllocaInst* alloca_inst = getContext()->getAllocaInst(getName());
 
   if (!alloca_inst) {
-    *error = createError("AllocaInst is invalid or undefined");
+    createError(error, "AllocaInst is invalid or undefined");
     return codegen;
   }
 

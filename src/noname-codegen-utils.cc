@@ -26,11 +26,11 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
-  Error* error = nullptr;
-  std::vector<Value*> elements(node->get_codegen_elements(&error, bb));
+  Error error;
+  std::vector<Value*> elements(node->get_codegen_elements(error, bb));
 
-  if (error) {
-    return logErrorLLVM(error->what().c_str());
+  if (error.code()) {
+    return logErrorLLVM(error.what().c_str());
   }
 
   llvm::Value* last = nullptr;

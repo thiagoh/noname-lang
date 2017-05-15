@@ -41,7 +41,7 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string name
   return new_node;
 }
 
-std::vector<Value*> DeclarationNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
+std::vector<Value*> DeclarationNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   AllocaInst* alloca_inst = declaration_codegen_util(this, bb);
 
   std::vector<Value*> codegen;

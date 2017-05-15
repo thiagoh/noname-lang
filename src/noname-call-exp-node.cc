@@ -73,7 +73,7 @@ CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* a
   CallExpNode* new_node = new CallExpNode(context, function, arg_exp_list);
   return new_node;
 }
-llvm::Function* CallExpNode::getCalledFunction(Error** error) const {
+llvm::Function* CallExpNode::getCalledFunction(Error& error) const {
   ASTContext* call_exp_context = getContext();
   llvm::Function* function = TheModule->getFunction(getCallee());
 
@@ -83,7 +83,7 @@ llvm::Function* CallExpNode::getCalledFunction(Error** error) const {
     if (!function_signature) {
       char msg[1024];
       sprintf(msg, "Could not find function signature '%s' referenced", getCallee().c_str());
-      *error = createError(msg);
+      createError(error, msg);
       return nullptr;
     }
 
@@ -101,7 +101,7 @@ llvm::Function* CallExpNode::getCalledFunction(Error** error) const {
   return function;
 }
 
-std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBlock* bb) const {
+std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
   ASTContext* call_exp_context = getContext();
 
@@ -112,10 +112,10 @@ std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBloc
   }
 
   if (!called_function) {
-    if (!error) {  // error may be already set
+    if (!error.code()) {  // error may be already set
       char msg[1024];
       sprintf(msg, "Unknown function '%s' referenced", getCallee().c_str());
-      *error = createError(msg);
+      createError(error, msg);
     }
     return codegen;
   }
@@ -126,7 +126,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBloc
   if (called_function->arg_size() != (size_t)value_args.size()) {
     char msg[1024];
     sprintf(msg, "Incorrect # arguments passed for function '%s'", getCallee().c_str());
-    *error = createError(msg);
+    createError(error, msg);
     return codegen;
   }
 
@@ -146,7 +146,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error** error, llvm::BasicBloc
     if (!args_value.back()) {
       char msg[1024];
       sprintf(msg, "Invalid or undefined argument for function '%s'", getCallee().c_str());
-      *error = createError(msg);
+      createError(error, msg);
       return codegen;
     }
 

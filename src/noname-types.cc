@@ -104,10 +104,10 @@ void ReleaseNonameEnvironment() {
 }
 
 /// LogError* - These are little helper functions for error handling.
-Error *createError(const char *str) {
+void createError(Error &error, const char *str) {
   char msg[1024];
   sprintf(msg, "%s\n", str);
-  return new Error(msg);
+  error.what(str);
 }
 ASTNode *logError(const char *str) {
   char msg[1024];
@@ -743,19 +743,19 @@ std::unique_ptr<NodeValue> NumberExpNode::getValue() const {
 //===----------------------------------------------------------------------===//
 // Code Generation
 //===----------------------------------------------------------------------===//
-std::vector<Value *> NumberExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) const {
+std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
   std::unique_ptr<NodeValue> node(getValue());
 
   if (!node) {
-    *error = createError("Invalid or undefined NodeValue");
+    createError(error, "Invalid or undefined NodeValue");
     return codegen;
   }
 
   Value *constant_value = node->constant_codegen(bb);
 
   if (!constant_value) {
-    *error = createError("Invalid or undefined constant value");
+    createError(error, "Invalid or undefined constant value");
     return codegen;
   }
 
@@ -778,8 +778,8 @@ Value *StringExpNode::codegen(llvm::BasicBlock *bb) {
 
   return node->constant_codegen(bb);
 }
-std::vector<Value *> StringExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) const {
-  *error = createError("NOT IMPLEMENTED - std::vector<Value*> StringExpNode::codegen_elements");
+std::vector<Value *> StringExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
+  createError(error, "NOT IMPLEMENTED - std::vector<Value*> StringExpNode::codegen_elements");
   return std::vector<Value *>();
 }
 Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
@@ -800,8 +800,8 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 
   return node->constant_codegen(bb);
 }
-std::vector<Value *> VarExpNode::codegen_elements(Error **error, llvm::BasicBlock *bb) const {
-  *error = createError("NOT IMPLEMENTED - std::vector<Value*> VarExpNode::codegen_elements");
+std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
+  createError(error, "NOT IMPLEMENTED - std::vector<Value*> VarExpNode::codegen_elements");
   return std::vector<Value *>();
 }
 }
