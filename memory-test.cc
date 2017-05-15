@@ -11,13 +11,14 @@ class Error {
   std::string _whatstr;
 
  public:
-  Error() : _what(0), _whatstr("") {}
+  explicit Error() : _what(0), _whatstr("") {}
+  virtual ~Error() = default;
   const char* what() const { return _what; }
   const char* whatcopied() const { return _whatcopied; }
   const std::string whatstr() const { return _whatstr; }
   void what(char* what) {
     this->_what = what;
-    this->_whatcopied = (char*)malloc(sizeof(char) * strlen(_what));
+    this->_whatcopied = (char*)calloc(strlen(_what), sizeof(char));
     strcpy(this->_whatcopied, what);
     this->_whatstr = (std::string(what));
   }
@@ -30,11 +31,15 @@ void create(Error& error) {
   std::cout << error.what() << "\n";
 }
 
-int main(int args, char** argv) {
+void doit() {
   Error error;
   create(error);
   std::cout << error.what() << "\n";
   std::cout << error.whatstr() << "\n";
   std::cout << error.whatcopied() << "\n";
+}
+
+int main(int args, char** argv) {
+  doit();
   return 0;
 }
