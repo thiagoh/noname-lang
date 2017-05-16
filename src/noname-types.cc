@@ -323,28 +323,6 @@ void release(arg_t *arg);
 void release(arglist_t *arglist);
 void release(arglist_node_t *arglist_node);
 
-void release(stmtlist_t *stmtlist) {
-  if (stmtlist->first) {
-    release(stmtlist->first);  // this will free all the pointers -> up to the last
-  }
-  free(stmtlist);
-}
-void release(stmtlist_node_t *stmtlist_node) {
-  if (stmtlist_node->node) {
-    // delete stmtlist_node->node;
-  }
-  if (stmtlist_node->next) {
-    release(stmtlist_node->next);
-  }
-  free(stmtlist_node);
-}
-
-void release(explist_t *explist) {}
-void release(explist_node_t *explist_node) {}
-void release(arg_t *arg) {}
-void release(arglist_t *arglist) {}
-void release(arglist_node_t *arglist_node) {}
-
 stmtlist_t *new_stmt_list(ASTContext *context, ASTNode *ast_node) {
   stmtlist_t *head_stmt_list = (stmtlist_t *)malloc(sizeof(struct stmtlist_t));
   stmtlist_node_t *new_node = (stmtlist_node_t *)malloc(sizeof(struct stmtlist_node_t));
@@ -489,6 +467,48 @@ arg_t *new_arg(ASTContext *context, char *arg_name, char *default_value) {
   return new_arg;
 }
 
+void release(stmtlist_t *stmtlist) {
+  if (stmtlist->first) {
+    release(stmtlist->first);  // this will free all the pointers -> up to the last
+  }
+  free(stmtlist);
+}
+void release(stmtlist_node_t *stmtlist_node) {
+  if (stmtlist_node->node) {
+    // delete stmtlist_node->node;
+  }
+  if (stmtlist_node->next) {
+    release(stmtlist_node->next);
+  }
+  free(stmtlist_node);
+}
+
+void release(explist_t *explist) {
+  ;
+  ;
+  //TODO IMPLEMENT ME
+}
+void release(explist_node_t *explist_node) {
+  ;
+  ;
+  //TODO IMPLEMENT ME
+}
+void release(arg_t *arg) {
+  ;
+  ;
+  //TODO IMPLEMENT ME
+}
+void release(arglist_t *arglist) {
+  ;
+  ;
+  //TODO IMPLEMENT ME
+}
+void release(arglist_node_t *arglist_node) {
+  ;
+  ;
+  //TODO IMPLEMENT ME
+}
+
 llvm::Type *toLLVLType(int type) {
   if (type == TYPE_DOUBLE) {
     return llvm::Type::getDoubleTy(TheContext);
@@ -515,7 +535,14 @@ llvm::Type *toLLVMType(llvm::Value *value) {
 
   if (!value) {
     type = llvm::Type::getVoidTy(TheContext);
-  } else if (isa<Function>(value)) {
+    return type;
+  }
+
+  if (isa<ReturnInst>(value)) {
+    value = ((ReturnInst *)value)->getReturnValue();
+  }
+
+  if (isa<Function>(value)) {
     Function *function = (Function *)value;
     if (!function) {
       logError("Could not find function");

@@ -66,14 +66,13 @@ Function* FunctionSignature::codegen() {
   return function;
 }
 
-ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
-                          ExpNode* return_node) {
+ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list) {
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[new_function_def for funtcion '%s']", name.c_str());
     fflush(stdout);
   }
 
-  FunctionDefNode* function_new_node = new FunctionDefNode(context, name, arg_list, stmt_list, return_node);
+  FunctionDefNode* function_new_node = new FunctionDefNode(context, name, arg_list, stmt_list);
 
   ASTNode* check_result = function_new_node->check();
 
@@ -94,8 +93,21 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(const std::string& n
     fflush(stdout);
   }
   Value* return_value = nullptr;
-  if (return_node) {
-    return_value = return_node->codegen();
+  if (auto& return_node = getReturnNode()) {
+    Error error;
+    std::vector<Value*> return_node_codegen_elements = return_node->get_codegen_elements(error);
+
+    if (error.code()) {
+      logError(error.what().c_str());
+      return nullptr;
+    }
+
+    for (auto current_value : return_node_codegen_elements) {
+      if (isa<ReturnInst>(current_value)) {
+        return_value = current_value;
+      }
+    }
+
     if (!return_value) {
       logError("Return value is null or undefined");
       return nullptr;
@@ -107,11 +119,8 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(const std::string& n
 }
 
 FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, std::vector<FunctionArgument*> args_defs,
-                                 std::vector<std::unique_ptr<ASTNode>> body_nodes, ExpNode* return_node)
-    : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
-      body_nodes(std::move(body_nodes)),
-      return_node(std::move(return_node)),
-      function_signature(nullptr) {
+                                 std::vector<std::unique_ptr<ASTNode>> body_nodes)
+    : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION), body_nodes(std::move(body_nodes)), function_signature(nullptr) {
   function_signature = createFunctionSignature(name, args_defs);
   if (!function_signature) {
     logError("FunctionDefNode could not be defined");
@@ -120,10 +129,9 @@ FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, s
 }
 
 FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list,
-                                 stmtlist_t* head_stmt_list, ExpNode* return_node)
+                                 stmtlist_t* head_stmt_list)
     : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION),
       body_nodes(std::vector<std::unique_ptr<ASTNode>>()),
-      return_node(std::move(return_node)),
       function_signature(nullptr) {
   std::vector<FunctionArgument*> args_defs;
 
@@ -154,7 +162,6 @@ FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, a
   }
 }
 FunctionDefNode::~FunctionDefNode() {
-  delete return_node;
   delete function_signature;
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[FunctionDefNode::~FunctionDefNode() for %s]", getName().c_str());
@@ -187,10 +194,6 @@ ASTNode* FunctionDefNode::check() const {
               ASTNode::toString(bodyNode.get()->getKind()).c_str());
       fflush(stdout);
     }
-  }
-
-  if (return_node && isa<ImportNode>(*return_node)) {
-    return new InvalidStatement(context, "Cannot import inside function definition");
   }
 
   return nullptr;
@@ -230,7 +233,6 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
       fprintf(stdout, "\n[## no return_value nullptr]\n");
       fflush(stdout);
     }
-    // Builder.CreateRetVoid();
     return_inst = ReturnInst::Create(TheContext);
 
   } else {
@@ -240,7 +242,6 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
       return_value->dump();
     }
 
-    // Builder.CreateRet(return_value);
     return_inst = ReturnInst::Create(TheContext, return_value);
   }
 
@@ -250,7 +251,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // fprintf(stdout, "\n[## codegen of %s ]", name.c_str());
   // fflush(stdout);
 
-  ExpNode* return_node = getReturnNode();
+  auto& return_node = getReturnNode();
   Value* return_value = nullptr;
   if (return_node) {
     return_value = return_node->codegen();
@@ -274,7 +275,6 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
 
   // Create a new basic block to start insertion into.
   BasicBlock* function_bb = BasicBlock::Create(TheContext, "entry", function);
-  // Builder.SetInsertPoint(function_bb);
 
   ASTContext* function_def_node_context = getContext();
   std::vector<FunctionArgument*>& signature_args = getFunctionArguments();
@@ -293,30 +293,51 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
 
   std::vector<std::unique_ptr<ASTNode>>& body_nodes = getBodyNodes();
   std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes.begin();
+
+  ReturnInst* return_inst = nullptr;
   while (it_body_nodes != body_nodes.end()) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
-
-    Instruction* body_codegen_value = (Instruction*)body_node->codegen();
-    function_bb->getInstList().push_back(body_codegen_value);
 
     if (noname::debug >= 1) {
       fprintf(stdout, "\n[## codegen of body statement (type %s)]", ASTNode::toString(body_node->getKind()).c_str());
       fflush(stdout);
-      body_codegen_value->dump();
+    }
+
+    Error error;
+    std::vector<Value*> body_node_codegen_elements = body_node->get_codegen_elements(error);
+
+    if (error.code()) {
+      return logErrorLLVM(error.what().c_str());
+    }
+
+    for (auto current_value : body_node_codegen_elements) {
+      Instruction* body_codegen_value = (Instruction*)current_value;
+
+      if (noname::debug >= 1) {
+        body_codegen_value->dump();
+      }
+
+      function_bb->getInstList().push_back(body_codegen_value);
+
+      if (isa<ReturnInst>(body_codegen_value)) {
+        return_inst = (ReturnInst*)body_codegen_value;
+      }
     }
   }
 
-  ReturnInst* return_inst = nullptr;
-  if (return_value) {
-    if (isa<CallInst>(return_value)) {
-      if (noname::debug >= 1) {
-        fprintf(stdout, "\n[CallInst prepended due to return being a call node]");
-        fflush(stdout);
-      }
-      function_bb->getInstList().push_back(dyn_cast<CallInst>(return_value));
-    }
-    return_inst = getLLVMReturnInst(return_value);
-  } else {
+  // if (return_value) {
+  //   if (isa<CallInst>(return_value)) {
+  //     if (noname::debug >= 1) {
+  //       fprintf(stdout, "\n[CallInst prepended due to return being a call node]");
+  //       fflush(stdout);
+  //     }
+  //     function_bb->getInstList().push_back(dyn_cast<CallInst>(return_value));
+  //   }
+  //   return_inst = getLLVMReturnInst(return_value);
+  // } else {
+  // return_inst = getLLVMReturnInst(return_value);
+  // }
+  if (!return_inst) {
     return_inst = getLLVMReturnInst(return_value);
   }
 
@@ -330,7 +351,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     return nullptr;
   }
 
-  function_bb->getInstList().push_back(return_inst);
+  // function_bb->getInstList().push_back(return_inst);
 
   // Validate the generated code, checking for consistency.
   verifyFunction(*function);

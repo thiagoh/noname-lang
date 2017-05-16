@@ -122,7 +122,7 @@ namespace noname {
 %token <long_v> LONG_TOK                "long"
 %type  <ast_node> declaration       "declaration"
 %type  <exp_node> assignment        "assignment"
-%type  <exp_node> optional_ret_stmt "optional_ret_stmt"
+// %type  <exp_node> optional_ret_stmt "optional_ret_stmt"
 %type  <exp_node> exp               "expression"
 %type  <ast_node> function_def      "function_def"
 %type  <stmtlist> stmtlist        "stmtlist"
@@ -178,35 +178,41 @@ ne_stmt_list:
 ;
 
 stmt:
-  declaration STMT_SEP            { 
+  declaration STMT_SEP { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - declaration]: ");
       }
-      $$ = $1;
+      $$ = $declaration;
     }
-  | assignment STMT_SEP           { 
+  | assignment STMT_SEP { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - assignment]: ");
       }
-      $$ = $1;
+      $$ = $assignment;
     }
-  | import STMT_SEP           { 
+  | import STMT_SEP { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - import]: ");
       }
-      $$ = $1;
+      $$ = $import;
     }
   | function_def optional_stmt_sep { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt - function_def]: ");
       }
-      $$ = $1;
+      $$ = $function_def;
     }
+  | RETURN exp STMT_SEP {
+        if (yydebug) {
+          fprintf(stderr, "\n[stmt - return]: ");
+        }
+        $$ = new_return_exp_node($exp);
+      }
   | exp STMT_SEP                  { 
       if (yydebug) {
         fprintf(stderr, "\n[stmt exp]: ");
       }
-      $$ = $1;
+      $$ = $exp;
     }
 ;
 
@@ -233,8 +239,7 @@ function_def:
         if (yydebug >= 1) {
           fprintf(stdout, "\n[############## processing function_def BEFORE stmtlist ##############]");
         }
-      } '{' stmtlist optional_ret_stmt '}' {
-      // ASTContext newContext(context);
+      } '{' stmtlist '}' {
 
       if ($arglist == NULL) {
         $arglist = new_arg_list(context);
@@ -244,8 +249,7 @@ function_def:
         $stmtlist = new_stmt_list(context);
       } 
 
-      // $$ = new_function_def(*$<context>function_context, $IDENTIFIER, $arglist, $stmtlist);
-      $$ = new_function_def(context->getParent(), std::string($IDENTIFIER), $arglist, $stmtlist, $optional_ret_stmt);
+      $$ = new_function_def(context->getParent(), std::string($IDENTIFIER), $arglist, $stmtlist);
       context_stack.pop();
       context = context_stack.top();
 
@@ -254,10 +258,10 @@ function_def:
     }
 ;
 
-optional_ret_stmt:
-  %empty                    { $$ = NULL; }
-  | RETURN exp STMT_SEP     { $$ = $exp; }
-;
+// optional_ret_stmt:
+//   %empty                    { $$ = NULL; }
+//   | RETURN exp STMT_SEP     { $$ = $exp; }
+// ;
 
 import:
   IMPORT STR_CONST          { $$ = new_import(context, std::string($STR_CONST)); }

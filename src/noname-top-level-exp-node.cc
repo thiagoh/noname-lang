@@ -34,7 +34,8 @@ TopLevelExpNode::TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExp
       call_exp_node(call_exp_node),
       anonymous_function(anonymous_function) {
   if (noname::debug >= 2) {
-    fprintf(stderr, "\n[TopLevelExpNode::TopLevelExpNode() called]");
+    fprintf(stdout, "\n[TopLevelExpNode::TopLevelExpNode() called]");
+    fflush(stdout);
   }
 }
 
@@ -48,14 +49,23 @@ TopLevelExpNode::~TopLevelExpNode() {
   }
 }
 
-ASTNode* create_anonymous_function_def_node(ASTContext* context, ExpNode* return_node) {
+ASTNode* create_anonymous_function_def_node(ASTContext* context, ExpNode* exp_node) {
+  ReturnExpNode* return_exp_node = nullptr;
+
+  if (isa<ReturnExpNode>(exp_node)) {
+    return_exp_node = (ReturnExpNode*)exp_node;
+  } else if (!exp_node) {
+    return new ErrorNode(context, "No such expression node defined for anonymous function");
+  } else {
+    return_exp_node = new_return_exp_node(exp_node);
+  }
+
   const std::string annon_name = "__anon_expr";
   std::unique_ptr<arglist_t> arg_list(new_arg_list(context));
-  std::unique_ptr<stmtlist_t> stmt_list(new_stmt_list(context));
+  std::unique_ptr<stmtlist_t> stmt_list(new_stmt_list(context, return_exp_node));
 
-  return new_function_def(context, annon_name, arg_list.get(), stmt_list.get(), return_node);
+  return new_function_def(context, annon_name, arg_list.get(), stmt_list.get());
 }
-
 ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
   CreateNewModuleAndInitialize();
 
@@ -64,25 +74,8 @@ ASTNode* new_top_level_exp_node(ExpNode* exp_node) {
   }
 
   ASTContext* top_level_context = exp_node->getContext();
-  CallExpNode* called_function_exp_node = (CallExpNode*)exp_node;
-
-  /*
-  Error error;
-  Function* called_function_declaration = called_function_exp_node->getCalledFunction(error);
-
-  if (error.code()) {
-    // TODO
-    return new ErrorNode(top_level_context, "Called function could not be declared");
-  }
-
-  if (!called_function_declaration) {
-    return new ErrorNode(top_level_context, "Called function could not be declared");
-  }
-
-  TheModule->getFunctionList().push_back(called_function_declaration);
-  */
-
-  ASTNode* function_def_node = create_anonymous_function_def_node(top_level_context, called_function_exp_node);
+  CallExpNode* called_function_call_exp_node = (CallExpNode*)exp_node;
+  ASTNode* function_def_node = create_anonymous_function_def_node(top_level_context, called_function_call_exp_node);
 
   if (function_def_node && isa<ErrorNode>(*function_def_node)) {
     return function_def_node;
@@ -173,9 +166,25 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
 
   codegen.push_back(anonymous_function);
 
-  // Instruction* call_inst = (Instruction*)call_exp_node->codegen();
-  // if (call_inst) {
-  //   codegen.push_back(call_inst);
+  if (noname::debug >= 1) {
+    fprintf(stdout, "\n[TopLevelExpNode::codegen_elements anonymous_function->dump()]\n");
+    fflush(stdout);
+    anonymous_function->dump();
+  }
+
+  // std::vector<Value*> call_exp_node_codegen_elements = call_exp_node->get_codegen_elements(error);
+  // if (error.code()) {
+  //   logError(error.what().c_str());
+  //   return codegen;
+  // }
+
+  // for (auto current_value : call_exp_node_codegen_elements) {
+  //   codegen.push_back(current_value);
+  //   if (noname::debug >= 1) {
+  //     fprintf(stdout, "\n[TopLevelExpNode::codegen_elements current_value->dump()]\n");
+  //     fflush(stdout);
+  //     current_value->dump();
+  //   }
   // }
 
   return codegen;

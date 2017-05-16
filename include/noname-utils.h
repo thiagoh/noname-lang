@@ -55,6 +55,7 @@ namespace noname {
 class ASTNode;
 class ASTContext;
 class ErrorNode;
+class ReturnExpNode;
 class LogicErrorNode;
 class ExpNode;
 class TopLevelExpNode;
@@ -140,13 +141,13 @@ void release(arglist_node_t* arglist_node);
 
 ImportNode* new_import(ASTContext* context, std::string filename);
 ASTNode* new_top_level_exp_node(ExpNode* node);
+ReturnExpNode* new_return_exp_node(ExpNode* node);
 VarExpNode* new_var_node(ASTContext* context, const std::string name);
 AssignmentNode* new_assignment_node(ASTContext* context, const std::string name, ExpNode* node);
 AssignmentNode* new_declaration_node(ASTContext* context, const std::string name);
 CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_t* arg_exp_list = nullptr);
 CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* arg_exp_list = nullptr);
-ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list,
-                          ExpNode* returnNode);
+ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list);
 
 // Codegen functions
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);

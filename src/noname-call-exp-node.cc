@@ -166,7 +166,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
   call_inst->setCallingConv(CallingConv::C);
 
   if (noname::debug >= 1) {
-    fprintf(stdout, "\n[call_inst->dump calling '%s']", called_function->getName().str().c_str());
+    fprintf(stdout, "\n[call_inst->dump() calling '%s']", called_function->getName().str().c_str());
     fflush(stdout);
     call_inst->dump();
   }
@@ -174,10 +174,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
   codegen.push_back(call_inst);
   return codegen;
 }
-Value* CallExpNode::codegen(llvm::BasicBlock* bb) {
-  ;
-  return codegen_elements_retlast(this, bb);
-}
+Value* CallExpNode::codegen(llvm::BasicBlock* bb) { return codegen_elements_retlast(this, bb); }
 
 //----------------------------------------------//
 //----------- Processor Strategy ---------------//

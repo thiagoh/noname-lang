@@ -67,6 +67,7 @@ class ASTContext;
 class ErrorNode;
 class LogicErrorNode;
 class ExpNode;
+class ReturnExpNode;
 class TopLevelExpNode;
 class NodeValue;
 class ImportNode;
@@ -175,6 +176,7 @@ class ASTNode {
 
     AST_NODE_TYPE_EXP_NODE,  // begin of EXP_NODE
     AST_NODE_TYPE_NUMBER,
+    AST_NODE_TYPE_RETURN_NODE,
     AST_NODE_TYPE_VARIABLE,
     AST_NODE_TYPE_STRING,
     AST_NODE_TYPE_UNARY_EXP,
@@ -252,6 +254,7 @@ class ASTNode {
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_TOP_LEVEL_EXP_NODE)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_EXP_NODE_LAST)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_NUMBER)
+      AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_RETURN_NODE)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_VARIABLE)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_STRING)
       AST_NODE_KIND_PROCESS_VAL(ASTNode::AST_NODE_TYPE_UNARY_EXP)
@@ -546,21 +549,25 @@ class FunctionSignature {
 class FunctionDefNode : public ASTNode {
  private:
   std::vector<std::unique_ptr<ASTNode>> body_nodes;
-  ExpNode* return_node;
   FunctionSignature* function_signature;
 
  public:
   FunctionDefNode(ASTContext* context, const std::string& name, std::vector<FunctionArgument*> args_defs,
-                  std::vector<std::unique_ptr<ASTNode>> body_nodes, ExpNode* return_node = nullptr);
-  FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list, stmtlist_t* head_stmt_list,
-                  ExpNode* return_node = nullptr);
+                  std::vector<std::unique_ptr<ASTNode>> body_nodes);
+  FunctionDefNode(ASTContext* context, const std::string& name, arglist_t* head_arg_list, stmtlist_t* head_stmt_list);
   virtual ~FunctionDefNode();
 
   // virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
 
   ASTNode* check() const override;
-  ExpNode* getReturnNode() { return return_node; }
+  std::unique_ptr<ASTNode>& getReturnNode() {
+    if (body_nodes.size() <= 0) {
+      static std::unique_ptr<ASTNode> null_return_node(nullptr);
+      return null_return_node;
+    }
+    return body_nodes.back();
+  }
 
   const std::string& getName() const { return function_signature->getName(); }
   std::vector<std::unique_ptr<ASTNode>>& getBodyNodes() { return body_nodes; }
@@ -591,7 +598,7 @@ class TopLevelExpNode : public ExpNode {
   TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExpNode* call_exp_node, Function* anonymous_function);
   virtual ~TopLevelExpNode();
 
-  void* eval() override { return exp_node->eval(); };
+  virtual void* eval() override { return exp_node->eval(); };
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;
   virtual std::vector<Value*> codegen_elements(Error& error, llvm::BasicBlock* bb = nullptr) const override;
 
@@ -601,6 +608,22 @@ class TopLevelExpNode : public ExpNode {
   ProcessorStrategy* getProcessorStrategy() override { return topLevelExpNodeProcessorStrategy; };
 
   static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_TOP_LEVEL_EXP_NODE; }
+};
+
+class ReturnExpNode : public ExpNode {
+ private:
+  ExpNode* exp_node;
+
+ public:
+  ReturnExpNode(ASTContext* context, ExpNode* exp_node);
+  virtual ~ReturnExpNode();
+
+  virtual void* eval() override { return exp_node->eval(); };
+  virtual std::unique_ptr<NodeValue> getValue() const override { return exp_node->getValue(); };
+  virtual Value* codegen(llvm::BasicBlock* bb) override;
+  virtual std::vector<Value*> codegen_elements(Error& error, llvm::BasicBlock* bb) const override;
+
+  static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_RETURN_NODE; }
 };
 
 /// CallExpNode - Expression class for function calls.
@@ -735,12 +758,12 @@ class ImportNodeProcessorStrategy : public ProcessorStrategy {
   void* process(ASTNode* node) override;
 };
 
-// class ReturnNode : public ExpNode {
+// class ReturnExpNode : public ExpNode {
 //  private:
 //   ExpNode* rhs;
 
 //  public:
-//   ReturnNode(ASTContext* context, ExpNode* rhs) : ExpNode(context),
+//   ReturnExpNode(ASTContext* context, ExpNode* rhs) : ExpNode(context),
 //   rhs(std::move(rhs)) {}
 
 //   virtual std::unique_ptr<NodeValue> getValue() const override { return 0; }
