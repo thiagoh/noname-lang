@@ -311,32 +311,20 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     }
 
     for (auto current_value : body_node_codegen_elements) {
-      Instruction* body_codegen_value = (Instruction*)current_value;
+      Instruction* instruction_codegen_value = (Instruction*)current_value;
 
       if (noname::debug >= 1) {
-        body_codegen_value->dump();
+        instruction_codegen_value->dump();
       }
 
-      function_bb->getInstList().push_back(body_codegen_value);
+      function_bb->getInstList().push_back(instruction_codegen_value);
 
-      if (isa<ReturnInst>(body_codegen_value)) {
-        return_inst = (ReturnInst*)body_codegen_value;
+      if (isa<ReturnInst>(instruction_codegen_value)) {
+        return_inst = (ReturnInst*)instruction_codegen_value;
       }
     }
   }
 
-  // if (return_value) {
-  //   if (isa<CallInst>(return_value)) {
-  //     if (noname::debug >= 1) {
-  //       fprintf(stdout, "\n[CallInst prepended due to return being a call node]");
-  //       fflush(stdout);
-  //     }
-  //     function_bb->getInstList().push_back(dyn_cast<CallInst>(return_value));
-  //   }
-  //   return_inst = getLLVMReturnInst(return_value);
-  // } else {
-  // return_inst = getLLVMReturnInst(return_value);
-  // }
   if (!return_inst) {
     return_inst = getLLVMReturnInst(return_value);
   }

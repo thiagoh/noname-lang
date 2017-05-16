@@ -55,12 +55,16 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   for (auto current_value : exp_node_codegen_elements) {
     if (isa<Constant>(current_value)) {
-      // ((Constant*)current_value)->dropAllReferences();
+      /**
+        * Skip constants. Why? Because of this: http://llvm.org/docs/doxygen/html/Constants_8cpp_source.html#l00568
+        * Everytime we create a constant it's automatically added to the context
+        * then there's no reson why add them again
+        *
+        * TODO: make this code generalized by creating a function which gets a std::vector<Value*> and 
+        * adds to the codegen vector
+        */
       continue;
     }
-    // if (isa<CallInst>(current_value)) {
-    //   continue;
-    // }
     codegen.push_back(current_value);
   }
 
