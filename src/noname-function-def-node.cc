@@ -117,7 +117,7 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(Error& error, const 
   //   }
   // }
   // return_type = toLLVMType(return_value);
-  return_type =  llvm::Type::getInt8PtrTy(TheContext);
+  return_type = llvm::Type::getInt8PtrTy(TheContext);
 
   return new FunctionSignature(name, args_defs, return_type);
 }
@@ -305,12 +305,10 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   std::vector<FunctionArgument*>& signature_args = getFunctionArguments();
   std::vector<FunctionArgument*>::iterator it_signature_args = signature_args.begin();
 
-  iterator_range<Argument*> function_args = function->args();
-  llvm::Argument* it_function_args = function_args.begin();
-
-  while (it_signature_args != signature_args.end()) {
+  llvm::Function::arg_iterator it_function_args = function->arg_begin();
+  while (it_function_args != function->arg_end()) {
     FunctionArgument* signature_arg = *it_signature_args++;
-    Argument* function_arg = it_function_args++;
+    Argument* function_arg = (Argument*)it_function_args++;
 
     // NodeValue* arg_node_value = NULL;
 
@@ -331,7 +329,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     // }
     // function_def_node_context->storeAllocaInst(signature_arg->name, alloca_inst);
     // function_bb->getInstList().push_back(alloca_inst);
-    
+
     function_def_node_context->storeValue(signature_arg->name, function_arg);
   }
 

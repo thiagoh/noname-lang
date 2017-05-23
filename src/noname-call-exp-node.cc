@@ -110,6 +110,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
   if (!called_function) {
     called_function = getCalledFunction(error);
   }
+  FunctionType* called_function_type = called_function->getFunctionType();
 
   if (!called_function) {
     if (!error.code()) {  // error may be already set
@@ -130,15 +131,13 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
     return codegen;
   }
 
-  iterator_range<Argument*> signature_args = called_function->args();
-  llvm::Argument* it_signature_args = signature_args.begin();
-
   std::vector<std::unique_ptr<ExpNode>>::const_iterator it_value_args = value_args.begin();
   std::vector<llvm::Value*> args_value;
 
-  for (; it_signature_args != signature_args.end() || it_value_args != value_args.end();) {
-    const std::unique_ptr<ExpNode>& value_arg = *it_value_args;
-    const Argument* signature_arg = it_signature_args;
+  llvm::Function::arg_iterator it_signature_args = called_function->arg_begin();
+  while (it_signature_args != called_function->arg_end()) {
+    const std::unique_ptr<ExpNode>& value_arg = *it_value_args++;
+    const Argument* signature_arg = (Argument*)it_signature_args++;
 
     call_exp_context->store(signature_arg->getName().str(), std::move(value_arg->getValue().get()));
 
@@ -149,10 +148,28 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
       createError(error, msg);
       return codegen;
     }
-
-    ++it_signature_args;
-    ++it_value_args;
   }
+
+  if (args_value.size() > called_function_type->getNumParams()) {
+    createError(error, "Calling function with more arguments than accepted");
+    return codegen;
+  }
+  for (unsigned i = 0; i != args_value.size(); ++i) {
+    if (called_function_type->getParamType(i) != args_value[i]->getType()) {
+      /**
+        * The arguments coming here are coming
+        *   foo(int a, int b)
+        * for the following case
+        * def fun(a,b){return a;};
+        *   foo(2,3);
+        * and they should be foo(void* a, void* b)
+        */
+      createError(error, "Calling function with unmached argument types");
+      return codegen;
+    }
+  }
+
+  // Calling a function with a bad signature
 
   llvm::CallInst* call_inst = nullptr;
   if (called_function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
