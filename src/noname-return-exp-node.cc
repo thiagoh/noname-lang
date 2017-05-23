@@ -53,6 +53,11 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   std::vector<Value*> exp_node_codegen_elements = exp_node->get_codegen_elements(error, bb);
 
+  if (exp_node_codegen_elements.size() > 0) {
+    fprintf(stdout, "nha");
+    fflush(stdout);
+  }
+
   for (auto current_value : exp_node_codegen_elements) {
     if (isa<Constant>(current_value)) {
       /**
@@ -69,8 +74,12 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
   }
 
   // codegen.insert(codegen.end(), exp_node_codegen_elements.begin(), exp_node_codegen_elements.end());
-  Value* value_to_be_returned = exp_node_codegen_elements.back();
+  Value* value_to_be_returned = nullptr;
   ReturnInst* return_inst = nullptr;
+
+  if (exp_node_codegen_elements.size() <= 0) {
+    value_to_be_returned = exp_node_codegen_elements.back();
+  }
 
   if (value_to_be_returned) {
     // createError(error, "No such elements from expression node of return");
