@@ -46,6 +46,10 @@ Function* FunctionSignature::codegen() {
   }
 
   std::vector<llvm::Type*> function_args_types(args_defs.size(), Type::getVoidTy(TheContext));
+
+  function_args_types.push_back(PointerTy_4);
+  function_args_types.push_back(PointerTy_4);
+
   FunctionType* function_type = FunctionType::get(return_type, function_args_types, false);
 
   Function* function = Function::Create(function_type, Function::ExternalLinkage, name);
@@ -299,16 +303,20 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   ASTContext* function_def_node_context = getContext();
   std::vector<FunctionArgument*>& signature_args = getFunctionArguments();
   std::vector<FunctionArgument*>::iterator it_signature_args = signature_args.begin();
+  Function::arg_iterator function_args = function->arg_begin();
 
   while (it_signature_args != signature_args.end()) {
+
     FunctionArgument* signature_arg = *it_signature_args++;
-    NodeValue* arg_node_value = NULL;
+    // NodeValue* arg_node_value = NULL;
 
-    if (signature_arg->default_value) {
-      arg_node_value = std::move(signature_arg->default_value->getValue().get());
-    }
+    // if (signature_arg->default_value) {
+    //   arg_node_value = std::move(signature_arg->default_value->getValue().get());
+    // }
 
-    function_def_node_context->store(signature_arg->name, arg_node_value);
+    // function_def_node_context->storeVariable(signature_arg->name, arg_node_value);
+
+    // function_def_node_context->storeValue(signature_arg->name, arg_node_value);
   }
 
   std::vector<std::unique_ptr<ASTNode>>& body_nodes = getBodyNodes();

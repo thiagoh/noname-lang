@@ -149,12 +149,6 @@ CallExpNode* new_call_node(ASTContext* context, const std::string name, explist_
 CallExpNode* new_call_node(ASTContext* context, Function* function, explist_t* arg_exp_list = nullptr);
 ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t* arg_list, stmtlist_t* stmt_list);
 
-// Codegen functions
-Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);
-llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb = nullptr);
-std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, const AssignmentNode* assignment,
-                                        llvm::BasicBlock* bb = nullptr);
-
 bool both_of_type(NodeValue* lhs, NodeValue* rhs, int type);
 bool any_of_type(NodeValue* lhs, NodeValue* rhs, int type);
 bool match_to_types(NodeValue* lhs, NodeValue* rhs, int type1, int type2);
@@ -165,6 +159,16 @@ llvm::Type* toLLVLType(int type);
 llvm::Type* toLLVMType(llvm::Value* return_value);
 int toNonameType(llvm::Value* value);
 int toNonameType(llvm::Type* type);
+
+// Codegen functions
+Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);
+llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb = nullptr);
+std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, const AssignmentNode* assignment,
+                                        llvm::BasicBlock* bb = nullptr);
+AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb = nullptr);
+StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb = nullptr);
+StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
+                                     llvm::BasicBlock* bb = nullptr);
 }
 
 #endif

@@ -829,6 +829,24 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 }
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   createError(error, "NOT IMPLEMENTED - std::vector<Value*> VarExpNode::codegen_elements");
+
+  Value *value = getContext()->getValue(name);
+  if (!value) {
+    createError(error, "Value could not be found");
+    return std::vector<Value *>();
+  }
+  AllocaInst *alloca_inst = alloca_typed_var_codegen(TYPE_VOID_POINTER);
+  if (!alloca_inst) {
+    createError(error, "AllocaInst could not be created");
+    return std::vector<Value *>();
+  }
+
+  StoreInst *store_inst = store_typed_var_codegen(TYPE_VOID_POINTER, value, alloca_inst);
+  if (!store_inst) {
+    createError(error, "StoreInst could not be created");
+    return std::vector<Value *>();
+  }
+
   return std::vector<Value *>();
 }
 }

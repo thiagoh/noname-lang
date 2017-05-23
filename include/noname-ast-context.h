@@ -54,8 +54,11 @@ class ASTContext {
   std::map<std::string, NodeValue*> mVariables;
   std::map<std::string, NodeValue*>::iterator itVariables;
 
-  std::map<std::string, AllocaInst*> mAllocaInst;
-  std::map<std::string, AllocaInst*>::iterator itAllocaInst;
+  std::map<std::string, llvm::AllocaInst*> mAllocaInst;
+  std::map<std::string, llvm::AllocaInst*>::iterator itAllocaInst;
+
+  std::map<std::string, llvm::Value*> mValue;
+  std::map<std::string, llvm::Value*>::iterator itValue;
 
  public:
   ASTContext(const std::string& name) : name(name), parent(NULL) {}
@@ -65,19 +68,22 @@ class ASTContext {
         parent(copy.parent),
         mFunctionSignatures(copy.mFunctionSignatures),
         mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
+        mAllocaInst(copy.mAllocaInst),
+        mValue(copy.mValue) {}
   ASTContext(const ASTContext& copy, ASTContext* parent)
       : name(copy.name),
         parent(parent),
         mFunctionSignatures(copy.mFunctionSignatures),
         mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
+        mAllocaInst(copy.mAllocaInst),
+        mValue(copy.mValue) {}
   ASTContext(const std::string& name, const ASTContext& copy, ASTContext* parent)
       : name(name),
         parent(parent),
         mFunctionSignatures(copy.mFunctionSignatures),
         mVariables(copy.mVariables),
-        mAllocaInst(copy.mAllocaInst) {}
+        mAllocaInst(copy.mAllocaInst),
+        mValue(copy.mValue) {}
   virtual ~ASTContext() = default;
   ASTContext& operator=(const ASTContext& copy) {
     name = copy.name;
@@ -85,6 +91,7 @@ class ASTContext {
     mVariables = copy.mVariables;
     mFunctionSignatures = copy.mFunctionSignatures;
     mAllocaInst = copy.mAllocaInst;
+    mValue = copy.mValue;
     return *this;
   }
   std::string getName() const { return name; }
@@ -112,6 +119,12 @@ class ASTContext {
   bool removeAllocaInst(const std::string name);
   llvm::AllocaInst* updateAllocaInst(const std::string name, llvm::AllocaInst* alloca_inst);
   llvm::AllocaInst* update(const std::string name, llvm::AllocaInst* alloca_inst);
+
+  // Value
+  llvm::Value* getValue(const std::string& name);
+  bool storeValue(const std::string name, llvm::Value* value);
+  bool removeValue(const std::string name);
+  llvm::Value* updateValue(const std::string name, llvm::Value* value);
 };
 }
 
