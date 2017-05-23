@@ -72,39 +72,43 @@ AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb) {
   AllocaInst* typed_pointer_alloca = nullptr;
 
   if (type == TYPE_DOUBLE) {
-    typed_pointer_alloca = new AllocaInst(Type::getDoubleTy(TheContext), "alloca_double_v", bb);
+    typed_pointer_alloca = new AllocaInst(Type::getDoubleTy(TheContext), "alloca_double_v");
     typed_pointer_alloca->setAlignment(8);
 
   } else if (type == TYPE_FLOAT) {
-    typed_pointer_alloca = new AllocaInst(Type::getFloatTy(TheContext), "alloca_float_v", bb);
+    typed_pointer_alloca = new AllocaInst(Type::getFloatTy(TheContext), "alloca_float_v");
     typed_pointer_alloca->setAlignment(4);
 
   } else if (type == TYPE_LONG) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 64), "alloca_long_v", bb);
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 64), "alloca_long_v");
     typed_pointer_alloca->setAlignment(8);
 
   } else if (type == TYPE_INT) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 32), "alloca_int_v", bb);
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 32), "alloca_int_v");
     typed_pointer_alloca->setAlignment(4);
 
   } else if (type == TYPE_SHORT) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 16), "alloca_short_v", bb);
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 16), "alloca_short_v");
     typed_pointer_alloca->setAlignment(2);
 
   } else if (type == TYPE_CHAR) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 8), "alloca_char_v", bb);
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 8), "alloca_char_v");
     typed_pointer_alloca->setAlignment(1);
 
   } else if (type == TYPE_VOID_POINTER) {
-    typed_pointer_alloca = new AllocaInst(PointerTy_4, "alloca_char_v", bb);
+    typed_pointer_alloca = new AllocaInst(PointerTy_4, "alloca_char_v");
     typed_pointer_alloca->setAlignment(8);
+  }
+
+  if (bb && typed_pointer_alloca) {
+    bb->getInstList().push_back(typed_pointer_alloca);
   }
 
   return typed_pointer_alloca;
 }
 
 StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb) {
-  StoreInst* store_inst = new StoreInst(value, ptr, false, bb);
+  StoreInst* store_inst = new StoreInst(value, ptr, false);
 
   if (type == TYPE_DOUBLE) {
     store_inst->setAlignment(8);
@@ -128,12 +132,48 @@ StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* pt
     store_inst->setAlignment(8);
   }
 
+  if (bb && store_inst) {
+    bb->getInstList().push_back(store_inst);
+  }
+
   return store_inst;
 }
 
+LoadInst* load_inst_codegen(int type, llvm::AllocaInst* alloca_inst, llvm::BasicBlock* bb) {
+  LoadInst* load_inst = new LoadInst(alloca_inst, "load_inst", false);
+
+  if (type == TYPE_DOUBLE) {
+    load_inst->setAlignment(8);
+
+  } else if (type == TYPE_FLOAT) {
+    load_inst->setAlignment(4);
+
+  } else if (type == TYPE_LONG) {
+    load_inst->setAlignment(8);
+
+  } else if (type == TYPE_INT) {
+    load_inst->setAlignment(4);
+
+  } else if (type == TYPE_SHORT) {
+    load_inst->setAlignment(2);
+
+  } else if (type == TYPE_CHAR) {
+    load_inst->setAlignment(1);
+
+  } else if (type == TYPE_VOID_POINTER) {
+    load_inst->setAlignment(8);
+  }
+
+  if (bb && load_inst) {
+    bb->getInstList().push_back(load_inst);
+  }
+
+  return load_inst;
+}
+
 StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
-                                     llvm::BasicBlock* bb ) {
-  StoreInst* store_inst = new StoreInst(cast_inst_from, alloca_inst_to, false, bb);
+                                     llvm::BasicBlock* bb) {
+  StoreInst* store_inst = new StoreInst(cast_inst_from, alloca_inst_to, false);
 
   if (type == TYPE_DOUBLE) {
     store_inst->setAlignment(8);
@@ -152,6 +192,13 @@ StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaI
 
   } else if (type == TYPE_CHAR) {
     store_inst->setAlignment(1);
+
+  } else if (type == TYPE_VOID_POINTER) {
+    store_inst->setAlignment(8);
+  }
+
+  if (bb && store_inst) {
+    bb->getInstList().push_back(store_inst);
   }
 
   return store_inst;

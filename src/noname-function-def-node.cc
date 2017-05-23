@@ -45,10 +45,10 @@ Function* FunctionSignature::codegen() {
     fflush(stdout);
   }
 
-  std::vector<llvm::Type*> function_args_types(args_defs.size(), Type::getVoidTy(TheContext));
-
-  function_args_types.push_back(PointerTy_4);
-  function_args_types.push_back(PointerTy_4);
+  // std::vector<llvm::Type*> function_args_types(args_defs.size(), Type::getVoidTy(TheContext));
+  std::vector<llvm::Type*> function_args_types(args_defs.size(), PointerTy_4);
+  // function_args_types.push_back(PointerTy_4);
+  // function_args_types.push_back(PointerTy_4);
 
   FunctionType* function_type = FunctionType::get(return_type, function_args_types, false);
 
@@ -96,27 +96,28 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(Error& error, const 
     fprintf(stdout, "\n[Figuring out the return type of %s]", name.c_str());
     fflush(stdout);
   }
-  Value* return_value = nullptr;
-  if (auto& return_node = getReturnNode()) {
-    std::vector<Value*> return_node_codegen_elements = return_node->get_codegen_elements(error);
+  // Value* return_value = nullptr;
+  // if (auto& return_node = getReturnNode()) {
+  //   std::vector<Value*> return_node_codegen_elements = return_node->get_codegen_elements(error);
 
-    if (error.code()) {
-      logError(error.what().c_str());
-      return nullptr;
-    }
+  //   if (error.code()) {
+  //     logError(error.what().c_str());
+  //     return nullptr;
+  //   }
 
-    for (auto current_value : return_node_codegen_elements) {
-      if (isa<ReturnInst>(current_value)) {
-        return_value = current_value;
-      }
-    }
+  //   for (auto current_value : return_node_codegen_elements) {
+  //     if (isa<ReturnInst>(current_value)) {
+  //       return_value = current_value;
+  //     }
+  //   }
 
-    if (!return_value) {
-      logError("Return value is null or undefined");
-      return nullptr;
-    }
-  }
-  return_type = toLLVMType(return_value);
+  //   if (!return_value) {
+  //     logError("Return value is null or undefined");
+  //     return nullptr;
+  //   }
+  // }
+  // return_type = toLLVMType(return_value);
+  return_type =  llvm::Type::getInt8PtrTy(TheContext);
 
   return new FunctionSignature(name, args_defs, return_type);
 }
@@ -191,7 +192,7 @@ ASTNode* FunctionDefNode::check() const {
 
   if (!function_signature) {
     char msg[2048];
-    snprintf(msg, 2048, "Function signature for '%s' is not set", getName().c_str());
+    snprintf(msg, 2048, "Function signature is not set");
     return new LogicErrorNode(context, msg);
   }
 
@@ -303,11 +304,14 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   ASTContext* function_def_node_context = getContext();
   std::vector<FunctionArgument*>& signature_args = getFunctionArguments();
   std::vector<FunctionArgument*>::iterator it_signature_args = signature_args.begin();
-  Function::arg_iterator function_args = function->arg_begin();
+
+  iterator_range<Argument*> function_args = function->args();
+  llvm::Argument* it_function_args = function_args.begin();
 
   while (it_signature_args != signature_args.end()) {
-
     FunctionArgument* signature_arg = *it_signature_args++;
+    Argument* function_arg = it_function_args++;
+
     // NodeValue* arg_node_value = NULL;
 
     // if (signature_arg->default_value) {
@@ -316,7 +320,19 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
 
     // function_def_node_context->storeVariable(signature_arg->name, arg_node_value);
 
-    // function_def_node_context->storeValue(signature_arg->name, arg_node_value);
+    /** 
+      * Do we really need to create this AllocaInst?
+      */
+    // AllocaInst* alloca_inst = alloca_typed_var_codegen(TYPE_VOID_POINTER);
+    // if (!alloca_inst) {
+    //   fprintf(stdout, "\n[## Argument could not be allocated]");
+    //   fflush(stdout);
+    //   return nullptr;
+    // }
+    // function_def_node_context->storeAllocaInst(signature_arg->name, alloca_inst);
+    // function_bb->getInstList().push_back(alloca_inst);
+    
+    function_def_node_context->storeValue(signature_arg->name, function_arg);
   }
 
   std::vector<std::unique_ptr<ASTNode>>& body_nodes = getBodyNodes();

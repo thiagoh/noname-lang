@@ -828,25 +828,40 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
   return node->constant_codegen(bb);
 }
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
-  createError(error, "NOT IMPLEMENTED - std::vector<Value*> VarExpNode::codegen_elements");
+  std::vector<Value *> codegen;
+
+  AllocaInst *alloca_inst = alloca_typed_var_codegen(TYPE_VOID_POINTER, bb);
+  if (!alloca_inst) {
+    createError(error, "AllocaInst could not be created");
+    return codegen;
+  }
+
+  codegen.push_back(alloca_inst);
 
   Value *value = getContext()->getValue(name);
   if (!value) {
     createError(error, "Value could not be found");
-    return std::vector<Value *>();
+    return codegen;
   }
-  AllocaInst *alloca_inst = alloca_typed_var_codegen(TYPE_VOID_POINTER);
-  if (!alloca_inst) {
-    createError(error, "AllocaInst could not be created");
-    return std::vector<Value *>();
-  }
+
+  // codegen.push_back(value);
 
   StoreInst *store_inst = store_typed_var_codegen(TYPE_VOID_POINTER, value, alloca_inst);
   if (!store_inst) {
     createError(error, "StoreInst could not be created");
-    return std::vector<Value *>();
+    return codegen;
   }
 
-  return std::vector<Value *>();
+  codegen.push_back(store_inst);
+
+  LoadInst *load_inst = load_inst_codegen(TYPE_VOID_POINTER, alloca_inst);
+  if (!load_inst) {
+    createError(error, "LoadInst could not be created");
+    return codegen;
+  }
+
+  codegen.push_back(load_inst);
+
+  return codegen;
 }
 }
