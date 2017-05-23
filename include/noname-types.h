@@ -584,7 +584,8 @@ class FunctionDefNode : public ASTNode {
   static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_DEF_FUNCTION; }
 
  private:
-  FunctionSignature* createFunctionSignature(const std::string& name, std::vector<FunctionArgument*> args_defs);
+  FunctionSignature* createFunctionSignature(Error& error, const std::string& name,
+                                             std::vector<FunctionArgument*> args_defs);
   llvm::ReturnInst* getLLVMReturnInst(Value* return_value);
 };
 

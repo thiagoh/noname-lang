@@ -85,7 +85,7 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
   return function_new_node;
 }
 
-FunctionSignature* FunctionDefNode::createFunctionSignature(const std::string& name,
+FunctionSignature* FunctionDefNode::createFunctionSignature(Error& error, const std::string& name,
                                                             std::vector<FunctionArgument*> args_defs) {
   llvm::Type* return_type = nullptr;
   if (noname::debug >= 1) {
@@ -94,7 +94,6 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(const std::string& n
   }
   Value* return_value = nullptr;
   if (auto& return_node = getReturnNode()) {
-    Error error;
     std::vector<Value*> return_node_codegen_elements = return_node->get_codegen_elements(error);
 
     if (error.code()) {
@@ -121,7 +120,14 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(const std::string& n
 FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, std::vector<FunctionArgument*> args_defs,
                                  std::vector<std::unique_ptr<ASTNode>> body_nodes)
     : ASTNode(context, AST_NODE_TYPE_DEF_FUNCTION), body_nodes(std::move(body_nodes)), function_signature(nullptr) {
-  function_signature = createFunctionSignature(name, args_defs);
+  Error error;
+  function_signature = createFunctionSignature(error, name, args_defs);
+
+  if (error.code()) {
+    logError(error.what().c_str());
+    return;
+  }
+
   if (!function_signature) {
     logError("FunctionDefNode could not be defined");
     return;
@@ -155,7 +161,14 @@ FunctionDefNode::FunctionDefNode(ASTContext* context, const std::string& name, a
     }
   } while (stmtlist_node);
 
-  function_signature = createFunctionSignature(name, args_defs);
+  Error error;
+  function_signature = createFunctionSignature(error, name, args_defs);
+
+  if (error.code()) {
+    logError(error.what().c_str());
+    return;
+  }
+
   if (!function_signature) {
     logError("FunctionDefNode could not be defined");
     return;
@@ -171,6 +184,13 @@ FunctionDefNode::~FunctionDefNode() {
 
 ASTNode* FunctionDefNode::check() const {
   ASTContext* context = getContext();
+
+  if (!function_signature) {
+    char msg[2048];
+    snprintf(msg, 2048, "Function signature for '%s' is not set", getName().c_str());
+    return new LogicErrorNode(context, msg);
+  }
+
   Function* function = TheModule->getFunction(getName());
 
   if (function) {

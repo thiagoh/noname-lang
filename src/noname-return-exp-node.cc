@@ -53,9 +53,9 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   std::vector<Value*> exp_node_codegen_elements = exp_node->get_codegen_elements(error, bb);
 
-  if (exp_node_codegen_elements.size() > 0) {
-    fprintf(stdout, "nha");
-    fflush(stdout);
+  if (error.code()) {
+    logError(error.what().c_str());
+    return codegen;
   }
 
   for (auto current_value : exp_node_codegen_elements) {
@@ -77,7 +77,7 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
   Value* value_to_be_returned = nullptr;
   ReturnInst* return_inst = nullptr;
 
-  if (exp_node_codegen_elements.size() <= 0) {
+  if (exp_node_codegen_elements.size() > 0) {
     value_to_be_returned = exp_node_codegen_elements.back();
   }
 
