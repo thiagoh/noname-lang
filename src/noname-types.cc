@@ -786,7 +786,21 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
     return codegen;
   }
 
+  AllocaInst *ptr_ia = alloca_typed_var_codegen(type, bb);
+  AllocaInst *ptr_pa = alloca_typed_var_codegen(TYPE_VOID_POINTER, bb);
+  StoreInst *void_80 = store_typed_var_codegen(type, constant_value, ptr_ia, bb);
+  CastInst *ptr_82 = cast_codegen(ptr_ia, bb);
+  StoreInst *void_83 = store_untyped_var_codegen(TYPE_VOID_POINTER, ptr_82, ptr_pa, bb);
+  LoadInst *ptr_86 = load_inst_codegen(TYPE_VOID_POINTER, ptr_pa, bb);
+
   codegen.push_back(constant_value);
+  codegen.push_back(ptr_ia);
+  codegen.push_back(ptr_pa);
+  codegen.push_back(void_80);
+  codegen.push_back(ptr_82);
+  codegen.push_back(void_83);
+  codegen.push_back(ptr_86);
+
   return codegen;
 }
 Value *NumberExpNode::codegen(llvm::BasicBlock *bb) {

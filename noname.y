@@ -343,8 +343,8 @@ ne_arg_list:
 
 arg:
   IDENTIFIER                      { $$ = new_arg(context, $1, NULL); }
-  | IDENTIFIER ASSIGN DOUBLE_TOK      { $$ = new_arg(context, $1, $3); }
-  | IDENTIFIER ASSIGN LONG_TOK        { $$ = new_arg(context, $1, $3); }
+  | IDENTIFIER ASSIGN DOUBLE_TOK  { $$ = new_arg(context, $1, $3); }
+  | IDENTIFIER ASSIGN LONG_TOK    { $$ = new_arg(context, $1, $3); }
   | IDENTIFIER ASSIGN STR_CONST   { $$ = new_arg(context, $1, $3); }
 ;
 

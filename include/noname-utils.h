@@ -170,6 +170,7 @@ LoadInst* load_inst_codegen(int type, llvm::AllocaInst* alloca_inst, llvm::Basic
 StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb = nullptr);
 StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
                                      llvm::BasicBlock* bb = nullptr);
+CastInst* cast_codegen(AllocaInst* alloca_inst_from, llvm::BasicBlock* bb = nullptr);
 }
 
 #endif

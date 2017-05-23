@@ -34,6 +34,7 @@ void CallExpNode::initializeArgs(explist_t* head_exp_list) {
         explist_node_t = explist_node_t->next;
       }
     } while (explist_node_t);
+
     // TODO: free all the expressions not just the head_exp_list one
     // free(head_exp_list);
   }
@@ -141,13 +142,30 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
 
     call_exp_context->store(signature_arg->getName().str(), std::move(value_arg->getValue().get()));
 
-    args_value.push_back(value_arg->codegen());
-    if (!args_value.back()) {
+    std::vector<Value*> value_arg_codegen_elements = value_arg->get_codegen_elements(error);
+
+    if (error.code()) {
+      logErrorLLVM(error.what().c_str());
+      return codegen;
+    }
+
+    if (value_arg_codegen_elements.size() <= 0 ||
+        (value_arg_codegen_elements.size() > 0 && !value_arg_codegen_elements.back())) {
       char msg[1024];
       sprintf(msg, "Invalid or undefined argument for function '%s'", getCallee().c_str());
       createError(error, msg);
       return codegen;
     }
+
+    for (auto current_value : value_arg_codegen_elements) {
+      if (noname::debug >= 1) {
+        current_value->dump();
+      }
+
+      codegen.push_back(current_value);
+    }
+
+    args_value.push_back(value_arg_codegen_elements.back());
   }
 
   if (args_value.size() > called_function_type->getNumParams()) {

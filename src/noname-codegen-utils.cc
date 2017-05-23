@@ -204,7 +204,7 @@ StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaI
   return store_inst;
 }
 
-CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock* bb = nullptr) {
+CastInst* cast_codegen(AllocaInst* alloca_inst_from, llvm::BasicBlock* bb) {
   CastInst* casted_inst = new BitCastInst(alloca_inst_from, PointerTy_4, "cast_inst_");
 
   return casted_inst;
@@ -247,7 +247,7 @@ std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, const
   // Cast the the "typed" variable to the "untyped" variable
   //  -->  CastInst* casted_inst = new BitCastInst(typed_pointer_alloca, PointerTy_4, "");
   //  -->  codegen.push_back(std::unique_ptr<Value>(casted_inst));
-  CastInst* cast_inst = cast_codegen(rhs_type, alloca_inst, bb);
+  CastInst* cast_inst = cast_codegen(alloca_inst, bb);
 
   // Store the address of the
   //  -->  StoreInst* voidp_store = new StoreInst(casted_inst, untyped_poiter_alloca, false);
