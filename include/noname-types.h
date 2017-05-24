@@ -105,7 +105,7 @@ extern PointerType* PointerTy_16;
 extern PointerType* PointerTy_8;
 extern PointerType* PointerTy_Double;
 extern PointerType* PointerTy_Float;
-extern StructType* StructTy_struct_datatype;
+extern StructType* StructTy_struct_datatype_t;
 
 extern int debug;
 extern ASTContext* context;
@@ -121,10 +121,10 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 // extern std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
 
 /* list of statements */
-typedef struct datatype {
+typedef struct datatype_t {
   int type;
   void* v;
-} datatype;
+} datatype_t;
 typedef struct stmtlist_node_t {
   ASTNode* node;
   stmtlist_node_t* next;

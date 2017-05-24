@@ -40,7 +40,7 @@ PointerType *PointerTy_16;
 PointerType *PointerTy_8;
 PointerType *PointerTy_Double;
 PointerType *PointerTy_Float;
-StructType *StructTy_struct_datatype;
+StructType *StructTy_struct_datatype_t;
 
 ProcessorStrategy *astNodeProcessorStrategy;
 ProcessorStrategy *expNodeProcessorStrategy;
@@ -71,12 +71,12 @@ void InitializeNonameEnvironment() {
   PointerTy_Double = PointerType::get(Type::getDoubleTy(TheContext), 0);
   PointerTy_Float = PointerType::get(Type::getFloatTy(TheContext), 0);
 
-  StructTy_struct_datatype = StructType::create(TheContext, "struct.datatype");
-  std::vector<Type *> StructTy_struct_datatype_fields;
-  StructTy_struct_datatype_fields.push_back(IntegerType::get(TheContext, 32));
-  StructTy_struct_datatype_fields.push_back(PointerTy_8);
-  if (StructTy_struct_datatype->isOpaque()) {
-    StructTy_struct_datatype->setBody(StructTy_struct_datatype_fields, /*isPacked=*/false);
+  StructTy_struct_datatype_t = StructType::create(TheContext, "struct.datatype_t");
+  std::vector<Type *> StructTy_struct_datatype_t_fields;
+  StructTy_struct_datatype_t_fields.push_back(IntegerType::get(TheContext, 32));
+  StructTy_struct_datatype_t_fields.push_back(PointerTy_8);
+  if (StructTy_struct_datatype_t->isOpaque()) {
+    StructTy_struct_datatype_t->setBody(StructTy_struct_datatype_t_fields, /*isPacked=*/false);
   }
 
   // initialization
@@ -234,100 +234,121 @@ void *call_jit_symbol(llvm::Type *result_type, JITSymbol &jit_symbol) {
   } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
     char (*function_pointer)() = (char (*)())(intptr_t)jit_symbol.getAddress();
     result = new char(function_pointer());
+
+  } else if (result_type == StructTy_struct_datatype_t) {
+    datatype_t (*function_pointer)() = (datatype_t(*)())(intptr_t)jit_symbol.getAddress();
+    datatype_t tmp = function_pointer();
+    datatype_t *output_datatype = (datatype_t *)malloc(sizeof(struct datatype_t));
+    output_datatype->v = 0;
+    output_datatype->type = 0;
+
+    if (tmp.v) {
+      output_datatype->v = tmp.v;
+    }
+
+    output_datatype->type = tmp.type;
+    result = output_datatype;
   }
 
   return result;
 }
-
+void print_jit_symbol_value(llvm::Type *result_type, void *result) {
+  print_jit_symbol_value(stdout, result_type, result);
+}
 void print_jit_symbol_value(FILE *file, llvm::Type *result_type, void *result) {
   // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
-  if (noname::debug >= 2) {
-    if (!result_type) {
-      assert(result_type && "Result type is null");
-    } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] undef");
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %lf", *(double *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %f", *(float *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %ld", *(long *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %d", *(int *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %hd", *(short *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %c", *(char *)result);
-      fflush(file);
-
-    } else if (result_type == StructTy_struct_datatype) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value StructTy_struct_datatype] %d",
-              (*(datatype *)result).type);
-      fflush(file);
-
-    } else if (result_type == PointerTy_8) {
-      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %p", result);
-      fflush(file);
-    }
+  if (!result_type) {
+    assert(result_type && "Result type is null");
   } else {
-    if (!result_type) {
-      assert(result_type && "Result type is null");
-    } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
-      fprintf(file, "undef");
-      fflush(file);
-    } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
-      fprintf(file, "%lf", *(double *)result);
-      fflush(file);
+    int result_noname_type = toNonameType(result_type);
+    print_jit_symbol_value(file, result_noname_type, result);
 
-    } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
-      fprintf(file, "%f", *(float *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
-      fprintf(file, "%ld", *(long *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
-      fprintf(file, "%d", *(int *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
-      fprintf(file, "%hd", *(short *)result);
-      fflush(file);
-
-    } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
-      fprintf(file, "%c", *(char *)result);
-      fflush(file);
-
-    } else if (result_type == StructTy_struct_datatype) {
-      fprintf(file, "datatype %d", (*(datatype *)result).type);
-      fflush(file);
-
-    } else if (result_type == PointerTy_8) {
-      fprintf(file, "%p", result);
-      fflush(file);
-
-    } else {
-      fprintf(file, "No such type found");
-      fflush(file);
+    if (noname::debug >= 1) {
       result_type->dump();
     }
   }
 }
-void print_jit_symbol_value(llvm::Type *result_type, void *result) {
-  print_jit_symbol_value(stdout, result_type, result);
+
+void print_jit_symbol_value(int result_type, void *result) { print_jit_symbol_value(stdout, result_type, result); }
+void print_jit_symbol_value(FILE *file, int result_type, void *result) {
+  // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
+  if (noname::debug >= 2) {
+    if (result_type == TYPE_VOID) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] undef");
+      fflush(file);
+
+    } else if (result_type == TYPE_DOUBLE) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %lf", *(double *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_FLOAT) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %f", *(float *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_LONG) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %ld", *(long *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_INT) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %d", *(int *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_SHORT) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %hd", *(short *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_CHAR) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %c", *(char *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_DATATYPE) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %d", (*(datatype_t *)result).type);
+      fflush(file);
+
+    } else if (result_type == TYPE_VOID_POINTER) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %p", result);
+      fflush(file);
+    }
+  } else {
+    if (result_type == TYPE_VOID) {
+      fprintf(file, "undef");
+      fflush(file);
+    } else if (result_type == TYPE_DOUBLE) {
+      fprintf(file, "%lf", *(double *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_FLOAT) {
+      fprintf(file, "%f", *(float *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_LONG) {
+      fprintf(file, "%ld", *(long *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_INT) {
+      fprintf(file, "%d", *(int *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_SHORT) {
+      fprintf(file, "%hd", *(short *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_CHAR) {
+      fprintf(file, "%c", *(char *)result);
+      fflush(file);
+
+    } else if (result_type == TYPE_DATATYPE) {
+      datatype_t datatype_result = *((datatype_t *)result);
+      print_jit_symbol_value(file, datatype_result.type, datatype_result.v);
+
+    } else if (result_type == TYPE_VOID_POINTER) {
+      fprintf(file, "%p", result);
+      fflush(file);
+    } else {
+      fprintf(file, "No such type found");
+      fflush(file);
+    }
+  }
 }
 void *call_and_print_jit_symbol_value(FILE *file, llvm::Type *result_type, JITSymbol &jit_symbol) {
   void *result = call_jit_symbol(result_type, jit_symbol);
@@ -568,7 +589,7 @@ llvm::Type *toLLVLType(int type) {
   } else if (type == TYPE_VOID_POINTER) {
     return llvm::Type::getInt8PtrTy(TheContext);
   } else if (type == TYPE_DATATYPE) {
-    return StructTy_struct_datatype;
+    return StructTy_struct_datatype_t;
   }
 
   return nullptr;
@@ -655,7 +676,7 @@ int toNonameType(llvm::Type *type) {
     return TYPE_VOID;
   } else if (llvm::Type::getInt8PtrTy(TheContext) == type) {
     return TYPE_VOID_POINTER;
-  } else if (StructTy_struct_datatype == type) {
+  } else if (StructTy_struct_datatype_t == type) {
     return TYPE_DATATYPE;
   }
 
@@ -840,27 +861,48 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
     return codegen;
   }
 
-  Value *constant_value = node->constant_codegen(bb);
+  ConstantInt *const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
+  ConstantInt *const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
+  ConstantInt *const_int32_type = ConstantInt::get(TheContext, APInt(32, type, true));
 
+  // struct datatype_t
+  AllocaInst *alloca_datatype = alloca_typed_var_codegen(TYPE_DATATYPE);
+  AllocaInst *alloca_value = alloca_typed_var_codegen(type, bb);
+
+  GetElementPtrInst *ptr_v =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v");
+  GetElementPtrInst *ptr_type =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_0}, "type");
+
+  // typed value
+  Value *constant_value = node->constant_codegen(bb);
+  constant_value = ConstantInt::get(TheContext, APInt(64, 784, true));
   if (!constant_value) {
     createError(error, "Invalid or undefined constant value");
     return codegen;
   }
 
-  AllocaInst *ptr_ia = alloca_typed_var_codegen(type, bb);
-  AllocaInst *ptr_pa = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
-  StoreInst *void_80 = store_typed_var_codegen(type, constant_value, ptr_ia, bb);
-  CastInst *ptr_82 = cast_codegen(ptr_ia, bb);
-  StoreInst *void_83 = store_untyped_var_codegen(TYPE_DATATYPE, ptr_82, ptr_pa, bb);
-  LoadInst *ptr_86 = load_inst_codegen(TYPE_DATATYPE, ptr_pa, bb);
+  StoreInst *store_value = store_typed_var_codegen(type, constant_value, alloca_value, bb);
+  CastInst *casted_value = cast_codegen(TYPE_VOID_POINTER, alloca_value, bb);
+  casted_value->dump();
+  StoreInst *store_ptr_v = store_typed_var_codegen(TYPE_VOID_POINTER, casted_value, ptr_v, bb);
 
-  codegen.push_back(constant_value);
-  codegen.push_back(ptr_ia);
-  codegen.push_back(ptr_pa);
-  codegen.push_back(void_80);
-  codegen.push_back(ptr_82);
-  codegen.push_back(void_83);
-  codegen.push_back(ptr_86);
+  StoreInst *store_ptr_type = store_typed_var_codegen(TYPE_INT, const_int32_type, ptr_type, bb);
+
+  LoadInst *load_inst_type = load_inst_codegen(TYPE_DATATYPE, alloca_datatype, bb);
+
+  codegen.push_back(alloca_datatype);
+  codegen.push_back(alloca_value);
+
+  codegen.push_back(ptr_v);
+  codegen.push_back(ptr_type);
+
+  codegen.push_back(store_value);
+  codegen.push_back(casted_value);
+  codegen.push_back(store_ptr_v);
+  codegen.push_back(store_ptr_type);
+
+  codegen.push_back(load_inst_type);
 
   return codegen;
 }
@@ -913,7 +955,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
 
   codegen.push_back(alloca_inst);
 
-  Value *codegen_value = getContext()->getValue(name );
+  Value *codegen_value = getContext()->getValue(name);
   // Value *codegen_type = getContext()->getValue(name + "_type");
   // Value *codegen_value = getContext()->getValue(name + "_value");
   if (!codegen_value) {

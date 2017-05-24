@@ -46,7 +46,7 @@ Function* FunctionSignature::codegen() {
   }
 
   // std::vector<llvm::Type*> function_args_types(args_defs.size(), Type::getVoidTy(TheContext));
-  std::vector<llvm::Type*> function_args_types(args_defs.size(), StructTy_struct_datatype);
+  std::vector<llvm::Type*> function_args_types(args_defs.size(), StructTy_struct_datatype_t);
   // std::vector<llvm::Type*> function_args_types;
   // for (unsigned int i = 0; i < args_defs.size(); i++) {
   //   function_args_types.push_back(IntegerType::get(TheContext, 32));
@@ -121,7 +121,7 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(Error& error, const 
   //   }
   // }
   // return_type = toLLVMType(return_value);
-  return_type = StructTy_struct_datatype;
+  return_type = StructTy_struct_datatype_t;
 
   return new FunctionSignature(name, args_defs, return_type);
 }

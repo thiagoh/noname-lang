@@ -111,6 +111,8 @@ void print_node_value(NodeValue* nodeValue);
 void print_node_value(FILE* file, NodeValue* nodeValue);
 
 void* call_jit_symbol(llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
+void print_jit_symbol_value(FILE* file, int result_noname_type, void* result);
+void print_jit_symbol_value(int result_noname_type, void* result);
 void print_jit_symbol_value(FILE* file, llvm::Type* result_type, void* result);
 void print_jit_symbol_value(llvm::Type* result_type, void* result);
 void* call_and_print_jit_symbol_value(FILE* file, llvm::Type* result_type, llvm::orc::JITSymbol& jit_symbol);
@@ -161,6 +163,7 @@ int toNonameType(llvm::Value* value);
 int toNonameType(llvm::Type* type);
 
 // Codegen functions
+Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullptr);
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);
 llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb = nullptr);
 std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, llvm::Value* value,
@@ -170,7 +173,7 @@ LoadInst* load_inst_codegen(int type, llvm::AllocaInst* alloca_inst, llvm::Basic
 StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb = nullptr);
 StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
                                      llvm::BasicBlock* bb = nullptr);
-CastInst* cast_codegen(AllocaInst* alloca_inst_from, llvm::BasicBlock* bb = nullptr);
+CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock* bb = nullptr);
 }
 
 #endif

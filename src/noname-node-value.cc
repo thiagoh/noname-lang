@@ -55,7 +55,7 @@ NodeValue::~NodeValue() {
     fprintf(stderr, "\n[NodeValue::~NodeValue() called]");
   }
 }
-Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullptr) {
+Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb) {
   Value* constant_value = nullptr;
 
   if (type == TYPE_DOUBLE) {

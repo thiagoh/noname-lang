@@ -100,7 +100,7 @@ AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb) {
     typed_pointer_alloca->setAlignment(8);
 
   } else if (type == TYPE_DATATYPE) {
-    typed_pointer_alloca = new AllocaInst(StructTy_struct_datatype, "alloca_datatype_v");
+    typed_pointer_alloca = new AllocaInst(StructTy_struct_datatype_t, "alloca_datatype_v");
     typed_pointer_alloca->setAlignment(8);
   }
 
@@ -217,8 +217,37 @@ StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaI
   return store_inst;
 }
 
-CastInst* cast_codegen(AllocaInst* alloca_inst_from, llvm::BasicBlock* bb) {
-  CastInst* casted_inst = new BitCastInst(alloca_inst_from, PointerTy_8, "cast_inst_");
+CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock* bb) {
+  CastInst* casted_inst = nullptr;
+
+  if (type == TYPE_DOUBLE) {
+    casted_inst = new BitCastInst(alloca_inst_from, Type::getDoubleTy(TheContext), "cast_inst_double_");
+
+  } else if (type == TYPE_FLOAT) {
+    casted_inst = new BitCastInst(alloca_inst_from, Type::getFloatTy(TheContext), "cast_inst_float_");
+
+  } else if (type == TYPE_LONG) {
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 64), "cast_inst_long_");
+
+  } else if (type == TYPE_INT) {
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 32), "cast_inst_int_");
+
+  } else if (type == TYPE_SHORT) {
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 16), "cast_inst_short_");
+
+  } else if (type == TYPE_CHAR) {
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 8), "cast_inst_char_");
+
+  } else if (type == TYPE_VOID_POINTER) {
+    casted_inst = new BitCastInst(alloca_inst_from, PointerTy_8, "cast_inst_ptr_v");
+
+  } else if (type == TYPE_DATATYPE) {
+    casted_inst = new BitCastInst(alloca_inst_from, StructTy_struct_datatype_t, "cast_inst_struct");
+  }
+
+  if (bb && casted_inst) {
+    bb->getInstList().push_back(casted_inst);
+  }
 
   return casted_inst;
 }
@@ -237,7 +266,7 @@ std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, Value
   StoreInst* store_inst_typed_var = store_typed_var_codegen(rhs_type, value, bb);
 
   // Cast the the "typed" variable to the "untyped" variable
-  CastInst* cast_inst = cast_codegen(alloca_inst, bb);
+  CastInst* cast_inst = cast_codegen(TYPE_DATATYPE, alloca_inst, bb);
 
   // Store the address of the
   StoreInst* store_inst_untyped_var = store_untyped_var_codegen(rhs_type, cast_inst, alloca_inst, bb);
