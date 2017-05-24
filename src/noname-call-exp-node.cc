@@ -111,7 +111,6 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
   if (!called_function) {
     called_function = getCalledFunction(error);
   }
-  FunctionType* called_function_type = called_function->getFunctionType();
 
   if (!called_function) {
     if (!error.code()) {  // error may be already set
@@ -122,6 +121,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
     return codegen;
   }
 
+  FunctionType* called_function_type = called_function->getFunctionType();
   const std::vector<std::unique_ptr<ExpNode>>& value_args = getArgs();
 
   // If argument mismatch error.
@@ -140,7 +140,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
     const std::unique_ptr<ExpNode>& value_arg = *it_value_args++;
     const Argument* signature_arg = (Argument*)it_signature_args++;
 
-    call_exp_context->store(signature_arg->getName().str(), std::move(value_arg->getValue().get()));
+    call_exp_context->storeVariable(signature_arg->getName().str(), std::move(value_arg->getValue().get()));
 
     std::vector<Value*> value_arg_codegen_elements = value_arg->get_codegen_elements(error);
 

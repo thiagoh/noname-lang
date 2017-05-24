@@ -105,7 +105,7 @@ JITSymbol NonameJIT::findMangledSymbol(const std::string &symbol_name) {
   return nullptr;
 }
 
-// TODO FIXME
+// TODO: FIXME
 void NonameJIT::writeToFile(const Module *mod) {
   // if (true) return;
 
@@ -125,7 +125,7 @@ void NonameJIT::writeToFile(const Module *mod) {
   // close(output_filedescriptor);
 }
 
-// TODO FIXME
+// TODO: FIXME
 void NonameJIT::writeToFile() {
   for (auto &mod : Modules) {
     if (noname::debug >= 1) {
@@ -136,7 +136,7 @@ void NonameJIT::writeToFile() {
   }
 }
 
-// TODO FIXME
+// TODO: FIXME
 void NonameJIT::release() {
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[NonameJIT::release()]");

@@ -59,6 +59,8 @@ class ASTContext {
 
   std::map<std::string, llvm::Value*> mValue;
   std::map<std::string, llvm::Value*>::iterator itValue;
+  std::map<std::string, llvm::Type*> mType;
+  std::map<std::string, llvm::Type*>::iterator itType;
 
  public:
   ASTContext(const std::string& name) : name(name), parent(NULL) {}
@@ -69,21 +71,24 @@ class ASTContext {
         mFunctionSignatures(copy.mFunctionSignatures),
         mVariables(copy.mVariables),
         mAllocaInst(copy.mAllocaInst),
-        mValue(copy.mValue) {}
+        mValue(copy.mValue),
+        mType(copy.mType) {}
   ASTContext(const ASTContext& copy, ASTContext* parent)
       : name(copy.name),
         parent(parent),
         mFunctionSignatures(copy.mFunctionSignatures),
         mVariables(copy.mVariables),
         mAllocaInst(copy.mAllocaInst),
-        mValue(copy.mValue) {}
+        mValue(copy.mValue),
+        mType(copy.mType) {}
   ASTContext(const std::string& name, const ASTContext& copy, ASTContext* parent)
       : name(name),
         parent(parent),
         mFunctionSignatures(copy.mFunctionSignatures),
         mVariables(copy.mVariables),
         mAllocaInst(copy.mAllocaInst),
-        mValue(copy.mValue) {}
+        mValue(copy.mValue),
+        mType(copy.mType) {}
   virtual ~ASTContext() = default;
   ASTContext& operator=(const ASTContext& copy) {
     name = copy.name;
@@ -92,6 +97,7 @@ class ASTContext {
     mFunctionSignatures = copy.mFunctionSignatures;
     mAllocaInst = copy.mAllocaInst;
     mValue = copy.mValue;
+    mType = copy.mType;
     return *this;
   }
   std::string getName() const { return name; }
@@ -100,14 +106,12 @@ class ASTContext {
   // Functions
   FunctionSignature* getFunctionSignature(const std::string& name);
   bool storeFunctionSignature(const std::string name, FunctionSignature* function_signature);
-  bool store(const std::string name, FunctionSignature* function_signature);
   bool removeFunctionSignature(const std::string name);
 
   // Variables
   NodeValue* getVariableShallow(const std::string& name);
   NodeValue* getVariable(const std::string& name);
   bool storeVariable(const std::string name, NodeValue* node_value);
-  bool store(const std::string name, NodeValue* node_value);
   bool removeVariable(const std::string name);
   NodeValue* updateVariable(const std::string name, NodeValue* node_value);
   NodeValue* update(const std::string name, NodeValue* node_value);
@@ -115,13 +119,13 @@ class ASTContext {
   // AllocaInst
   llvm::AllocaInst* getAllocaInst(const std::string& name);
   bool storeAllocaInst(const std::string name, llvm::AllocaInst* alloca_inst);
-  bool store(const std::string name, llvm::AllocaInst* alloca_inst);
   bool removeAllocaInst(const std::string name);
   llvm::AllocaInst* updateAllocaInst(const std::string name, llvm::AllocaInst* alloca_inst);
   llvm::AllocaInst* update(const std::string name, llvm::AllocaInst* alloca_inst);
 
   // Value
   llvm::Value* getValue(const std::string& name);
+  llvm::Type* getValueType(const std::string& name);
   bool storeValue(const std::string name, llvm::Value* value);
   bool removeValue(const std::string name);
   llvm::Value* updateValue(const std::string name, llvm::Value* value);

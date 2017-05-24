@@ -50,15 +50,16 @@ namespace noname {
 #ifndef YYTOKENTYPE
 #define YYTOKENTYPE
 enum yytokentype {
-  TYPE_VOID = 32,
-  TYPE_VOID_POINTER = 33,
-  TYPE_CHAR = 34,
-  TYPE_SHORT = 35,
-  TYPE_INT = 36,
-  TYPE_FLOAT = 37,
-  TYPE_LONG = 38,
-  TYPE_DOUBLE = 39,
-  TYPE_STRING = 40,
+  TYPE_DATATYPE = 32,
+  TYPE_VOID = 33,
+  TYPE_VOID_POINTER = 34,
+  TYPE_CHAR = 35,
+  TYPE_SHORT = 36,
+  TYPE_INT = 37,
+  TYPE_FLOAT = 38,
+  TYPE_LONG = 39,
+  TYPE_DOUBLE = 40,
+  TYPE_STRING = 41,
 };
 #endif
 
@@ -98,13 +99,13 @@ extern ProcessorStrategy* callNodeProcessorStrategy;
 extern ProcessorStrategy* importNodeProcessorStrategy;
 
 extern Type* VoidTy;
-extern PointerType* PointerTy_1;
-extern PointerType* PointerTy_2;
-extern PointerType* PointerTy_3;
-extern PointerType* PointerTy_4;
-extern PointerType* PointerTy_5;
-extern PointerType* PointerTy_6;
-extern PointerType* PointerTy_7;
+extern PointerType* PointerTy_32;
+extern PointerType* PointerTy_64;
+extern PointerType* PointerTy_16;
+extern PointerType* PointerTy_8;
+extern PointerType* PointerTy_Double;
+extern PointerType* PointerTy_Float;
+extern StructType* StructTy_struct_datatype;
 
 extern int debug;
 extern ASTContext* context;
@@ -120,6 +121,10 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 // extern std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
 
 /* list of statements */
+typedef struct datatype {
+  int type;
+  void* v;
+} datatype;
 typedef struct stmtlist_node_t {
   ASTNode* node;
   stmtlist_node_t* next;

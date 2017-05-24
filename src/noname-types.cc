@@ -34,13 +34,13 @@ std::unique_ptr<llvm::orc::NonameJIT> TheJIT;
 
 bool initialized = false;
 Type *VoidTy;
-PointerType *PointerTy_1;
-PointerType *PointerTy_2;
-PointerType *PointerTy_3;
-PointerType *PointerTy_4;
-PointerType *PointerTy_5;
-PointerType *PointerTy_6;
-PointerType *PointerTy_7;
+PointerType *PointerTy_32;
+PointerType *PointerTy_64;
+PointerType *PointerTy_16;
+PointerType *PointerTy_8;
+PointerType *PointerTy_Double;
+PointerType *PointerTy_Float;
+StructType *StructTy_struct_datatype;
 
 ProcessorStrategy *astNodeProcessorStrategy;
 ProcessorStrategy *expNodeProcessorStrategy;
@@ -64,13 +64,20 @@ void InitializeNonameEnvironment() {
   // Now we going to create JIT
 
   VoidTy = Type::getVoidTy(TheContext);
-  PointerTy_1 = PointerType::get(IntegerType::get(TheContext, 32), 0);
-  PointerTy_2 = PointerType::get(IntegerType::get(TheContext, 64), 0);
-  PointerTy_3 = PointerType::get(IntegerType::get(TheContext, 16), 0);
-  PointerTy_4 = PointerType::get(IntegerType::get(TheContext, 8), 0);
-  PointerTy_5 = PointerType::get(Type::getDoubleTy(TheContext), 0);
-  PointerTy_6 = PointerType::get(Type::getFloatTy(TheContext), 0);
-  PointerTy_7 = PointerType::get(PointerTy_4, 0);
+  PointerTy_32 = PointerType::get(IntegerType::get(TheContext, 32), 0);
+  PointerTy_64 = PointerType::get(IntegerType::get(TheContext, 64), 0);
+  PointerTy_16 = PointerType::get(IntegerType::get(TheContext, 16), 0);
+  PointerTy_8 = PointerType::get(IntegerType::get(TheContext, 8), 0);
+  PointerTy_Double = PointerType::get(Type::getDoubleTy(TheContext), 0);
+  PointerTy_Float = PointerType::get(Type::getFloatTy(TheContext), 0);
+
+  StructTy_struct_datatype = StructType::create(TheContext, "struct.datatype");
+  std::vector<Type *> StructTy_struct_datatype_fields;
+  StructTy_struct_datatype_fields.push_back(IntegerType::get(TheContext, 32));
+  StructTy_struct_datatype_fields.push_back(PointerTy_8);
+  if (StructTy_struct_datatype->isOpaque()) {
+    StructTy_struct_datatype->setBody(StructTy_struct_datatype_fields, /*isPacked=*/false);
+  }
 
   // initialization
   astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
@@ -239,48 +246,82 @@ void print_jit_symbol_value(FILE *file, llvm::Type *result_type, void *result) {
       assert(result_type && "Result type is null");
     } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] undef");
+      fflush(file);
+
     } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %lf", *(double *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %f", *(float *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %ld", *(long *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %d", *(int *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %hd", *(short *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %c", *(char *)result);
+      fflush(file);
+
+    } else if (result_type == StructTy_struct_datatype) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value StructTy_struct_datatype] %d",
+              (*(datatype *)result).type);
+      fflush(file);
+
+    } else if (result_type == PointerTy_8) {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] %p", result);
+      fflush(file);
     }
   } else {
     if (!result_type) {
       assert(result_type && "Result type is null");
     } else if (result_type == llvm::Type::getVoidTy(TheContext)) {
       fprintf(file, "undef");
+      fflush(file);
     } else if (result_type == llvm::Type::getDoubleTy(TheContext)) {
       fprintf(file, "%lf", *(double *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getFloatTy(TheContext)) {
       fprintf(file, "%f", *(float *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt64Ty(TheContext)) {
       fprintf(file, "%ld", *(long *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt32Ty(TheContext)) {
       fprintf(file, "%d", *(int *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt16Ty(TheContext)) {
       fprintf(file, "%hd", *(short *)result);
+      fflush(file);
 
     } else if (result_type == llvm::Type::getInt8Ty(TheContext)) {
       fprintf(file, "%c", *(char *)result);
+      fflush(file);
+
+    } else if (result_type == StructTy_struct_datatype) {
+      fprintf(file, "datatype %d", (*(datatype *)result).type);
+      fflush(file);
+
+    } else if (result_type == PointerTy_8) {
+      fprintf(file, "%p", result);
+      fflush(file);
+
     } else {
       fprintf(file, "No such type found");
+      fflush(file);
       result_type->dump();
     }
   }
@@ -486,27 +527,27 @@ void release(stmtlist_node_t *stmtlist_node) {
 void release(explist_t *explist) {
   ;
   ;
-  //TODO IMPLEMENT ME
+  //TODO: IMPLEMENT ME
 }
 void release(explist_node_t *explist_node) {
   ;
   ;
-  //TODO IMPLEMENT ME
+  //TODO: IMPLEMENT ME
 }
 void release(arg_t *arg) {
   ;
   ;
-  //TODO IMPLEMENT ME
+  //TODO: IMPLEMENT ME
 }
 void release(arglist_t *arglist) {
   ;
   ;
-  //TODO IMPLEMENT ME
+  //TODO: IMPLEMENT ME
 }
 void release(arglist_node_t *arglist_node) {
   ;
   ;
-  //TODO IMPLEMENT ME
+  //TODO: IMPLEMENT ME
 }
 
 llvm::Type *toLLVLType(int type) {
@@ -526,6 +567,8 @@ llvm::Type *toLLVLType(int type) {
     return llvm::Type::getVoidTy(TheContext);
   } else if (type == TYPE_VOID_POINTER) {
     return llvm::Type::getInt8PtrTy(TheContext);
+  } else if (type == TYPE_DATATYPE) {
+    return StructTy_struct_datatype;
   }
 
   return nullptr;
@@ -535,40 +578,56 @@ llvm::Type *toLLVMType(llvm::Value *value) {
 
   if (!value) {
     type = llvm::Type::getVoidTy(TheContext);
-    return type;
   }
 
-  if (isa<ReturnInst>(value)) {
-    value = ((ReturnInst *)value)->getReturnValue();
+  if (!type) {
+    if (isa<ReturnInst>(value)) {
+      value = ((ReturnInst *)value)->getReturnValue();
+    }
+
+    if (isa<Function>(value)) {
+      Function *function = (Function *)value;
+      if (!function) {
+        logError("Could not find function");
+        return nullptr;
+      }
+      type = function->getReturnType();
+      if (!type) {
+        logError("Function returning invalid type");
+        return nullptr;
+      }
+    } else if (isa<CallInst>(value)) {
+      CallInst *call_inst = (CallInst *)value;
+      Function *function = call_inst->getCalledFunction();
+      if (!function) {
+        logError("Could not find function");
+        return nullptr;
+      }
+      type = function->getReturnType();
+      if (!type) {
+        logError("Function returning invalid type");
+        return nullptr;
+      }
+    } else if (isa<LoadInst>(value)) {
+      // https://stackoverflow.com/questions/29211941/is-any-way-to-get-llvm-deference-pointer-values-raw-typei-e-pointer-type
+      LoadInst *load_inst = (LoadInst *)value;
+      Value *value = load_inst->getPointerOperand();
+      // PointerType* PT = cast<PointerType>(PO->getType());
+      type = value->getType();
+      if (!type) {
+        logError("LoadInst invalid type");
+        return nullptr;
+      }
+    } else {
+      type = value->getType();
+    }
   }
 
-  if (isa<Function>(value)) {
-    Function *function = (Function *)value;
-    if (!function) {
-      logError("Could not find function");
-      return nullptr;
-    }
-    type = function->getReturnType();
-    if (!type) {
-      logError("Function returning invalid type");
-      return nullptr;
-    }
-  } else if (isa<CallInst>(value)) {
-    CallInst *call_inst = (CallInst *)value;
-    Function *function = call_inst->getCalledFunction();
-    if (!function) {
-      logError("Could not find function");
-      return nullptr;
-    }
-    type = function->getReturnType();
-    if (!type) {
-      logError("Function returning invalid type");
-      return nullptr;
-    }
-  } else {
-    type = value->getType();
+  if (type) {
     if (noname::debug >= 1) {
-      fprintf(stderr, "\n[## toLLVMType: %d]", type->getTypeID());
+      fprintf(stdout, "\n[## toLLVMType: %d]", type->getTypeID());
+      fflush(stdout);
+      type->dump();
     }
   }
 
@@ -596,6 +655,8 @@ int toNonameType(llvm::Type *type) {
     return TYPE_VOID;
   } else if (llvm::Type::getInt8PtrTy(TheContext) == type) {
     return TYPE_VOID_POINTER;
+  } else if (StructTy_struct_datatype == type) {
+    return TYPE_DATATYPE;
   }
 
   return 0;
@@ -787,11 +848,11 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
   }
 
   AllocaInst *ptr_ia = alloca_typed_var_codegen(type, bb);
-  AllocaInst *ptr_pa = alloca_typed_var_codegen(TYPE_VOID_POINTER, bb);
+  AllocaInst *ptr_pa = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
   StoreInst *void_80 = store_typed_var_codegen(type, constant_value, ptr_ia, bb);
   CastInst *ptr_82 = cast_codegen(ptr_ia, bb);
-  StoreInst *void_83 = store_untyped_var_codegen(TYPE_VOID_POINTER, ptr_82, ptr_pa, bb);
-  LoadInst *ptr_86 = load_inst_codegen(TYPE_VOID_POINTER, ptr_pa, bb);
+  StoreInst *void_83 = store_untyped_var_codegen(TYPE_DATATYPE, ptr_82, ptr_pa, bb);
+  LoadInst *ptr_86 = load_inst_codegen(TYPE_DATATYPE, ptr_pa, bb);
 
   codegen.push_back(constant_value);
   codegen.push_back(ptr_ia);
@@ -825,7 +886,7 @@ std::vector<Value *> StringExpNode::codegen_elements(Error &error, llvm::BasicBl
 }
 Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
   //
-  // TODO FIXME: create a cache for this
+  // TODO: FIXME: create a cache for this
   // this method should NOT look for NodeValue* then convert it to Value
   // this method should create a cache so that the code would generated once
   //
@@ -844,7 +905,7 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
 
-  AllocaInst *alloca_inst = alloca_typed_var_codegen(TYPE_VOID_POINTER, bb);
+  AllocaInst *alloca_inst = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
   if (!alloca_inst) {
     createError(error, "AllocaInst could not be created");
     return codegen;
@@ -852,15 +913,17 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
 
   codegen.push_back(alloca_inst);
 
-  Value *value = getContext()->getValue(name);
-  if (!value) {
+  Value *codegen_value = getContext()->getValue(name );
+  // Value *codegen_type = getContext()->getValue(name + "_type");
+  // Value *codegen_value = getContext()->getValue(name + "_value");
+  if (!codegen_value) {
     createError(error, "Value could not be found");
     return codegen;
   }
 
   // codegen.push_back(value);
 
-  StoreInst *store_inst = store_typed_var_codegen(TYPE_VOID_POINTER, value, alloca_inst);
+  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, codegen_value, alloca_inst);
   if (!store_inst) {
     createError(error, "StoreInst could not be created");
     return codegen;
@@ -868,7 +931,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
 
   codegen.push_back(store_inst);
 
-  LoadInst *load_inst = load_inst_codegen(TYPE_VOID_POINTER, alloca_inst);
+  LoadInst *load_inst = load_inst_codegen(TYPE_DATATYPE, alloca_inst);
   if (!load_inst) {
     createError(error, "LoadInst could not be created");
     return codegen;

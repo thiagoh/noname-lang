@@ -62,7 +62,7 @@ AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb) 
     alloca_name += declaration->getName();
   }
 
-  AllocaInst* untyped_poiter_alloca = new AllocaInst(PointerTy_4, alloca_name);
+  AllocaInst* untyped_poiter_alloca = new AllocaInst(PointerTy_8, alloca_name);
   untyped_poiter_alloca->setAlignment(8);
 
   return untyped_poiter_alloca;
@@ -96,7 +96,11 @@ AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb) {
     typed_pointer_alloca->setAlignment(1);
 
   } else if (type == TYPE_VOID_POINTER) {
-    typed_pointer_alloca = new AllocaInst(PointerTy_4, "alloca_char_v");
+    typed_pointer_alloca = new AllocaInst(PointerTy_8, "alloca_char_v");
+    typed_pointer_alloca->setAlignment(8);
+
+  } else if (type == TYPE_DATATYPE) {
+    typed_pointer_alloca = new AllocaInst(StructTy_struct_datatype, "alloca_datatype_v");
     typed_pointer_alloca->setAlignment(8);
   }
 
@@ -130,6 +134,9 @@ StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* pt
 
   } else if (type == TYPE_VOID_POINTER) {
     store_inst->setAlignment(8);
+
+  } else if (type == TYPE_DATATYPE) {
+    store_inst->setAlignment(8);
   }
 
   if (bb && store_inst) {
@@ -161,6 +168,9 @@ LoadInst* load_inst_codegen(int type, llvm::AllocaInst* alloca_inst, llvm::Basic
     load_inst->setAlignment(1);
 
   } else if (type == TYPE_VOID_POINTER) {
+    load_inst->setAlignment(8);
+
+  } else if (type == TYPE_DATATYPE) {
     load_inst->setAlignment(8);
   }
 
@@ -195,6 +205,9 @@ StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaI
 
   } else if (type == TYPE_VOID_POINTER) {
     store_inst->setAlignment(8);
+
+  } else if (type == TYPE_DATATYPE) {
+    store_inst->setAlignment(8);
   }
 
   if (bb && store_inst) {
@@ -205,57 +218,32 @@ StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaI
 }
 
 CastInst* cast_codegen(AllocaInst* alloca_inst_from, llvm::BasicBlock* bb) {
-  CastInst* casted_inst = new BitCastInst(alloca_inst_from, PointerTy_4, "cast_inst_");
+  CastInst* casted_inst = new BitCastInst(alloca_inst_from, PointerTy_8, "cast_inst_");
 
   return casted_inst;
 }
 
-std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, const AssignmentNode* assignment,
-                                        llvm::BasicBlock* bb) {
+std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, Value* value, llvm::BasicBlock* bb) {
   /**
     * Instructions for this method can be found at:docs/declare-and-assign.cc
     */
 
-  const std::unique_ptr<ExpNode>& rhs = assignment->getRHS();
-
-  // std::vector<std::unique_ptr<Value>> value_codegen_elements =
-  // rhs->codegen_elements();
-  // codegen.reserve(value_codegen_elements.size());
-  // // codegen.insert(codegen.end(), value_codegen_elements.begin(),
-  // value_codegen_elements.end());
-  // for (auto && uptr : value_codegen_elements) {
-  //   codegen.push_back(std::move(uptr));
-  // }
+  int rhs_type = toNonameType(value);
 
   // create the actual Constant value
-  //  -->  ConstantInt* value_const = ConstantInt::get(TheContext, APInt(32,
-  //  StringRef("100"), 10));
-  Value* value_codegen = rhs->codegen();
-  int rhs_type = toNonameType(value_codegen);
-
-  // alocate the "typed" variable that will handle the Constant value
-  //  -->  AllocaInst* typed_pointer_alloca = new
-  //  AllocaInst(IntegerType::get(TheContext, 32), "int_v");
-  //  -->  typed_pointer_alloca->setAlignment(4);
   AllocaInst* alloca_inst = alloca_typed_var_codegen(rhs_type, bb);
 
   // store the Constant into the allocated "typed" variable
-  //  -->  StoreInst* void_34 = new StoreInst(value_const, typed_pointer_alloca, false);
-  //  -->  void_34->setAlignment(4);
-  StoreInst* store_inst_typed_var = store_typed_var_codegen(rhs_type, value_codegen, bb);
+  StoreInst* store_inst_typed_var = store_typed_var_codegen(rhs_type, value, bb);
 
   // Cast the the "typed" variable to the "untyped" variable
-  //  -->  CastInst* casted_inst = new BitCastInst(typed_pointer_alloca, PointerTy_4, "");
-  //  -->  codegen.push_back(std::unique_ptr<Value>(casted_inst));
   CastInst* cast_inst = cast_codegen(alloca_inst, bb);
 
   // Store the address of the
-  //  -->  StoreInst* voidp_store = new StoreInst(casted_inst, untyped_poiter_alloca, false);
-  //  -->  voidp_store->setAlignment(8);
   StoreInst* store_inst_untyped_var = store_untyped_var_codegen(rhs_type, cast_inst, alloca_inst, bb);
 
   std::vector<Value*> codegen;
-  codegen.push_back(value_codegen);
+  codegen.push_back(value);
   codegen.push_back(alloca_inst);
   codegen.push_back(store_inst_typed_var);
   codegen.push_back(store_inst_untyped_var);

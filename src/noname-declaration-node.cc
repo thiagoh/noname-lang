@@ -33,7 +33,7 @@ AssignmentNode* new_declaration_node(ASTContext* context, const std::string name
     return logErrorV("\nVariable already exists in this context!");
   }
 
-  context->store(name, temp_node);  // temp_node is null. It doesn't matter, it's only a declaration
+  context->storeVariable(name, temp_node);  // temp_node is null. It doesn't matter, it's only a declaration
 
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[new_assignment %s]", context->getName().c_str());
@@ -52,7 +52,7 @@ std::vector<Value*> DeclarationNode::codegen_elements(Error& error, llvm::BasicB
 Value* DeclarationNode::codegen(llvm::BasicBlock* bb) { return declaration_codegen_util(this, bb); }
 void* DeclarationNode::eval() {
   NodeValue* node_value = nullptr;
-  getContext()->store(name, node_value);
+  getContext()->storeVariable(name, node_value);
   return nullptr;
 }
 }

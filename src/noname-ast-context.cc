@@ -47,10 +47,6 @@ bool ASTContext::storeFunctionSignature(const std::string name, FunctionSignatur
   mFunctionSignatures[name] = function_signature;
   return true;
 }
-bool ASTContext::store(const std::string name, FunctionSignature* function_signature) {
-  return storeFunctionSignature(name, function_signature);
-}
-
 // Variables
 NodeValue* ASTContext::getVariableShallow(const std::string& name) {
   itVariables = mVariables.find(name);
@@ -84,7 +80,6 @@ bool ASTContext::storeVariable(const std::string name, NodeValue* node_value) {
   mVariables[name] = node_value;
   return true;
 }
-bool ASTContext::store(const std::string name, NodeValue* node_value) { return storeVariable(name, node_value); }
 bool ASTContext::removeVariable(const std::string name) {
   itVariables = mVariables.find(name);
   if (itVariables != mVariables.end()) {
@@ -143,7 +138,6 @@ bool ASTContext::storeAllocaInst(const std::string name, AllocaInst* alloca_inst
   mAllocaInst[name] = alloca_inst;
   return true;
 }
-bool ASTContext::store(const std::string name, AllocaInst* alloca_inst) { return storeAllocaInst(name, alloca_inst); }
 bool ASTContext::removeAllocaInst(const std::string name) {
   itAllocaInst = mAllocaInst.find(name);
   if (itAllocaInst != mAllocaInst.end()) {
@@ -201,12 +195,20 @@ bool ASTContext::storeValue(const std::string name, llvm::Value* value) {
   }
 
   mValue[name] = value;
+  mType[name] = toLLVMType(value);
+
   return true;
 }
 bool ASTContext::removeValue(const std::string name) {
   itValue = mValue.find(name);
   if (itValue != mValue.end()) {
     mValue.erase(itValue);
+
+    itType = mType.find(name);
+    if (itType != mType.end()) {
+      mType.erase(itType);
+    }
+
     return true;
   }
   return false;
@@ -220,6 +222,7 @@ llvm::Value* ASTContext::updateValue(const std::string name, llvm::Value* value)
 
   if (itValue != mValue.end()) {
     mValue[name] = value;
+    mType[name] = toLLVMType(value);
     return value;
   }
 

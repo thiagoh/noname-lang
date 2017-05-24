@@ -46,9 +46,12 @@ Function* FunctionSignature::codegen() {
   }
 
   // std::vector<llvm::Type*> function_args_types(args_defs.size(), Type::getVoidTy(TheContext));
-  std::vector<llvm::Type*> function_args_types(args_defs.size(), PointerTy_4);
-  // function_args_types.push_back(PointerTy_4);
-  // function_args_types.push_back(PointerTy_4);
+  std::vector<llvm::Type*> function_args_types(args_defs.size(), StructTy_struct_datatype);
+  // std::vector<llvm::Type*> function_args_types;
+  // for (unsigned int i = 0; i < args_defs.size(); i++) {
+  //   function_args_types.push_back(IntegerType::get(TheContext, 32));
+  //   function_args_types.push_back(PointerTy_8);
+  // }
 
   FunctionType* function_type = FunctionType::get(return_type, function_args_types, false);
 
@@ -56,8 +59,9 @@ Function* FunctionSignature::codegen() {
   function->setCallingConv(CallingConv::C);
 
   // Set names for all arguments.
-  int index = 0;
+  double index = 0.0;
   for (auto& function_arg : function->args()) {
+    // function_arg.setName(args_defs[floor(index / 2.0)]->name);
     function_arg.setName(args_defs[index++]->name);
   }
 
@@ -84,7 +88,7 @@ ASTNode* new_function_def(ASTContext* context, const std::string name, arglist_t
     return check_result;
   }
 
-  context->store(name, new FunctionSignature(*function_new_node->getFunctionSignature()));
+  context->storeFunctionSignature(name, new FunctionSignature(*function_new_node->getFunctionSignature()));
 
   return function_new_node;
 }
@@ -117,7 +121,7 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(Error& error, const 
   //   }
   // }
   // return_type = toLLVMType(return_value);
-  return_type = llvm::Type::getInt8PtrTy(TheContext);
+  return_type = StructTy_struct_datatype;
 
   return new FunctionSignature(name, args_defs, return_type);
 }
@@ -308,7 +312,6 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   llvm::Function::arg_iterator it_function_args = function->arg_begin();
   while (it_function_args != function->arg_end()) {
     FunctionArgument* signature_arg = *it_signature_args++;
-    Argument* function_arg = (Argument*)it_function_args++;
 
     // NodeValue* arg_node_value = NULL;
 
@@ -330,6 +333,12 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     // function_def_node_context->storeAllocaInst(signature_arg->name, alloca_inst);
     // function_bb->getInstList().push_back(alloca_inst);
 
+    // Argument* function_arg_type = (Argument*)it_function_args++;
+    // Argument* function_arg_value = (Argument*)it_function_args++;
+    // function_def_node_context->storeValue(signature_arg->name + "_type", function_arg_type);
+    // function_def_node_context->storeValue(signature_arg->name + "_value", function_arg_value);
+
+    Argument* function_arg = (Argument*)it_function_args++;
     function_def_node_context->storeValue(signature_arg->name, function_arg);
   }
 

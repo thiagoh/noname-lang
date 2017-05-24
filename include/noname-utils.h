@@ -163,7 +163,7 @@ int toNonameType(llvm::Type* type);
 // Codegen functions
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);
 llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb = nullptr);
-std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, const AssignmentNode* assignment,
+std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, llvm::Value* value,
                                         llvm::BasicBlock* bb = nullptr);
 AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb = nullptr);
 LoadInst* load_inst_codegen(int type, llvm::AllocaInst* alloca_inst, llvm::BasicBlock* bb = nullptr);

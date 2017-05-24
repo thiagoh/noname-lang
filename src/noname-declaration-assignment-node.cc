@@ -28,7 +28,7 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 void* DeclarationAssignmentNode::eval() {
   std::unique_ptr<NodeValue> node_value = getValue();
 
-  getContext()->store(name, std::move(node_value.get()));
+  getContext()->storeVariable(name, std::move(node_value.get()));
 
   if (noname::debug >= 2) {
     fprintf(stdout, "\n############ stored %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
@@ -39,7 +39,11 @@ void* DeclarationAssignmentNode::eval() {
 std::vector<Value*> DeclarationAssignmentNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   AllocaInst* untyped_poiter_alloca = declaration_codegen_util(this, bb);
 
-  std::vector<Value*> assign_codegen = assign_codegen_util(untyped_poiter_alloca, this, bb);
+  const std::unique_ptr<ExpNode>& rhs = getRHS();
+  Value* value = rhs->codegen();
+  getContext()->storeValue(getName(), value);
+
+  std::vector<Value*> assign_codegen = assign_codegen_util(untyped_poiter_alloca, value, bb);
   std::vector<Value*> codegen;
 
   codegen.push_back(untyped_poiter_alloca);

@@ -51,7 +51,11 @@ std::vector<Value*> AssignmentNode::codegen_elements(noname::Error& error, llvm:
     return codegen;
   }
 
-  std::vector<Value*> assign_codegen = assign_codegen_util(alloca_inst, this, bb);
+  const std::unique_ptr<ExpNode>& rhs = getRHS();
+  Value* value = rhs->codegen();
+  getContext()->storeValue(getName(), value);
+
+  std::vector<Value*> assign_codegen = assign_codegen_util(alloca_inst, value, bb);
 
   codegen.push_back(alloca_inst);
   for (auto& ptr : assign_codegen) {

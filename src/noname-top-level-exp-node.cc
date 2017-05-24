@@ -213,7 +213,11 @@ void* TopLevelExpNodeProcessorStrategy::process(ASTNode* node) {
       TheModule->dump();
     }
 
-    llvm::Type* result_type = toLLVMType(elements.back());
+    llvm::Type* result_type = nullptr;
+
+    // getContext()->getValueType()
+
+    result_type = toLLVMType(elements.back());
     assert(result_type && "Result type is null");
 
     // JIT the module containing the anonymous expression, keeping a handle so
