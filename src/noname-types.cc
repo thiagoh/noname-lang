@@ -872,24 +872,13 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
   codegen.push_back(alloca_datatype);
   codegen.push_back(alloca_value);
 
-  // alloca_datatype->dump();
-  // alloca_value->dump();
-
   // typed value
   Value *constant_value = node->constant_codegen(bb);
-  // long* i = (long*) get_copy_address_long(784);
-  // Constant* beginConstAddress = ConstantInt::get(Type::getInt64Ty(TheContext), (uint64_t)i);
-  // constant_value = ConstantExpr::getIntToPtr((Constant*) constant_value, PointerType::getUnqual(IntegerType::get(TheContext, 8))); 
-  constant_value->dump();
   
-  // constant_value = ConstantInt::get(TheContext, APInt(64, 784, true));
   if (!constant_value) {
     createError(error, "Invalid or undefined constant value");
     return codegen;
   }
-
-  // StoreInst *store_value = store_typed_var_codegen(type, constant_value, alloca_value, bb);
-  // codegen.push_back(store_value);
 
   GetElementPtrInst *get_elem_ptr_v =
       GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v");
@@ -898,13 +887,6 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
 
   codegen.push_back(get_elem_ptr_v);
   codegen.push_back(get_elem_ptr_type);
-
-  // get_elem_ptr_v->dump();
-  // get_elem_ptr_type->dump();
-
-  // CastInst *casted_value = cast_codegen(TYPE_VOID_POINTER, alloca_value, bb);
-  // casted_value->dump();
-  // codegen.push_back(casted_value);
 
   StoreInst *store_ptr_v = store_typed_var_codegen(TYPE_VOID_POINTER, constant_value, get_elem_ptr_v, bb);
   codegen.push_back(store_ptr_v);

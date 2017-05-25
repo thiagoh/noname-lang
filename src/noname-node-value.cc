@@ -68,6 +68,7 @@ Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb) {
   Value* constant_value = nullptr;
 
   if (false) {
+    // TODO: remove this code
     if (type == TYPE_DOUBLE) {
       APFloat ap_value(*(double*)value);
       constant_value = ConstantFP::get(TheContext, ap_value);
@@ -78,7 +79,6 @@ Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb) {
       APInt ap_value(CHAR_BIT * sizeof(long), *(long*)value, true);
       constant_value = ConstantInt::get(TheContext, ap_value);
     } else if (type == TYPE_INT) {
-      // APInt (unsigned numBits, uint64_t val, bool isSigned=false)
       APInt ap_value(CHAR_BIT * sizeof(int), *(int*)value, true);
       constant_value = ConstantInt::get(TheContext, ap_value);
     } else if (type == TYPE_SHORT) {
