@@ -240,7 +240,7 @@ void *call_jit_symbol(llvm::Type *result_type, JITSymbol &jit_symbol) {
 
     datatype_t tmp = function_pointer();
     datatype_t *output_datatype = (datatype_t *)malloc(sizeof(struct datatype_t));
-    
+
     output_datatype->v = 0;
     output_datatype->type = 0;
 
@@ -879,7 +879,7 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
 
   // typed value
   Value *constant_value = node->constant_codegen(bb);
-  
+
   if (!constant_value) {
     createError(error, "Invalid or undefined constant value");
     return codegen;

@@ -152,8 +152,6 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
     ConstantInt* const_int32_21 = ConstantInt::get(TheContext, APInt(32, StringRef("333"), 10));
     ConstantInt* const_int32_22 = ConstantInt::get(TheContext, APInt(32, StringRef("3333333"), 10));
 
-
-
     // Block entry (label_entry_34)
     AllocaInst* ptr_my_integer_var = new AllocaInst(IntegerType::get(TheContext, 64), "my_integer_var");
     ptr_my_integer_var->setAlignment(8);
@@ -164,26 +162,20 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
     StoreInst* void_35 = new StoreInst(const_int64_19, ptr_my_integer_var, false);
     void_35->setAlignment(8);
     void_35->dump();
-    GetElementPtrInst* ptr_type = GetElementPtrInst::Create(StructTy_struct_datatype_t, ptr_my_datatype, {
-      const_int32_15, 
-      const_int32_15
-    }, "type");
+    GetElementPtrInst* ptr_type = GetElementPtrInst::Create(StructTy_struct_datatype_t, ptr_my_datatype,
+                                                            {const_int32_15, const_int32_15}, "type");
     ptr_type->dump();
     StoreInst* void_36 = new StoreInst(const_int32_20, ptr_type, false);
     void_36->setAlignment(8);
     void_36->dump();
     CastInst* ptr_37 = new BitCastInst(ptr_my_integer_var, PointerTy_8, "");
     ptr_37->dump();
-    GetElementPtrInst* ptr_v = GetElementPtrInst::Create(StructTy_struct_datatype_t, ptr_my_datatype, {
-      const_int32_15, 
-      const_int32_14
-    }, "v");
+    GetElementPtrInst* ptr_v =
+        GetElementPtrInst::Create(StructTy_struct_datatype_t, ptr_my_datatype, {const_int32_15, const_int32_14}, "v");
     ptr_v->dump();
     StoreInst* void_38 = new StoreInst(ptr_37, ptr_v, false);
     void_38->setAlignment(8);
     void_38->dump();
-    
-    
 
     // Define function inside Module
     TheModule->getFunctionList().push_back(function);
@@ -198,9 +190,9 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
 
     // // Run the optimizer on the function.
     TheFPM->run(*function);
-    
+
     codegen.push_back(function);
-    
+
     return codegen;
   }
 
