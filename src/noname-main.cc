@@ -391,8 +391,11 @@ int main(int argc, char **argv) {
 
   /*
     
-    def fun(a,b) { return b; };
+    def fun(a,b) { return a; };
 
+    def fun2(a,b) { return a + b; };
+    fun2(32.2,4);
+    
     def f() { return 32122; };
     def f1() { return 111; };
     def f2() { return 222; };

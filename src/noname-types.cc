@@ -237,8 +237,10 @@ void *call_jit_symbol(llvm::Type *result_type, JITSymbol &jit_symbol) {
 
   } else if (result_type == StructTy_struct_datatype_t) {
     datatype_t (*function_pointer)() = (datatype_t(*)())(intptr_t)jit_symbol.getAddress();
+
     datatype_t tmp = function_pointer();
     datatype_t *output_datatype = (datatype_t *)malloc(sizeof(struct datatype_t));
+    
     output_datatype->v = 0;
     output_datatype->type = 0;
 
@@ -308,6 +310,9 @@ void print_jit_symbol_value(FILE *file, int result_type, void *result) {
     } else if (result_type == TYPE_VOID_POINTER) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] %p", result);
       fflush(file);
+    } else {
+      fprintf(file, "\n###########[call_and_print_jit_symbol_value] No such type found: %d", result_type);
+      fflush(file);
     }
   } else {
     if (result_type == TYPE_VOID) {
@@ -345,7 +350,7 @@ void print_jit_symbol_value(FILE *file, int result_type, void *result) {
       fprintf(file, "%p", result);
       fflush(file);
     } else {
-      fprintf(file, "No such type found");
+      fprintf(file, "No such type found: %d", result_type);
       fflush(file);
     }
   }
