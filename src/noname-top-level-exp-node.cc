@@ -107,7 +107,7 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
       std::vector<llvm::Type*> called_function_args_types(0, Type::getVoidTy(TheContext));
       FunctionType* called_function_type =
           FunctionType::get(Type::getInt64Ty(TheContext), called_function_args_types, false);
-      called_function = Function::Create(called_function_type, Function::ExternalLinkage, "f");
+      called_function = Function::Create(called_function_type, Function::ExternalLinkage, "fun");
       called_function->dump();
     }
 
@@ -142,6 +142,49 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
 
     BasicBlock* function_bb = BasicBlock::Create(TheContext, "entry", function);
 
+    ConstantInt* const_int32_14 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
+    ConstantInt* const_int32_15 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
+    ConstantInt* const_int64_16 = ConstantInt::get(TheContext, APInt(64, StringRef("16"), 10));
+    ConstantInt* const_int32_17 = ConstantInt::get(TheContext, APInt(32, StringRef("8"), 10));
+    ConstantInt* const_int1_18 = ConstantInt::get(TheContext, APInt(1, StringRef("0"), 10));
+    ConstantInt* const_int64_19 = ConstantInt::get(TheContext, APInt(64, StringRef("786"), 10));
+    ConstantInt* const_int32_20 = ConstantInt::get(TheContext, APInt(32, StringRef("999"), 10));
+    ConstantInt* const_int32_21 = ConstantInt::get(TheContext, APInt(32, StringRef("333"), 10));
+    ConstantInt* const_int32_22 = ConstantInt::get(TheContext, APInt(32, StringRef("3333333"), 10));
+
+
+
+    // Block entry (label_entry_34)
+    AllocaInst* ptr_my_integer_var = new AllocaInst(IntegerType::get(TheContext, 64), "my_integer_var");
+    ptr_my_integer_var->setAlignment(8);
+    ptr_my_integer_var->dump();
+    AllocaInst* ptr_my_datatype = new AllocaInst(StructTy_struct_datatype_t, "my_datatype");
+    ptr_my_datatype->setAlignment(8);
+    ptr_my_datatype->dump();
+    StoreInst* void_35 = new StoreInst(const_int64_19, ptr_my_integer_var, false);
+    void_35->setAlignment(8);
+    void_35->dump();
+    GetElementPtrInst* ptr_type = GetElementPtrInst::Create(StructTy_struct_datatype_t, ptr_my_datatype, {
+      const_int32_15, 
+      const_int32_15
+    }, "type");
+    ptr_type->dump();
+    StoreInst* void_36 = new StoreInst(const_int32_20, ptr_type, false);
+    void_36->setAlignment(8);
+    void_36->dump();
+    CastInst* ptr_37 = new BitCastInst(ptr_my_integer_var, PointerTy_8, "");
+    ptr_37->dump();
+    GetElementPtrInst* ptr_v = GetElementPtrInst::Create(StructTy_struct_datatype_t, ptr_my_datatype, {
+      const_int32_15, 
+      const_int32_14
+    }, "v");
+    ptr_v->dump();
+    StoreInst* void_38 = new StoreInst(ptr_37, ptr_v, false);
+    void_38->setAlignment(8);
+    void_38->dump();
+    
+    
+
     // Define function inside Module
     TheModule->getFunctionList().push_back(function);
     // Define the called function inside Module
@@ -155,7 +198,9 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
 
     // // Run the optimizer on the function.
     TheFPM->run(*function);
+    
     codegen.push_back(function);
+    
     return codegen;
   }
 

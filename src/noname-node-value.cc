@@ -33,22 +33,31 @@ void initialize() {
 
 NodeValue::NodeValue(const std::string& value) : type(TYPE_STRING), value(0) {
   initialize();
-  this->value = new std::string(value);
+  this->value = get_copy_address_string(value);
 }
 NodeValue::NodeValue(int value) : type(TYPE_INT), value(0) {
   initialize();
-  this->value = new int;
-  memcpy(this->value, &value, sizeof(int));
+  this->value = get_copy_address_int(value);
 }
 NodeValue::NodeValue(double value) : type(TYPE_DOUBLE), value(0) {
   initialize();
-  this->value = new double;
-  memcpy(this->value, &value, sizeof(double));
+  this->value = get_copy_address_double(value);
+}
+NodeValue::NodeValue(float value) : type(TYPE_FLOAT), value(0) {
+  initialize();
+  this->value = get_copy_address_float(value);
+}
+NodeValue::NodeValue(short value) : type(TYPE_SHORT), value(0) {
+  initialize();
+  this->value = get_copy_address_short(value);
+}
+NodeValue::NodeValue(char value) : type(TYPE_CHAR), value(0) {
+  initialize();
+  this->value = get_copy_address_char(value);
 }
 NodeValue::NodeValue(long value) : type(TYPE_LONG), value(0) {
   initialize();
-  this->value = new long;
-  memcpy(this->value, &value, sizeof(long));
+  this->value = get_copy_address_long(value);
 }
 NodeValue::~NodeValue() {
   if (noname::debug >= 1) {
@@ -58,31 +67,37 @@ NodeValue::~NodeValue() {
 Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb) {
   Value* constant_value = nullptr;
 
-  if (type == TYPE_DOUBLE) {
-    APFloat ap_value(*(double*)value);
-    constant_value = ConstantFP::get(TheContext, ap_value);
-  } else if (type == TYPE_FLOAT) {
-    APFloat ap_value(*(float*)value);
-    constant_value = ConstantFP::get(TheContext, ap_value);
-  } else if (type == TYPE_LONG) {
-    APInt ap_value(CHAR_BIT * sizeof(long), *(long*)value, true);
-    constant_value = ConstantInt::get(TheContext, ap_value);
-  } else if (type == TYPE_INT) {
-    // APInt (unsigned numBits, uint64_t val, bool isSigned=false)
-    APInt ap_value(CHAR_BIT * sizeof(int), *(int*)value, true);
-    constant_value = ConstantInt::get(TheContext, ap_value);
-  } else if (type == TYPE_SHORT) {
-    APInt ap_value(CHAR_BIT * sizeof(short), *(short*)value, true);
-    constant_value = ConstantInt::get(TheContext, ap_value);
-  } else if (type == TYPE_CHAR) {
-    APInt ap_value(CHAR_BIT * sizeof(char), *(char*)value, true);
-    constant_value = ConstantInt::get(TheContext, ap_value);
-  } else {
-    char msg[1024];
-    sprintf(msg, "Invalid constant value type. Type: %d", type);
-    return logErrorLLVM(msg);
+  if (false) {
+    if (type == TYPE_DOUBLE) {
+      APFloat ap_value(*(double*)value);
+      constant_value = ConstantFP::get(TheContext, ap_value);
+    } else if (type == TYPE_FLOAT) {
+      APFloat ap_value(*(float*)value);
+      constant_value = ConstantFP::get(TheContext, ap_value);
+    } else if (type == TYPE_LONG) {
+      APInt ap_value(CHAR_BIT * sizeof(long), *(long*)value, true);
+      constant_value = ConstantInt::get(TheContext, ap_value);
+    } else if (type == TYPE_INT) {
+      // APInt (unsigned numBits, uint64_t val, bool isSigned=false)
+      APInt ap_value(CHAR_BIT * sizeof(int), *(int*)value, true);
+      constant_value = ConstantInt::get(TheContext, ap_value);
+    } else if (type == TYPE_SHORT) {
+      APInt ap_value(CHAR_BIT * sizeof(short), *(short*)value, true);
+      constant_value = ConstantInt::get(TheContext, ap_value);
+    } else if (type == TYPE_CHAR) {
+      APInt ap_value(CHAR_BIT * sizeof(char), *(char*)value, true);
+      constant_value = ConstantInt::get(TheContext, ap_value);
+    } else {
+      char msg[1024];
+      sprintf(msg, "Invalid constant value type. Type: %d", type);
+      return logErrorLLVM(msg);
+    }
   }
 
+  // long* i = (long*) get_copy_address_long(784);
+  Constant* beginConstAddress = ConstantInt::get(Type::getInt64Ty(TheContext), (uint64_t)value);
+  constant_value = ConstantExpr::getIntToPtr(beginConstAddress, PointerType::getUnqual(IntegerType::get(TheContext, 8))); 
+  
   return constant_value;
 }
 Value* NodeValue::constant_codegen(llvm::BasicBlock* bb) { return constant_codegen_util(type, value, bb); }

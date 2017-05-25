@@ -17,6 +17,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/Scalar.h"
@@ -325,9 +326,12 @@ class NodeValue {
 
  public:
   NodeValue(const std::string& value);
-  NodeValue(int value);
-  NodeValue(double value);
   NodeValue(long value);
+  NodeValue(int value);
+  NodeValue(short value);
+  NodeValue(char value);
+  NodeValue(double value);
+  NodeValue(float value);
   virtual ~NodeValue();
 
   int getType() { return type; }

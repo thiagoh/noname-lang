@@ -174,6 +174,34 @@ StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* pt
 StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
                                      llvm::BasicBlock* bb = nullptr);
 CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock* bb = nullptr);
+
+
+
+
+
+
+
+//===----------------------------------------------------------------------===//
+// "Library" functions that can be "extern'd" from user code.
+//===----------------------------------------------------------------------===//
+
+#ifdef LLVM_ON_WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+/// putchard - putchar that takes a double and returns 0.
+extern "C" DLLEXPORT double putchard(double X);
+/// printd - printf that takes a double prints it as "%f\n", returning 0.
+extern "C" DLLEXPORT double printd(double X);
+extern "C" DLLEXPORT void* get_copy_address_string(const std::string& value) ;
+extern "C" DLLEXPORT void* get_copy_address_long(long value) ;
+extern "C" DLLEXPORT void* get_copy_address_int(int value) ;
+extern "C" DLLEXPORT void* get_copy_address_short(short value) ;
+extern "C" DLLEXPORT void* get_copy_address_char(char value) ;
+extern "C" DLLEXPORT void* get_copy_address_double(double value) ;
+extern "C" DLLEXPORT void* get_copy_address_float(float value) ;
 }
 
 #endif

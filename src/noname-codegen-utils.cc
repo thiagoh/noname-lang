@@ -25,6 +25,59 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
+
+//===----------------------------------------------------------------------===//
+// "Library" functions that can be "extern'd" from user code.
+//===----------------------------------------------------------------------===//
+
+/// putchard - putchar that takes a double and returns 0.
+extern "C" DLLEXPORT double putchard(double X) {
+  fputc((char)X, stderr);
+  return 0;
+}
+
+/// printd - printf that takes a double prints it as "%f\n", returning 0.
+extern "C" DLLEXPORT double printd(double X) {
+  fprintf(stderr, "%f\n", X);
+  return 0;
+}
+
+extern "C" DLLEXPORT void* get_copy_address_string(const std::string& value) {
+  return new std::string(value);
+}
+extern "C" DLLEXPORT void* get_copy_address_long(long value) {
+  long* out_value = new long;
+  memcpy(out_value, &value, sizeof(long));
+  return out_value;
+}
+extern "C" DLLEXPORT void* get_copy_address_int(int value) {
+  int* out_value = new int;
+  memcpy(out_value, &value, sizeof(int));
+  return out_value;
+}
+extern "C" DLLEXPORT void* get_copy_address_short(short value) {
+  short* out_value = new short;
+  memcpy(out_value, &value, sizeof(short));
+  return out_value;
+}
+extern "C" DLLEXPORT void* get_copy_address_char(char value) {
+  char* out_value = new char;
+  memcpy(out_value, &value, sizeof(char));
+  return out_value;
+}
+extern "C" DLLEXPORT void* get_copy_address_double(double value) {
+  double* out_value = new double;
+  memcpy(out_value, &value, sizeof(double));
+  return out_value;
+}
+extern "C" DLLEXPORT void* get_copy_address_float(float value) {
+  float* out_value = new float;
+  memcpy(out_value, &value, sizeof(float));
+  return out_value;
+}
+
+
+
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
   Error error;
   std::vector<Value*> elements(node->get_codegen_elements(error, bb));
@@ -221,28 +274,28 @@ CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock*
   CastInst* casted_inst = nullptr;
 
   if (type == TYPE_DOUBLE) {
-    casted_inst = new BitCastInst(alloca_inst_from, Type::getDoubleTy(TheContext), "cast_inst_double_");
+    casted_inst = new BitCastInst(alloca_inst_from, Type::getDoubleTy(TheContext));//, "cast_inst_double_");
 
   } else if (type == TYPE_FLOAT) {
-    casted_inst = new BitCastInst(alloca_inst_from, Type::getFloatTy(TheContext), "cast_inst_float_");
+    casted_inst = new BitCastInst(alloca_inst_from, Type::getFloatTy(TheContext));//, "cast_inst_float_");
 
   } else if (type == TYPE_LONG) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 64), "cast_inst_long_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 64));//, "cast_inst_long_");
 
   } else if (type == TYPE_INT) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 32), "cast_inst_int_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 32));//, "cast_inst_int_");
 
   } else if (type == TYPE_SHORT) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 16), "cast_inst_short_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 16));//, "cast_inst_short_");
 
   } else if (type == TYPE_CHAR) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 8), "cast_inst_char_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 8));//, "cast_inst_char_");
 
   } else if (type == TYPE_VOID_POINTER) {
-    casted_inst = new BitCastInst(alloca_inst_from, PointerTy_8, "cast_inst_ptr_v");
+    casted_inst = new BitCastInst(alloca_inst_from, PointerTy_8);//, "cast_inst_ptr_v");
 
   } else if (type == TYPE_DATATYPE) {
-    casted_inst = new BitCastInst(alloca_inst_from, StructTy_struct_datatype_t, "cast_inst_struct");
+    casted_inst = new BitCastInst(alloca_inst_from, StructTy_struct_datatype_t);//, "cast_inst_struct");
   }
 
   if (bb && casted_inst) {
