@@ -199,8 +199,8 @@ StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* pt
   return store_inst;
 }
 
-LoadInst* load_inst_codegen(int type, llvm::AllocaInst* alloca_inst, llvm::BasicBlock* bb) {
-  LoadInst* load_inst = new LoadInst(alloca_inst, "load_inst", false);
+LoadInst* load_inst_codegen(int type, llvm::Value* value, llvm::BasicBlock* bb) {
+  LoadInst* load_inst = new LoadInst(value, "load_inst", false);
 
   if (type == TYPE_DOUBLE) {
     load_inst->setAlignment(8);

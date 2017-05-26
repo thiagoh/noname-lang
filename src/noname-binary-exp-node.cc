@@ -158,91 +158,201 @@ Value* BinaryExpNode::CreatePow(Value* L, Value* R, const char* name = "call_pow
 
 std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
-  Value* result = nullptr;
-  Value* L = lhs->codegen();
-  Value* R = rhs->codegen();
+
+  std::vector<Value*> lhs_codegen_elements(lhs->get_codegen_elements(error, bb));
+
+  if (error.code()) {
+    logError(error.what().c_str());
+    return codegen;
+  }
+
+  std::vector<Value*> rhs_codegen_elements(rhs->get_codegen_elements(error, bb));
+  if (error.code()) {
+    logError(error.what().c_str());
+    return codegen;
+  }
+
+  fprintf(stdout, "\nlhs_codegen_elements:\n");
+  fflush(stdout);
+  for (auto current_value : lhs_codegen_elements) {
+    current_value->dump();
+    codegen.push_back(current_value);
+  }
+
+  fprintf(stdout, "\n\nlhs_codegen_elements:\n");
+  fflush(stdout);
+  for (auto current_value : rhs_codegen_elements) {
+    current_value->dump();
+    codegen.push_back(current_value);
+  }
+
+  fprintf(stdout, "\n\n");
+  fflush(stdout);
+
+  Value* L = lhs_codegen_elements.back();
+  Value* R = rhs_codegen_elements.back();
 
   if (!L || !R) {
     logError("L or R are undefined");
     return codegen;
   }
 
-  int lhs_type = toNonameType(L);
-  int rhs_type = toNonameType(R);
-  int result_type = get_adequate_result_type(lhs_type, rhs_type);
+  AllocaInst* lptr_datatype = (AllocaInst*)((LoadInst*)L)->getPointerOperand();
+  AllocaInst* rptr_datatype = (AllocaInst*)((LoadInst*)R)->getPointerOperand();
 
-  /*
-  how to insert into correct point
-  http://llvm.org/docs/doxygen/html/Instruction_8cpp_source.html#l00023
-  Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
-    Instruction *InsertBefore)
-    : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
+  ConstantInt* const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
+  ConstantInt* const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
+  ConstantInt* const_int32_double = ConstantInt::get(TheContext, APInt(32, TYPE_DOUBLE, true));
+  ConstantInt* const_int32_long = ConstantInt::get(TheContext, APInt(32, TYPE_LONG, true));
 
-   // If requested, insert this instruction into a basic block...
-   if (InsertBefore) {
-     llvm::BasicBlock *BB = InsertBefore->getParent();
-     assert(BB && "Instruction to insert before is not in a basic block!");
-     BB->getInstList().insert(InsertBefore->getIterator(), this);
-   }
+  GetElementPtrInst* lptr_type =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, lptr_datatype, {const_int32_0, const_int32_0}, "type", bb);
+  GetElementPtrInst* rptr_type =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, rptr_datatype, {const_int32_0, const_int32_0}, "type", bb);
+
+  GetElementPtrInst* lptr_v =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, lptr_datatype, {const_int32_0, const_int32_1}, "v", bb);
+  GetElementPtrInst* rptr_v =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, rptr_datatype, {const_int32_0, const_int32_1}, "v", bb);
+
+  codegen.push_back(lptr_type);
+  codegen.push_back(rptr_type);
+  codegen.push_back(lptr_v);
+  codegen.push_back(rptr_v);
+
+  LoadInst* lload_inst_type = load_inst_codegen(TYPE_INT, lptr_type, bb);
+  LoadInst* rload_inst_type = load_inst_codegen(TYPE_INT, rptr_type, bb);
+
+  codegen.push_back(lload_inst_type);
+  codegen.push_back(rload_inst_type);
+
+  LoadInst* lload_inst_v = load_inst_codegen(TYPE_VOID_POINTER, lptr_v, bb);
+  LoadInst* rload_inst_v = load_inst_codegen(TYPE_VOID_POINTER, rptr_v, bb);
+
+  codegen.push_back(lload_inst_v);
+  codegen.push_back(rload_inst_v);
+
+  CastInst* lcast_inst_long_v = new BitCastInst(lload_inst_v, PointerTy_64, "lcast_inst_long_v", bb);
+  CastInst* rcast_inst_long_v = new BitCastInst(rload_inst_v, PointerTy_64, "rcast_inst_long_v", bb);
+  LoadInst* lload_inst_long_v = load_inst_codegen(TYPE_LONG, lcast_inst_long_v, bb);
+  LoadInst* rload_inst_long_v = load_inst_codegen(TYPE_LONG, rcast_inst_long_v, bb);
+
+  codegen.push_back(lcast_inst_long_v);
+  codegen.push_back(rcast_inst_long_v);
+  codegen.push_back(lload_inst_long_v);
+  codegen.push_back(rload_inst_long_v);
+
+  CastInst* lcast_inst_double_v = new BitCastInst(lload_inst_v, PointerTy_Double, "lcast_inst_double_v", bb);
+  CastInst* rcast_inst_double_v = new BitCastInst(rload_inst_v, PointerTy_Double, "rcast_inst_double_v", bb);
+  LoadInst* lload_inst_double_v = load_inst_codegen(TYPE_DOUBLE, lcast_inst_double_v, bb);
+  LoadInst* rload_inst_double_v = load_inst_codegen(TYPE_DOUBLE, rcast_inst_double_v, bb);
+
+  codegen.push_back(lcast_inst_double_v);
+  codegen.push_back(rcast_inst_double_v);
+  codegen.push_back(lload_inst_double_v);
+  codegen.push_back(rload_inst_double_v);
+
+  //http://llvm.org/docs/doxygen/html/IRBuilder_8h_source.html#l01428
+
+  CmpInst* cond_equal_double = new ICmpInst(*bb, ICmpInst::ICMP_EQ, lload_inst_type,
+                                            ConstantInt::get(TheContext, APInt(32, TYPE_DOUBLE)), "cond_equal_double");
+  CmpInst* cond_equal_long = new ICmpInst(*bb, ICmpInst::ICMP_EQ, lload_inst_type,
+                                          ConstantInt::get(TheContext, APInt(32, TYPE_LONG)), "cond_equal_long");
+
+  Function* function_bb = dyn_cast<Function>(bb);
+
+  BasicBlock* label_if_then_double = BasicBlock::Create(TheContext, "if.then.double", function_bb);
+  BasicBlock* label_if_else = BasicBlock::Create(TheContext, "if.else", function_bb);
+  BasicBlock* label_if_then_long = BasicBlock::Create(TheContext, "if.then.long", function_bb);
+  // BasicBlock* label_if_then_string = BasicBlock::Create(TheContext, "if.then.string", function_bb);
+  BasicBlock* label_if_end = BasicBlock::Create(TheContext, "if.end", function_bb);
+
+  BranchInst* branch_inst = BranchInst::Create(label_if_then_double, label_if_else, cond_equal_double, bb);
+  codegen.push_back(branch_inst);
+
+  codegen.push_back(BranchInst::Create(label_if_then_long, label_if_end, cond_equal_long, bb));
+
+  L->dump();
+  R->dump();
+
+  L->getType()->dump();
+  R->getType()->dump();
+
+  lload_inst_type->dump();
+  rload_inst_type->dump();
+
+  lload_inst_v->dump();
+  rload_inst_v->dump();
+
+  AllocaInst* alloca_datatype = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
+  GetElementPtrInst* get_elem_ptr_v =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v", bb);
+  GetElementPtrInst* get_elem_ptr_type = GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype,
+                                                                   {const_int32_0, const_int32_0}, "type", bb);
+
+  codegen.push_back(alloca_datatype);
+  codegen.push_back(get_elem_ptr_v);
+  codegen.push_back(get_elem_ptr_type);
+
+  AllocaInst* alloca_datatype_double_v = alloca_typed_var_codegen(TYPE_DOUBLE, label_if_then_double);
+  AllocaInst* alloca_datatype_long_v = alloca_typed_var_codegen(TYPE_LONG, label_if_then_long);
+
+  codegen.push_back(alloca_datatype_double_v);
+  codegen.push_back(alloca_datatype_long_v);
+
+  BinaryOperator* binary_op_double = nullptr;
+  BinaryOperator* binary_op_long = nullptr;
+
+  if (op == '+') {
+    binary_op_double = BinaryOperator::Create(Instruction::FAdd, lload_inst_double_v, rload_inst_double_v, "add",
+                                              label_if_then_double);
+    binary_op_long =
+        BinaryOperator::Create(Instruction::Add, lload_inst_long_v, rload_inst_long_v, "add", label_if_then_long);
+  } else if (op == '-') {
+    binary_op_double = BinaryOperator::Create(Instruction::FSub, lload_inst_double_v, rload_inst_double_v, "sub",
+                                              label_if_then_double);
+    binary_op_long =
+        BinaryOperator::Create(Instruction::Sub, lload_inst_long_v, rload_inst_long_v, "sub", label_if_then_long);
+  } else if (op == '*') {
+    binary_op_double = BinaryOperator::Create(Instruction::FMul, lload_inst_double_v, rload_inst_double_v, "mul",
+                                              label_if_then_double);
+    binary_op_long =
+        BinaryOperator::Create(Instruction::Mul, lload_inst_long_v, rload_inst_long_v, "mul", label_if_then_long);
+  } else if (op == '/') {
+    binary_op_double = BinaryOperator::Create(Instruction::FDiv, lload_inst_double_v, rload_inst_double_v, "div",
+                                              label_if_then_double);
+    binary_op_long =
+        BinaryOperator::Create(Instruction::SDiv, lload_inst_long_v, rload_inst_long_v, "div", label_if_then_long);
+  } else if (op == '^') {
+    logError("^ NOT IMPLEMENTED YET");
+    // result = CreatePow(L, R);
   }
-  Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
-    llvm::BasicBlock *InsertAtEnd)
-    : User(ty, Value::InstructionVal + it, Ops, NumOps), Parent(nullptr) {
 
-    // append this instruction into the basic block
-    assert(InsertAtEnd && "Basic block to append to may not be NULL!");
-    InsertAtEnd->getInstList().push_back(this);
-  }
-  */
+  codegen.push_back(store_typed_var_codegen(TYPE_DOUBLE, const_int32_double, get_elem_ptr_type, label_if_then_double));
+  codegen.push_back(store_typed_var_codegen(TYPE_LONG, const_int32_long, get_elem_ptr_type, label_if_then_long));
 
-  if (result_type == TYPE_DOUBLE || result_type == TYPE_FLOAT) {
-    if (op == '+') {
-      // result = Builder.CreateFAdd(L, R, "addtmp");
-      result = BinaryOperator::Create(Instruction::FAdd, L, R, "add");
-    } else if (op == '-') {
-      // result = Builder.CreateFSub(L, R, "addtmp");
-      result = BinaryOperator::Create(Instruction::FSub, L, R, "sub");
-    } else if (op == '*') {
-      // result = Builder.CreateFMul(L, R, "multmp");
-      result = BinaryOperator::Create(Instruction::FMul, L, R, "mul");
-    } else if (op == '/') {
-      // result = Builder.CreateFDiv(L, R, "divtmp");
-      result = BinaryOperator::Create(Instruction::FDiv, L, R, "div");
-    } else if (op == '^') {
-      result = CreatePow(L, R);
-    }
+  StoreInst* store_inst_double_v =
+      store_typed_var_codegen(TYPE_DOUBLE, binary_op_double, alloca_datatype_double_v, label_if_then_double);
+  StoreInst* store_inst_long_v =
+      store_typed_var_codegen(TYPE_LONG, binary_op_long, alloca_datatype_long_v, label_if_then_long);
 
-  } else if (result_type == TYPE_LONG || result_type == TYPE_INT || result_type == TYPE_SHORT ||
-             result_type == TYPE_CHAR) {
-    if (op == '+') {
-      // result = Builder.CreateAdd(L, R, "addtmp");
-      result = BinaryOperator::Create(Instruction::Add, L, R, "add");
-    } else if (op == '-') {
-      // result = Builder.CreateSub(L, R, "addtmp");
-      result = BinaryOperator::Create(Instruction::Sub, L, R, "sub");
-    } else if (op == '*') {
-      // result = Builder.CreateMul(L, R, "multmp");
-      result = BinaryOperator::Create(Instruction::Mul, L, R, "mul");
-    } else if (op == '/') {
-      // result = Builder.CreateSDiv(L, R, "divtmp");
-      result = BinaryOperator::Create(Instruction::SDiv, L, R, "div");
+  codegen.push_back(store_inst_double_v);
+  codegen.push_back(store_inst_long_v);
 
-      // cast from int to double
-      // Builder.CreateSIToFP(result, Type * DestTy, const Twine& Name = "")
+  CastInst* cast_inst_double_v = new BitCastInst(alloca_datatype_double_v, PointerTy_8, "", label_if_then_double);
+  CastInst* cast_inst_long_v = new BitCastInst(alloca_datatype_long_v, PointerTy_8, "", label_if_then_long);
 
-    } else if (op == '^') {
-      result = CreatePow(L, R);
-    }
+  codegen.push_back(cast_inst_double_v);
+  codegen.push_back(cast_inst_long_v);
 
-    // } else if (result_type == TYPE_STRING) {
-    //   std::string typed_lhs_value = *(std::string*)lhs_value;
-    //   std::string typed_rhs_value = *(std::string*)rhs_value;
-    //   if (op == '+') {
-    //     result = new NodeValue(typed_lhs_value + typed_rhs_value);
-    //   }
-  }
+  codegen.push_back(store_typed_var_codegen(TYPE_DOUBLE, cast_inst_double_v, get_elem_ptr_v, label_if_then_double));
+  codegen.push_back(store_typed_var_codegen(TYPE_LONG, cast_inst_long_v, get_elem_ptr_v, label_if_then_long));
 
-  codegen.push_back(result);
+  BranchInst::Create(label_if_end, label_if_then_double);
+  BranchInst::Create(label_if_end, label_if_then_long);
+
+  codegen.push_back(branch_inst);
+
   return codegen;
 }
 

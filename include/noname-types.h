@@ -595,7 +595,7 @@ class FunctionDefNode : public ASTNode {
  private:
   FunctionSignature* createFunctionSignature(Error& error, const std::string& name,
                                              std::vector<FunctionArgument*> args_defs);
-  llvm::ReturnInst* getLLVMReturnInst(Value* return_value);
+  llvm::ReturnInst* getLLVMReturnInst(Value* return_value) const;
 };
 
 class TopLevelExpNode : public ExpNode {

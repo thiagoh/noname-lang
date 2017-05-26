@@ -169,7 +169,7 @@ llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock
 std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, llvm::Value* value,
                                         llvm::BasicBlock* bb = nullptr);
 AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb = nullptr);
-LoadInst* load_inst_codegen(int type, llvm::AllocaInst* alloca_inst, llvm::BasicBlock* bb = nullptr);
+LoadInst* load_inst_codegen(int type, llvm::Value* alloca_inst, llvm::BasicBlock* bb = nullptr);
 StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb = nullptr);
 StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
                                      llvm::BasicBlock* bb = nullptr);

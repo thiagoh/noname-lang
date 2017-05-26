@@ -637,9 +637,10 @@ llvm::Type *toLLVMType(llvm::Value *value) {
     } else if (isa<LoadInst>(value)) {
       // https://stackoverflow.com/questions/29211941/is-any-way-to-get-llvm-deference-pointer-values-raw-typei-e-pointer-type
       LoadInst *load_inst = (LoadInst *)value;
-      Value *value = load_inst->getPointerOperand();
+      // load_inst->getType()->dump();
+      // Value *value = load_inst->getPointerOperand();
       // PointerType* PT = cast<PointerType>(PO->getType());
-      type = value->getType();
+      type = load_inst->getType();
       if (!type) {
         logError("LoadInst invalid type");
         return nullptr;
@@ -872,10 +873,10 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
 
   // struct datatype_t
   AllocaInst *alloca_datatype = alloca_typed_var_codegen(TYPE_DATATYPE);
-  AllocaInst *alloca_value = alloca_typed_var_codegen(type, bb);
+  // AllocaInst *alloca_value = alloca_typed_var_codegen(type, bb);
 
   codegen.push_back(alloca_datatype);
-  codegen.push_back(alloca_value);
+  // codegen.push_back(alloca_value);
 
   // typed value
   Value *constant_value = node->constant_codegen(bb);

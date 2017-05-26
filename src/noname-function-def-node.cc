@@ -254,7 +254,7 @@ Function* FunctionDefNode::getFunctionDefinition() {
 
   return function;
 }
-llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) {
+llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) const {
   ReturnInst* return_inst = nullptr;
   // Finish off the function by creating the ReturnInst
   if (!return_value) {
@@ -281,10 +281,6 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // fflush(stdout);
 
   auto& return_node = getReturnNode();
-  Value* return_value = nullptr;
-  if (return_node) {
-    return_value = return_node->codegen();
-  }
   Function* function = getFunctionDefinition();
 
   if (!function) {
@@ -355,7 +351,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     }
 
     Error error;
-    std::vector<Value*> body_node_codegen_elements = body_node->get_codegen_elements(error);
+    std::vector<Value*> body_node_codegen_elements = body_node->get_codegen_elements(error, function_bb);
 
     if (error.code()) {
       return logErrorLLVM(error.what().c_str());
@@ -368,7 +364,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
         instruction_codegen_value->dump();
       }
 
-      function_bb->getInstList().push_back(instruction_codegen_value);
+      // function_bb->getInstList().push_back(instruction_codegen_value);
 
       if (isa<ReturnInst>(instruction_codegen_value)) {
         return_inst = (ReturnInst*)instruction_codegen_value;
@@ -377,6 +373,11 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   }
 
   if (!return_inst) {
+    Value* return_value = nullptr;
+    if (return_node) {
+      return_value = return_node->codegen();
+    }
+
     return_inst = getLLVMReturnInst(return_value);
   }
 
