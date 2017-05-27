@@ -396,13 +396,16 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // Validate the generated code, checking for consistency.
   verifyFunction(*function);
 
+  if (noname::debug >= 1) {
+    function->dump();
+  }
+
   // Run the optimizer on the function.
   TheFPM->run(*function);
 
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[Function %s defined inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
     fflush(stdout);
-    function->dump();
   }
 
   return function;

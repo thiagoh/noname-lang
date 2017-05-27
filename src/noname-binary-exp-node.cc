@@ -254,23 +254,18 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   //http://llvm.org/docs/doxygen/html/IRBuilder_8h_source.html#l01428
 
+  Function* function = bb->getParent();
+
+  BasicBlock* label_if_then_double = BasicBlock::Create(TheContext, "if.then.double", function);
+  BasicBlock* label_if_else = BasicBlock::Create(TheContext, "if.else", function);
+  BasicBlock* label_if_then_long = BasicBlock::Create(TheContext, "if.then.long", function);
+  BasicBlock* label_if_end = BasicBlock::Create(TheContext, "if.end", function);
+
   CmpInst* cond_equal_double = new ICmpInst(*bb, ICmpInst::ICMP_EQ, lload_inst_type,
                                             ConstantInt::get(TheContext, APInt(32, TYPE_DOUBLE)), "cond_equal_double");
-  CmpInst* cond_equal_long = new ICmpInst(*bb, ICmpInst::ICMP_EQ, lload_inst_type,
+  CmpInst* cond_equal_long = new ICmpInst(*label_if_else, ICmpInst::ICMP_EQ, lload_inst_type,
                                           ConstantInt::get(TheContext, APInt(32, TYPE_LONG)), "cond_equal_long");
 
-  Function* function_bb = dyn_cast<Function>(bb);
-
-  BasicBlock* label_if_then_double = BasicBlock::Create(TheContext, "if.then.double", function_bb);
-  BasicBlock* label_if_else = BasicBlock::Create(TheContext, "if.else", function_bb);
-  BasicBlock* label_if_then_long = BasicBlock::Create(TheContext, "if.then.long", function_bb);
-  // BasicBlock* label_if_then_string = BasicBlock::Create(TheContext, "if.then.string", function_bb);
-  BasicBlock* label_if_end = BasicBlock::Create(TheContext, "if.end", function_bb);
-
-  BranchInst* branch_inst = BranchInst::Create(label_if_then_double, label_if_else, cond_equal_double, bb);
-  codegen.push_back(branch_inst);
-
-  codegen.push_back(BranchInst::Create(label_if_then_long, label_if_end, cond_equal_long, bb));
 
   L->dump();
   R->dump();
@@ -293,6 +288,9 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   codegen.push_back(alloca_datatype);
   codegen.push_back(get_elem_ptr_v);
   codegen.push_back(get_elem_ptr_type);
+  
+  codegen.push_back(BranchInst::Create(label_if_then_double, label_if_else, cond_equal_double, bb));
+  codegen.push_back(BranchInst::Create(label_if_then_long, label_if_end, cond_equal_long, label_if_else));
 
   AllocaInst* alloca_datatype_double_v = alloca_typed_var_codegen(TYPE_DOUBLE, label_if_then_double);
   AllocaInst* alloca_datatype_long_v = alloca_typed_var_codegen(TYPE_LONG, label_if_then_long);
@@ -351,7 +349,14 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   BranchInst::Create(label_if_end, label_if_then_double);
   BranchInst::Create(label_if_end, label_if_then_long);
 
-  codegen.push_back(branch_inst);
+  codegen.push_back(label_if_end);
+
+  CastInst* cast_inst_alloca_datatype =
+      new BitCastInst(alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", label_if_end);
+  LoadInst* load_inst_alloca_datatype = load_inst_codegen(TYPE_VOID_POINTER, cast_inst_alloca_datatype, label_if_end);
+
+  codegen.push_back(cast_inst_alloca_datatype);
+  codegen.push_back(load_inst_alloca_datatype);
 
   return codegen;
 }

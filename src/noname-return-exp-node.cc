@@ -58,6 +58,8 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
     return codegen;
   }
 
+  BasicBlock* last_bb = bb;
+
   for (auto current_value : exp_node_codegen_elements) {
     if (isa<Constant>(current_value)) {
       /**
@@ -69,6 +71,8 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
         * adds to the codegen vector
         */
       continue;
+    } else if (bb && isa<BasicBlock>(current_value)) {
+      last_bb = dyn_cast<BasicBlock>(current_value);
     }
     codegen.push_back(current_value);
   }
@@ -82,11 +86,18 @@ std::vector<Value*> ReturnExpNode::codegen_elements(Error& error, llvm::BasicBlo
   }
 
   if (value_to_be_returned) {
+    if (noname::debug >= 1) {
+      fprintf(stdout, "\n[value_to_be_returned->dump()]");
+      fflush(stdout);
+      value_to_be_returned->dump();
+    }
+
+    return_inst = ReturnInst::Create(TheContext, value_to_be_returned, last_bb);
+
     // createError(error, "No such elements from expression node of return");
     // return codegen;
-    return_inst = ReturnInst::Create(TheContext, value_to_be_returned);
   } else {
-    return_inst = ReturnInst::Create(TheContext);
+    return_inst = ReturnInst::Create(TheContext, last_bb);
   }
 
   if (noname::debug >= 1) {

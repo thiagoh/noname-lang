@@ -41,6 +41,7 @@ PointerType *PointerTy_8;
 PointerType *PointerTy_Double;
 PointerType *PointerTy_Float;
 StructType *StructTy_struct_datatype_t;
+PointerType *PointerTy_StructTy_struct_datatype_t;
 
 ProcessorStrategy *astNodeProcessorStrategy;
 ProcessorStrategy *expNodeProcessorStrategy;
@@ -78,6 +79,8 @@ void InitializeNonameEnvironment() {
   if (StructTy_struct_datatype_t->isOpaque()) {
     StructTy_struct_datatype_t->setBody(StructTy_struct_datatype_t_fields, /*isPacked=*/false);
   }
+
+  PointerTy_StructTy_struct_datatype_t = PointerType::get(StructTy_struct_datatype_t, 0);
 
   // initialization
   astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
