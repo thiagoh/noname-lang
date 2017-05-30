@@ -253,6 +253,17 @@ void *call_jit_symbol(llvm::Type *result_type, JITSymbol &jit_symbol) {
 
     output_datatype->type = tmp.type;
     result = output_datatype;
+
+  } else if (result_type == PointerTy_StructTy_struct_datatype_t) {
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fprintf(stdout, "\nNOT IMPLEMENTED YET");
+    fflush(stdout);
   }
 
   return result;
@@ -598,6 +609,8 @@ llvm::Type *toLLVLType(int type) {
     return llvm::Type::getInt8PtrTy(TheContext);
   } else if (type == TYPE_DATATYPE) {
     return StructTy_struct_datatype_t;
+  } else if (type == TYPE_DATATYPE_POINTER) {
+    return PointerTy_StructTy_struct_datatype_t;
   }
 
   return nullptr;
@@ -687,6 +700,8 @@ int toNonameType(llvm::Type *type) {
     return TYPE_VOID_POINTER;
   } else if (StructTy_struct_datatype_t == type) {
     return TYPE_DATATYPE;
+  } else if (PointerTy_StructTy_struct_datatype_t == type) {
+    return TYPE_DATATYPE_POINTER;
   }
 
   return 0;
@@ -763,7 +778,7 @@ int get_adequate_result_type(NodeValue *lhs, NodeValue *rhs) {
   if (any_of_type(lhs, rhs, TYPE_CHAR)) {
     return TYPE_CHAR;
   }
-  return -1;
+  return 0;
 }
 
 int get_adequate_result_type(int lhs_type, int rhs_type) {
@@ -791,7 +806,7 @@ int get_adequate_result_type(int lhs_type, int rhs_type) {
   if (any_of_type(lhs_type, rhs_type, TYPE_CHAR)) {
     return TYPE_CHAR;
   }
-  return -1;
+  return 0;
 }
 
 void *ASTNodeProcessorStrategy::process(ASTNode *node) {
@@ -875,7 +890,7 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
   ConstantInt *const_int32_type = ConstantInt::get(TheContext, APInt(32, type, true));
 
   // struct datatype_t
-  AllocaInst *alloca_datatype = alloca_typed_var_codegen(TYPE_DATATYPE);
+  AllocaInst *alloca_datatype = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
   // AllocaInst *alloca_value = alloca_typed_var_codegen(type, bb);
 
   codegen.push_back(alloca_datatype);
@@ -890,9 +905,9 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
   }
 
   GetElementPtrInst *get_elem_ptr_v =
-      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v");
-  GetElementPtrInst *get_elem_ptr_type =
-      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_0}, "type");
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v", bb);
+  GetElementPtrInst *get_elem_ptr_type = GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype,
+                                                                   {const_int32_0, const_int32_0}, "type", bb);
 
   codegen.push_back(get_elem_ptr_v);
   codegen.push_back(get_elem_ptr_type);
@@ -958,6 +973,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   codegen.push_back(alloca_inst);
 
   Value *codegen_value = getContext()->getValue(name);
+
   // Value *codegen_type = getContext()->getValue(name + "_type");
   // Value *codegen_value = getContext()->getValue(name + "_value");
   if (!codegen_value) {
@@ -965,9 +981,13 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
     return codegen;
   }
 
+  if (noname::debug >= 1) {
+    codegen_value->dump();
+  }
+
   // codegen.push_back(value);
 
-  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, codegen_value, alloca_inst);
+  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, codegen_value, alloca_inst, bb);
   if (!store_inst) {
     createError(error, "StoreInst could not be created");
     return codegen;
@@ -975,7 +995,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
 
   codegen.push_back(store_inst);
 
-  LoadInst *load_inst = load_inst_codegen(TYPE_DATATYPE, alloca_inst);
+  LoadInst *load_inst = load_inst_codegen(TYPE_DATATYPE, alloca_inst, bb);
   if (!load_inst) {
     createError(error, "LoadInst could not be created");
     return codegen;

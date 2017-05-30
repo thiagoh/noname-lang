@@ -52,15 +52,16 @@ namespace noname {
 #define YYTOKENTYPE
 enum yytokentype {
   TYPE_DATATYPE = 32,
-  TYPE_VOID = 33,
-  TYPE_VOID_POINTER = 34,
-  TYPE_CHAR = 35,
-  TYPE_SHORT = 36,
-  TYPE_INT = 37,
-  TYPE_FLOAT = 38,
-  TYPE_LONG = 39,
-  TYPE_DOUBLE = 40,
-  TYPE_STRING = 41,
+  TYPE_DATATYPE_POINTER = 33,
+  TYPE_VOID = 34,
+  TYPE_VOID_POINTER = 35,
+  TYPE_CHAR = 36,
+  TYPE_SHORT = 37,
+  TYPE_INT = 38,
+  TYPE_FLOAT = 39,
+  TYPE_LONG = 40,
+  TYPE_DOUBLE = 41,
+  TYPE_STRING = 42,
 };
 #endif
 

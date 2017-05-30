@@ -33,6 +33,7 @@ ReturnExpNode* new_return_exp_node(ExpNode* exp_node) {
 
 ReturnExpNode::ReturnExpNode(ASTContext* context, ExpNode* exp_node)
     : ExpNode(context, AST_NODE_TYPE_RETURN_NODE), exp_node(exp_node) {
+      
   if (noname::debug >= 2) {
     fprintf(stdout, "\n[ReturnExpNode::ReturnExpNode() called]");
     fflush(stdout);

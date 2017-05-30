@@ -142,7 +142,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
 
     call_exp_context->storeVariable(signature_arg->getName().str(), std::move(value_arg->getValue().get()));
 
-    std::vector<Value*> value_arg_codegen_elements = value_arg->get_codegen_elements(error);
+    std::vector<Value*> value_arg_codegen_elements = value_arg->get_codegen_elements(error, bb);
 
     if (error.code()) {
       logErrorLLVM(error.what().c_str());
@@ -192,9 +192,9 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
   llvm::CallInst* call_inst = nullptr;
   if (called_function->getReturnType() == llvm::Type::getVoidTy(TheContext)) {
     // Cannot assign a name to void values!
-    call_inst = CallInst::Create(called_function, args_value);
+    call_inst = CallInst::Create(called_function, args_value, "", bb);
   } else {
-    call_inst = CallInst::Create(called_function, args_value, "__call_exp");
+    call_inst = CallInst::Create(called_function, args_value, "__call_exp", bb);
   }
 
   call_inst->setTailCall(false);

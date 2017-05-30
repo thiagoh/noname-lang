@@ -125,35 +125,35 @@ AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb) {
   AllocaInst* typed_pointer_alloca = nullptr;
 
   if (type == TYPE_DOUBLE) {
-    typed_pointer_alloca = new AllocaInst(Type::getDoubleTy(TheContext), "alloca_double_v");
+    typed_pointer_alloca = new AllocaInst(Type::getDoubleTy(TheContext), "alloca_double");
     typed_pointer_alloca->setAlignment(8);
 
   } else if (type == TYPE_FLOAT) {
-    typed_pointer_alloca = new AllocaInst(Type::getFloatTy(TheContext), "alloca_float_v");
+    typed_pointer_alloca = new AllocaInst(Type::getFloatTy(TheContext), "alloca_float");
     typed_pointer_alloca->setAlignment(4);
 
   } else if (type == TYPE_LONG) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 64), "alloca_long_v");
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 64), "alloca_long");
     typed_pointer_alloca->setAlignment(8);
 
   } else if (type == TYPE_INT) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 32), "alloca_int_v");
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 32), "alloca_int");
     typed_pointer_alloca->setAlignment(4);
 
   } else if (type == TYPE_SHORT) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 16), "alloca_short_v");
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 16), "alloca_short");
     typed_pointer_alloca->setAlignment(2);
 
   } else if (type == TYPE_CHAR) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 8), "alloca_char_v");
+    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 8), "alloca_char");
     typed_pointer_alloca->setAlignment(1);
 
   } else if (type == TYPE_VOID_POINTER) {
-    typed_pointer_alloca = new AllocaInst(PointerTy_8, "alloca_char_v");
+    typed_pointer_alloca = new AllocaInst(PointerTy_8, "alloca_char");
     typed_pointer_alloca->setAlignment(8);
 
   } else if (type == TYPE_DATATYPE) {
-    typed_pointer_alloca = new AllocaInst(StructTy_struct_datatype_t, "alloca_datatype_v");
+    typed_pointer_alloca = new AllocaInst(StructTy_struct_datatype_t, "alloca_datatype");
     typed_pointer_alloca->setAlignment(8);
   }
 

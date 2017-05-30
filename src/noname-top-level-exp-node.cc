@@ -52,17 +52,19 @@ TopLevelExpNode::~TopLevelExpNode() {
 ASTNode* create_anonymous_function_def_node(ASTContext* context, ExpNode* exp_node) {
   ReturnExpNode* return_exp_node = nullptr;
 
-  if (isa<ReturnExpNode>(exp_node)) {
-    return_exp_node = (ReturnExpNode*)exp_node;
-  } else if (!exp_node) {
-    return new ErrorNode(context, "No such expression node defined for anonymous function");
-  } else {
-    return_exp_node = new_return_exp_node(exp_node);
-  }
-
   const std::string annon_name = "__anon_expr";
   std::unique_ptr<arglist_t> arg_list(new_arg_list(context));
-  std::unique_ptr<stmtlist_t> stmt_list(new_stmt_list(context, return_exp_node));
+
+  // if (isa<ReturnExpNode>(exp_node)) {
+  //   return_exp_node = (ReturnExpNode*)exp_node;
+  // } else if (!exp_node) {
+  //   return new ErrorNode(context, "No such expression node defined for anonymous function");
+  // } else {
+  //   return_exp_node = new_return_exp_node(exp_node);
+  // }
+  // std::unique_ptr<stmtlist_t> stmt_list(new_stmt_list(context, return_exp_node));
+
+  std::unique_ptr<stmtlist_t> stmt_list(new_stmt_list(context, exp_node));
 
   return new_function_def(context, annon_name, arg_list.get(), stmt_list.get());
 }
@@ -209,7 +211,7 @@ std::vector<Value*> TopLevelExpNode::codegen_elements(Error& error, llvm::BasicB
     anonymous_function->dump();
   }
 
-  // std::vector<Value*> call_exp_node_codegen_elements = call_exp_node->get_codegen_elements(error);
+  // std::vector<Value*> call_exp_node_codegen_elements = call_exp_node->get_codegen_elements(error,bb);
   // if (error.code()) {
   //   logError(error.what().c_str());
   //   return codegen;

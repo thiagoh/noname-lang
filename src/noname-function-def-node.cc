@@ -102,7 +102,7 @@ FunctionSignature* FunctionDefNode::createFunctionSignature(Error& error, const 
   }
   // Value* return_value = nullptr;
   // if (auto& return_node = getReturnNode()) {
-  //   std::vector<Value*> return_node_codegen_elements = return_node->get_codegen_elements(error);
+  //   std::vector<Value*> return_node_codegen_elements = return_node->get_codegen_elements(error,bb);
 
   //   if (error.code()) {
   //     logError(error.what().c_str());
@@ -299,7 +299,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   }
 
   // Create a new basic block to start insertion into.
-  BasicBlock* function_bb = BasicBlock::Create(TheContext, "entry", function);
+  BasicBlock* function_bb = BasicBlock::Create(TheContext, "fn_entry", function);
 
   ASTContext* function_def_node_context = getContext();
   std::vector<FunctionArgument*>& signature_args = getFunctionArguments();
@@ -342,6 +342,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   std::vector<std::unique_ptr<ASTNode>>::iterator it_body_nodes = body_nodes.begin();
 
   ReturnInst* return_inst = nullptr;
+  Instruction* last = nullptr;
   while (it_body_nodes != body_nodes.end()) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
@@ -369,13 +370,62 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
       if (isa<ReturnInst>(instruction_codegen_value)) {
         return_inst = (ReturnInst*)instruction_codegen_value;
       }
+
+      last = instruction_codegen_value;
     }
   }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+
+  if (isa<CallInst>(last)) {
+    ConstantInt* const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
+    ConstantInt* const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
+    ConstantInt* const_int32_double = ConstantInt::get(TheContext, APInt(32, TYPE_DOUBLE, true));
+    ConstantInt* const_int32_long = ConstantInt::get(TheContext, APInt(32, TYPE_LONG, true));
+
+    BasicBlock* anon_function_bb = function_bb;
+    // BasicBlock* anon_function_bb = &anonymous_function->getEntryBlock();
+
+    CallInst* struct_call = dyn_cast<CallInst>(&anon_function_bb->getInstList().back());
+
+    std::vector<unsigned> type_indice;
+    type_indice.push_back(0);
+    std::vector<unsigned> value_indice;
+    value_indice.push_back(1);
+
+    AllocaInst* alloca_inst_call_return = new AllocaInst(StructTy_struct_datatype_t, "struct_call", anon_function_bb);
+    alloca_inst_call_return->setAlignment(8);
+    CastInst* cast_inst_call_return =
+        new BitCastInst(alloca_inst_call_return, PointerTy_StructTy_struct_datatype_t, "", anon_function_bb);
+    GetElementPtrInst* get_el_call_return_type = GetElementPtrInst::Create(
+        StructTy_struct_datatype_t, cast_inst_call_return, {const_int32_0, const_int32_0}, "", anon_function_bb);
+    ExtractValueInst* extract_val_call_return_type =
+        ExtractValueInst::Create(struct_call, type_indice, "", anon_function_bb);
+    StoreInst* void_114 = new StoreInst(extract_val_call_return_type, get_el_call_return_type, false, anon_function_bb);
+    void_114->setAlignment(8);
+    GetElementPtrInst* get_el_call_return_v = GetElementPtrInst::Create(
+        StructTy_struct_datatype_t, cast_inst_call_return, {const_int32_0, const_int32_1}, "", anon_function_bb);
+    ExtractValueInst* extract_call_return_v = ExtractValueInst::Create(struct_call, value_indice, "", anon_function_bb);
+    StoreInst* void_117 = new StoreInst(extract_call_return_v, get_el_call_return_v, false, anon_function_bb);
+    void_117->setAlignment(8);
+
+    CastInst* ptr_117 =
+        new BitCastInst(alloca_inst_call_return, PointerTy_StructTy_struct_datatype_t, "", anon_function_bb);
+    LoadInst* struct_118 = new LoadInst(ptr_117, "", false, anon_function_bb);
+    struct_118->setAlignment(8);
+    return_inst = ReturnInst::Create(TheContext, struct_118, anon_function_bb);
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
 
   if (!return_inst) {
     Value* return_value = nullptr;
     if (return_node) {
-      return_value = return_node->codegen();
+      return_value = return_node->codegen(bb);
     }
 
     return_inst = getLLVMReturnInst(return_value);
@@ -394,18 +444,19 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // function_bb->getInstList().push_back(return_inst);
 
   // Validate the generated code, checking for consistency.
-  verifyFunction(*function);
+  verifyFunction(*function, &errs());
 
   if (noname::debug >= 1) {
     function->dump();
   }
 
   // Run the optimizer on the function.
-  TheFPM->run(*function);
+  // TheFPM->run(*function);
 
   if (noname::debug >= 1) {
     fprintf(stdout, "\n[Function %s defined inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
     fflush(stdout);
+    function->dump();
   }
 
   return function;
