@@ -344,7 +344,7 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   if (op == '+') {
     binary_op_double =
         BinaryOperator::Create(Instruction::FAdd, lload_inst_double_v, rload_inst_double_v, "add", data.label_if_then_double);
-    binary_op_long = BinaryOperator::Create(Instruction::Add, const_int64_1, const_int64_1, "add", data.label_else_if_then_long);
+    binary_op_long = BinaryOperator::Create(Instruction::Add, lhs_long_v, rhs_long_v, "add", data.label_else_if_then_long);
   } else if (op == '-') {
     binary_op_double =
         BinaryOperator::Create(Instruction::FSub, lload_inst_double_v, rload_inst_double_v, "sub", data.label_if_then_double);
@@ -374,13 +374,17 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   // arg.void_v = new long(actual_long_v);
   ConstantInt* const_int64_8 = ConstantInt::get(TheContext, APInt(64, StringRef("8"), 10));
-  CallInst* malloc_ptr_long_v = push_back_ret(codegen, CallInst::Create(func__Znwm, const_int64_8, "call", data.label_else_if_then_long)); // new long
-  CastInst* ptr_long_v =   push_back_ret(codegen, new BitCastInst(malloc_ptr_long_v, PointerTy_64, "", data.label_else_if_then_long)); // new long
+  CallInst* malloc_ptr_long_v =
+      push_back_ret(codegen, CallInst::Create(func__Znwm, const_int64_8, "call", data.label_else_if_then_long));  // new long
+  CastInst* ptr_long_v =
+      push_back_ret(codegen, new BitCastInst(malloc_ptr_long_v, PointerTy_64, "", data.label_else_if_then_long));  // new long
   // malloc done
-  LoadInst* load_long_v =   push_back_ret(codegen, load_inst_codegen(TYPE_LONG, alloca_datatype_long_v, data.label_else_if_then_long));
-  StoreInst* si_long_v1 = push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, load_long_v, ptr_long_v, data.label_else_if_then_long));
+  LoadInst* load_long_v = push_back_ret(codegen, load_inst_codegen(TYPE_LONG, alloca_datatype_long_v, data.label_else_if_then_long));
+  StoreInst* si_long_v1 =
+      push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, load_long_v, ptr_long_v, data.label_else_if_then_long));
   CastInst* cast_inst_long_v = push_back_ret(codegen, new BitCastInst(ptr_long_v, PointerTy_8, "", data.label_else_if_then_long));
-  StoreInst* si_long_v2 = push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_long_v, data.get_elem_ptr_v, data.label_else_if_then_long));
+  StoreInst* si_long_v2 = push_back_ret(
+      codegen, store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_long_v, data.get_elem_ptr_v, data.label_else_if_then_long));
 
   //////////////////////////////////////
   //////////////////////////////////////
