@@ -94,7 +94,7 @@ void InitializeNonameEnvironment() {
       /*Params=*/FuncTy_Znwm_args,
       /*isVarArg=*/false);
 
-  Function *func__Znwm = TheModule->getFunction("_Znwm");
+  func__Znwm = TheModule->getFunction("_Znwm");
   if (!func__Znwm) {
     func__Znwm = Function::Create(
         /*Type=*/FuncTy_Znwm,
@@ -231,8 +231,7 @@ void print_node_value(FILE *file, NodeValue *node_value) {
     } else if (node_value->getType() == TYPE_STRING) {
       fprintf(file, "\n##########[print_node_value] %s", (*(std::string *)node_value->getRawValue()).c_str());
     } else {
-      fprintf(file == stdout ? stderr : file, "\n##########[print_node_value] [WARN] could not print type %d",
-              node_value->getType());
+      fprintf(file == stdout ? stderr : file, "\n##########[print_node_value] [WARN] could not print type %d", node_value->getType());
     }
   } else {
     if (!node_value) {
@@ -313,9 +312,7 @@ void *call_jit_symbol(llvm::Type *result_type, JITSymbol &jit_symbol) {
 
   return result;
 }
-void print_jit_symbol_value(llvm::Type *result_type, void *result) {
-  print_jit_symbol_value(stdout, result_type, result);
-}
+void print_jit_symbol_value(llvm::Type *result_type, void *result) { print_jit_symbol_value(stdout, result_type, result); }
 void print_jit_symbol_value(FILE *file, llvm::Type *result_type, void *result) {
   // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
   if (!result_type) {
@@ -771,8 +768,7 @@ std::unique_ptr<NodeValue> VarExpNode::getValue() const {
   NodeValue *node = getContext()->getVariable(name);
 
   if (!node) {
-    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
-            getContext()->getName().c_str());
+    fprintf(stdout, "\n\n############ could not find %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
   }
 
   return std::unique_ptr<NodeValue>(node);
@@ -786,13 +782,9 @@ bool match_to_types(int lhs_type, int rhs_type, int type1, int type2) {
   return ((lhs_type == type1 && rhs_type == type2) || (lhs_type == type2 && rhs_type == type1));
 }
 
-bool both_of_type(NodeValue *lhs, NodeValue *rhs, int type) {
-  return lhs && rhs && both_of_type(lhs->getType(), rhs->getType(), type);
-}
+bool both_of_type(NodeValue *lhs, NodeValue *rhs, int type) { return lhs && rhs && both_of_type(lhs->getType(), rhs->getType(), type); }
 
-bool any_of_type(NodeValue *lhs, NodeValue *rhs, int type) {
-  return lhs && rhs && any_of_type(lhs->getType(), rhs->getType(), type);
-}
+bool any_of_type(NodeValue *lhs, NodeValue *rhs, int type) { return lhs && rhs && any_of_type(lhs->getType(), rhs->getType(), type); }
 
 bool match_to_types(NodeValue *lhs, NodeValue *rhs, int type1, int type2) {
   return lhs && rhs && match_to_types(lhs->getType(), rhs->getType(), type1, type2);
@@ -910,8 +902,7 @@ std::unique_ptr<NodeValue> NumberExpNode::getValue() const {
   } else if (type == TYPE_CHAR) {
     node = new NodeValue(*(char *)value);
   } else {
-    std::string msg("No such type " + std::to_string(type) +
-                    " is implemented for NodeValue *NumberExpNode::getValue()");
+    std::string msg("No such type " + std::to_string(type) + " is implemented for NodeValue *NumberExpNode::getValue()");
     node = logErrorNV(new ErrorNode(getContext(), msg));
   }
 
@@ -950,8 +941,8 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
 
   GetElementPtrInst *get_elem_ptr_v =
       GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v", bb);
-  GetElementPtrInst *get_elem_ptr_type = GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype,
-                                                                   {const_int32_0, const_int32_0}, "type", bb);
+  GetElementPtrInst *get_elem_ptr_type =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_0}, "type", bb);
 
   codegen.push_back(get_elem_ptr_v);
   codegen.push_back(get_elem_ptr_type);
@@ -1004,8 +995,7 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 
   if (!node) {
     char msg[1024];
-    sprintf(msg, "\n\n############ could not find %s on context %s \n\n", name.c_str(),
-            getContext()->getName().c_str());
+    sprintf(msg, "\n\n############ could not find %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
     return logErrorLLVM(msg);
   }
 
