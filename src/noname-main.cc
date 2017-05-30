@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <algorithm>
 #include <map>
+#include <queue>
 #include <vector>
 #include <stack>
 #include <stdio.h>
@@ -52,6 +53,7 @@ FILE *fin = stdin;                      /* we read from this file */
 namespace noname {
 
 ASTContext *context;
+std::queue<std::string> bootstrap_codes;
 std::vector<std::string> imported_files;
 std::stack<ASTContext *> context_stack;
 std::map<int, std::string> map;
@@ -127,32 +129,54 @@ char *get_file_path(const char *filename) {
 }
 
 int noname_read(char *buf, int *result, int max_size) {
-  if (fin == NULL) {
-    fatal_error("Input stream is invalid");
-  }
-
   int cur_char = '*';
   int n = 0;
-  for (; n < max_size && (cur_char = getc(fin)) != EOF; ++n) {
-    buf[n] = (char)cur_char;
-    if (read_from_file_import) {
-      // NOP
-    } else {
-      if (cur_char == '\n') {
-        ++n;
-        break;
+
+  if (!bootstrap_codes.empty()) {
+    while (!bootstrap_codes.empty()) {
+      const std::string &line = bootstrap_codes.front();
+
+      if ((unsigned int)(max_size - n) >= line.length()) {
+        // enough room for reading the whole line
+        bootstrap_codes.pop();
+
+        for (unsigned int i = 0; n < max_size && i < line.length(); ++i, ++n) {
+          cur_char = line[i];
+          buf[n] = (char)cur_char;
+        }
+      } else if (n == 0 && (unsigned int)(max_size - n) < line.length()) {
+        // there is no enough room for reading the line even though n is 0
+        fatal_error("There is no enough room for reading the line even ");
+      } else {
       }
     }
-  }
-  if (cur_char == EOF) {
-    // fprintf(stderr, "\n[EOF] %s", buf);
-    if (feof(fin) && read_from_file_import) {
-      // fprintf(stderr, "\n[read_from_file_import %d]", *result);
-      fclose(fin);  // close the file
-      read_from_file_import = false;
-      fin = stdin;
-    } else if (ferror(fin)) {
-      fatal_error("Input stream scanner failed");
+
+  } else {
+    if (fin == NULL) {
+      fatal_error("Input stream is invalid");
+    }
+
+    for (; n < max_size && (cur_char = getc(fin)) != EOF; ++n) {
+      buf[n] = (char)cur_char;
+      if (read_from_file_import) {
+        // NOP
+      } else {
+        if (cur_char == '\n') {
+          ++n;
+          break;
+        }
+      }
+    }
+    if (cur_char == EOF) {
+      // fprintf(stderr, "\n[EOF] %s", buf);
+      if (feof(fin) && read_from_file_import) {
+        // fprintf(stderr, "\n[read_from_file_import %d]", *result);
+        fclose(fin);  // close the file
+        read_from_file_import = false;
+        fin = stdin;
+      } else if (ferror(fin)) {
+        fatal_error("Input stream scanner failed");
+      }
     }
   }
 
@@ -249,8 +273,7 @@ void write_cursor() {
 }
 
 void division_by_zero(YYLTYPE &yylloc) {
-  fprintf(stderr, "Error: %d:%d - %d:%d. Division by zero", yylloc.first_line, yylloc.first_column, yylloc.last_line,
-          yylloc.last_column);
+  fprintf(stderr, "Error: %d:%d - %d:%d. Division by zero", yylloc.first_line, yylloc.first_column, yylloc.last_line, yylloc.last_column);
 }
 }
 
@@ -320,51 +343,52 @@ int main(int argc, char **argv) {
   // assert_equals(cast<double>(333), (double)333);
   // assert_equals(cast<float>(1000.0), (float)1000.0);
   // exit(0);
-
-  map[258] = "LINE_BREAK";
-  map[259] = "STMT_SEP";
-  map[260] = "LETTER";
-  map[261] = "DIGIT";
-  map[262] = "DIGITS";
-  map[263] = "DARROW";
-  map[264] = "ELSE_TOK";
-  map[265] = "FALSE";
-  map[266] = "IF_TOK";
-  map[267] = "IN_TOK";
-  map[268] = "LET_TOK";
-  map[269] = "DEF_TOK";
-  map[270] = "LOOP_TOK";
-  map[271] = "THEN_TOK";
-  map[272] = "WHILE";
-  map[273] = "BREAK_TOK";
-  map[274] = "CASE_TOK";
-  map[275] = "NEW_TOK";
-  map[276] = "NOT_TOK";
-  map[277] = "RETURN";
-  map[278] = "TRUE";
-  map[279] = "NEWLINE";
-  map[280] = "NOTNEWLINE";
-  map[281] = "WHITESPACE";
-  map[282] = "LE_TOK";
-  map[283] = "ASSIGN";
-  map[284] = "NULLCH";
-  map[285] = "BACKSLASH";
-  map[286] = "STAR_TOK";
-  map[287] = "NOTSTAR";
-  map[288] = "LEFTPAREN_TOK";
-  map[289] = "NOTLEFTPAREN_TOK";
-  map[290] = "RIGHTPAREN";
-  map[291] = "NOTRIGHTPAREN";
-  map[292] = "LINE_COMMENT";
-  map[293] = "START_COMMENT";
-  map[294] = "END_COMMENT";
-  map[295] = "QUOTES";
-  map[296] = "ERROR_TOK";
-  map[297] = "IDENTIFIER";
-  map[298] = "STR_CONST";
-  map[299] = "DOUBLE_TOK";
-  map[300] = "LONG_TOK";
-  map[314] = "NEG_TOK";
+  {
+    map[258] = "LINE_BREAK";
+    map[259] = "STMT_SEP";
+    map[260] = "LETTER";
+    map[261] = "DIGIT";
+    map[262] = "DIGITS";
+    map[263] = "DARROW";
+    map[264] = "ELSE_TOK";
+    map[265] = "FALSE";
+    map[266] = "IF_TOK";
+    map[267] = "IN_TOK";
+    map[268] = "LET_TOK";
+    map[269] = "DEF_TOK";
+    map[270] = "LOOP_TOK";
+    map[271] = "THEN_TOK";
+    map[272] = "WHILE";
+    map[273] = "BREAK_TOK";
+    map[274] = "CASE_TOK";
+    map[275] = "NEW_TOK";
+    map[276] = "NOT_TOK";
+    map[277] = "RETURN";
+    map[278] = "TRUE";
+    map[279] = "NEWLINE";
+    map[280] = "NOTNEWLINE";
+    map[281] = "WHITESPACE";
+    map[282] = "LE_TOK";
+    map[283] = "ASSIGN";
+    map[284] = "NULLCH";
+    map[285] = "BACKSLASH";
+    map[286] = "STAR_TOK";
+    map[287] = "NOTSTAR";
+    map[288] = "LEFTPAREN_TOK";
+    map[289] = "NOTLEFTPAREN_TOK";
+    map[290] = "RIGHTPAREN";
+    map[291] = "NOTRIGHTPAREN";
+    map[292] = "LINE_COMMENT";
+    map[293] = "START_COMMENT";
+    map[294] = "END_COMMENT";
+    map[295] = "QUOTES";
+    map[296] = "ERROR_TOK";
+    map[297] = "IDENTIFIER";
+    map[298] = "STR_CONST";
+    map[299] = "DOUBLE_TOK";
+    map[300] = "LONG_TOK";
+    map[314] = "NEG_TOK";
+  }
 
   fprintf(stdout, "\n[MUST INCLUDE BASIC LIBRARIES]\n");
 
@@ -379,6 +403,10 @@ int main(int argc, char **argv) {
   InitializeModuleAndPassManager();
 
   noname::InitializeNonameEnvironment();
+
+  bootstrap_codes.push("def f1(a,b) { return a; };");
+  bootstrap_codes.push("def f2(a,b) { return b; };");
+  bootstrap_codes.push("def f3(a,b) { return a + b; };");
 
   /**
     * 

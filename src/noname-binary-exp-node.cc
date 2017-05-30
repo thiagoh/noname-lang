@@ -197,24 +197,39 @@ typedef struct BinaryExpNode_Data_t {
   AllocaInst* alloca_datatype_rarg;
   GetElementPtrInst* get_elem_ptr_rarg_v;
   GetElementPtrInst* get_elem_ptr_rarg_type;
+
+  BasicBlock* label_if_then_double;
+  BasicBlock* label_else_if;
+  BasicBlock* label_else_if_then_long;
+  BasicBlock* label_if_default;
+  BasicBlock* label_if_end;
+
 } BinaryExpNode_Data_t;
 
 void prepare(Error& error, BinaryExpNode_Data_t& data, std::vector<Value*>& codegen, llvm::BasicBlock* bb) {
   // prepare variable to receive return
-  AllocaInst* alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_main", bb));
-  GetElementPtrInst* get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(alloca_datatype, "_main", bb));
-  GetElementPtrInst* get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(alloca_datatype, "_main", bb));
+  data.alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_main", bb));
+  data.get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.alloca_datatype, "_main", bb));
+  data.get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.alloca_datatype, "_main", bb));
 
   // prepare variable to receive LHS
-  AllocaInst* alloca_datatype_larg = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_larg", bb));
-  GetElementPtrInst* get_elem_ptr_larg_v = push_back_ret(codegen, get_element_ptr_v_codegen(alloca_datatype_larg, "_larg", bb));
-  GetElementPtrInst* get_elem_ptr_larg_type = push_back_ret(codegen, get_element_ptr_type_codegen(alloca_datatype_larg, "_larg", bb));
+  data.alloca_datatype_larg = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_larg", bb));
+  data.get_elem_ptr_larg_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.alloca_datatype_larg, "_larg", bb));
+  data.get_elem_ptr_larg_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.alloca_datatype_larg, "_larg", bb));
 
   // prepare variable to receive RHS
 
-  AllocaInst* alloca_datatype_rarg = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_rarg", bb));
-  GetElementPtrInst* get_elem_ptr_rarg_v = push_back_ret(codegen, get_element_ptr_v_codegen(alloca_datatype_rarg, "_rarg", bb));
-  GetElementPtrInst* get_elem_ptr_rarg_type = push_back_ret(codegen, get_element_ptr_type_codegen(alloca_datatype_rarg, "_rarg", bb));
+  data.alloca_datatype_rarg = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_rarg", bb));
+  data.get_elem_ptr_rarg_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.alloca_datatype_rarg, "_rarg", bb));
+  data.get_elem_ptr_rarg_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.alloca_datatype_rarg, "_rarg", bb));
+
+  Function* function = bb->getParent();
+
+  data.label_if_then_double = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_then_double", function, 0));
+  data.label_else_if = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_else", function, 0));
+  data.label_else_if_then_long = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_then_long", function, 0));
+  data.label_if_default = push_back_ret(codegen, BasicBlock::Create(TheContext, "label_if_default", function, 0));
+  data.label_if_end = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_end", function, 0));
 }
 
 std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
@@ -230,57 +245,50 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   Function* function = bb->getParent();
 
-  BasicBlock* label_if_then_double = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_then_double", function, 0));
-  BasicBlock* label_else_if = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_else", function, 0));
-  BasicBlock* label_else_if_then_long = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_then_long", function, 0));
-  BasicBlock* label_if_default = push_back_ret(codegen, BasicBlock::Create(TheContext, "label_if_default", function, 0));
-  BasicBlock* label_if_end = push_back_ret(codegen, BasicBlock::Create(TheContext, "if_end", function, 0));
+  Value* LHS = nullptr;
+  Value* RHS = nullptr;
 
-  std::vector<Value*> lhs_codegen_elements(lhs->get_codegen_elements(error, bb));
+  {
+    std::vector<Value*> lhs_codegen_elements(lhs->get_codegen_elements(error, bb));
 
-  if (error.code()) {
-    logError(error.what().c_str());
-    return codegen;
-  }
-
-  std::vector<Value*> rhs_codegen_elements(rhs->get_codegen_elements(error, bb));
-  if (error.code()) {
-    logError(error.what().c_str());
-    return codegen;
-  }
-
-  // fprintf(stdout, "\nlhs_codegen_elements:\n");
-  // fflush(stdout);
-  for (auto current_value : lhs_codegen_elements) {
-    if (!current_value->getType()->isVoidTy()) {
-      current_value->setName(current_value->getName() + "_LHS");
-    }
-    current_value->dump();
-    if (isa<Instruction>(current_value)) {
-      // bb->getInstList().push_back((Instruction*)current_value);
-    }
-    codegen.push_back(current_value);
-  }
-
-  // fprintf(stdout, "\n\nlhs_codegen_elements:\n");
-  // fflush(stdout);
-  for (auto current_value : rhs_codegen_elements) {
-    if (!current_value->getType()->isVoidTy()) {
-      current_value->setName(current_value->getName() + "_RHS");
+    if (error.code()) {
+      logError(error.what().c_str());
+      return codegen;
     }
 
-    current_value->dump();
-    if (isa<Instruction>(current_value)) {
-      // bb->getInstList().push_back((Instruction*)current_value);
+    std::vector<Value*> rhs_codegen_elements(rhs->get_codegen_elements(error, bb));
+    if (error.code()) {
+      logError(error.what().c_str());
+      return codegen;
     }
-    codegen.push_back(current_value);
+
+    // fprintf(stdout, "\nlhs_codegen_elements:\n");
+    // fflush(stdout);
+    for (auto current_value : lhs_codegen_elements) {
+      if (!current_value->getType()->isVoidTy()) {
+        current_value->setName(current_value->getName() + "_LHS");
+      }
+      current_value->dump();
+      codegen.push_back(current_value);
+    }
+
+    // fprintf(stdout, "\n\nlhs_codegen_elements:\n");
+    // fflush(stdout);
+    for (auto current_value : rhs_codegen_elements) {
+      if (!current_value->getType()->isVoidTy()) {
+        current_value->setName(current_value->getName() + "_RHS");
+      }
+
+      current_value->dump();
+      codegen.push_back(current_value);
+    }
+
+    // fprintf(stdout, "\n\n");
+    // fflush(stdout);
+    
+    LHS = lhs_codegen_elements.back();
+    RHS = rhs_codegen_elements.back();
   }
-
-  // fprintf(stdout, "\n\n");
-  // fflush(stdout);
-
-  Value* LHS = lhs_codegen_elements.back();
-  Value* RHS = rhs_codegen_elements.back();
 
   if (!LHS || !RHS) {
     logError("LHS or RHS are undefined");
@@ -312,54 +320,60 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   //http://llvm.org/docs/doxygen/html/IRBuilder_8h_source.html#l01428
 
   CmpInst* cond_equal_double = new ICmpInst(*bb, ICmpInst::ICMP_EQ, lload_inst_type, const_int32_double, "cond_equal_double");
-  codegen.push_back(BranchInst::Create(label_if_then_double, label_else_if, cond_equal_double, bb));
+  codegen.push_back(BranchInst::Create(data.label_if_then_double, data.label_else_if, cond_equal_double, bb));
 
-  CmpInst* cond_equal_long = new ICmpInst(*label_else_if, ICmpInst::ICMP_EQ, lload_inst_type, const_int32_long, "cond_equal_long");
-  codegen.push_back(BranchInst::Create(label_else_if_then_long, label_if_default, cond_equal_long, label_else_if));
+  CmpInst* cond_equal_long = new ICmpInst(*data.label_else_if, ICmpInst::ICMP_EQ, lload_inst_type, const_int32_long, "cond_equal_long");
+  codegen.push_back(BranchInst::Create(data.label_else_if_then_long, data.label_if_default, cond_equal_long, data.label_else_if));
 
-  AllocaInst* alloca_datatype_double_v = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DOUBLE, label_if_then_double));
-  AllocaInst* alloca_datatype_long_v = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_LONG, label_else_if_then_long));
+  AllocaInst* alloca_datatype_double_v = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DOUBLE, data.label_if_then_double));
+  AllocaInst* alloca_datatype_long_v = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_LONG, data.label_else_if_then_long));
 
   Value* binary_op_double = nullptr;
   Value* binary_op_long = nullptr;
 
   if (op == '+') {
-    binary_op_double = BinaryOperator::Create(Instruction::FAdd, lload_inst_double_v, rload_inst_double_v, "add", label_if_then_double);
-    binary_op_long = BinaryOperator::Create(Instruction::Add, lload_inst_long_v, rload_inst_long_v, "add", label_else_if_then_long);
+    binary_op_double =
+        BinaryOperator::Create(Instruction::FAdd, lload_inst_double_v, rload_inst_double_v, "add", data.label_if_then_double);
+    binary_op_long = BinaryOperator::Create(Instruction::Add, lload_inst_long_v, rload_inst_long_v, "add", data.label_else_if_then_long);
   } else if (op == '-') {
-    binary_op_double = BinaryOperator::Create(Instruction::FSub, lload_inst_double_v, rload_inst_double_v, "sub", label_if_then_double);
-    binary_op_long = BinaryOperator::Create(Instruction::Sub, lload_inst_long_v, rload_inst_long_v, "sub", label_else_if_then_long);
+    binary_op_double =
+        BinaryOperator::Create(Instruction::FSub, lload_inst_double_v, rload_inst_double_v, "sub", data.label_if_then_double);
+    binary_op_long = BinaryOperator::Create(Instruction::Sub, lload_inst_long_v, rload_inst_long_v, "sub", data.label_else_if_then_long);
   } else if (op == '*') {
-    binary_op_double = BinaryOperator::Create(Instruction::FMul, lload_inst_double_v, rload_inst_double_v, "mul", label_if_then_double);
-    binary_op_long = BinaryOperator::Create(Instruction::Mul, lload_inst_long_v, rload_inst_long_v, "mul", label_else_if_then_long);
+    binary_op_double =
+        BinaryOperator::Create(Instruction::FMul, lload_inst_double_v, rload_inst_double_v, "mul", data.label_if_then_double);
+    binary_op_long = BinaryOperator::Create(Instruction::Mul, lload_inst_long_v, rload_inst_long_v, "mul", data.label_else_if_then_long);
   } else if (op == '/') {
-    binary_op_double = BinaryOperator::Create(Instruction::FDiv, lload_inst_double_v, rload_inst_double_v, "div", label_if_then_double);
-    binary_op_long = BinaryOperator::Create(Instruction::SDiv, lload_inst_long_v, rload_inst_long_v, "div", label_else_if_then_long);
+    binary_op_double =
+        BinaryOperator::Create(Instruction::FDiv, lload_inst_double_v, rload_inst_double_v, "div", data.label_if_then_double);
+    binary_op_long = BinaryOperator::Create(Instruction::SDiv, lload_inst_long_v, rload_inst_long_v, "div", data.label_else_if_then_long);
   } else if (op == '^') {
     logError("^ NOT IMPLEMENTED YET");
     // result = CreatePow(LHS, RHS);
   }
 
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_double, data.get_elem_ptr_type, label_if_then_double));
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_long, data.get_elem_ptr_type, label_else_if_then_long));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_double, data.get_elem_ptr_type, data.label_if_then_double));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_long, data.get_elem_ptr_type, data.label_else_if_then_long));
 
   // #################################
   // #################################
   // #################################
 
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_DOUBLE, binary_op_double, alloca_datatype_double_v, label_if_then_double));
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_LONG, binary_op_long, alloca_datatype_long_v, label_else_if_then_long));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_DOUBLE, binary_op_double, alloca_datatype_double_v, data.label_if_then_double));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_LONG, binary_op_long, alloca_datatype_long_v, data.label_else_if_then_long));
 
-  CastInst* cast_inst_double_v = push_back_ret(codegen, new BitCastInst(alloca_datatype_double_v, PointerTy_8, "", label_if_then_double));
-  CastInst* cast_inst_long_v = push_back_ret(codegen, new BitCastInst(alloca_datatype_long_v, PointerTy_8, "", label_else_if_then_long));
+  CastInst* cast_inst_double_v =
+      push_back_ret(codegen, new BitCastInst(alloca_datatype_double_v, PointerTy_8, "", data.label_if_then_double));
+  CastInst* cast_inst_long_v =
+      push_back_ret(codegen, new BitCastInst(alloca_datatype_long_v, PointerTy_8, "", data.label_else_if_then_long));
 
-  // LoadInst* load_inst_double_v = load_inst_codegen(TYPE_VOID_POINTER, cast_inst_double_v, label_if_then_double);
-  // LoadInst* load_inst_long_v = load_inst_codegen(TYPE_VOID_POINTER, cast_inst_long_v, label_else_if_then_long);
+  // LoadInst* load_inst_double_v = load_inst_codegen(TYPE_VOID_POINTER, cast_inst_double_v, data.label_if_then_double);
+  // LoadInst* load_inst_long_v = load_inst_codegen(TYPE_VOID_POINTER, cast_inst_long_v, data.label_else_if_then_long);
   // codegen.push_back(load_inst_double_v);
   // codegen.push_back(load_inst_long_v);
 
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_double_v, data.get_elem_ptr_v, label_if_then_double));
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_long_v, data.get_elem_ptr_v, label_else_if_then_long));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_double_v, data.get_elem_ptr_v, data.label_if_then_double));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_long_v, data.get_elem_ptr_v, data.label_else_if_then_long));
 
   //////////////////////////////////////
   //////////////////////////////////////
@@ -376,25 +390,25 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
     return codegen;
   }
 
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, constant_value, data.get_elem_ptr_v, label_if_default));
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_777, data.get_elem_ptr_type, label_if_default));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, constant_value, data.get_elem_ptr_v, data.label_if_default));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_777, data.get_elem_ptr_type, data.label_if_default));
 
   //////////////////////////////////////
   //////////////////////////////////////
   //////////////////////////////////////
 
-  BranchInst::Create(label_if_end, label_if_default);
-  BranchInst::Create(label_if_end, label_if_then_double);
-  BranchInst::Create(label_if_end, label_else_if_then_long);
+  BranchInst::Create(data.label_if_end, data.label_if_default);
+  BranchInst::Create(data.label_if_end, data.label_if_then_double);
+  BranchInst::Create(data.label_if_end, data.label_else_if_then_long);
 
-  codegen.push_back(label_if_end);
+  codegen.push_back(data.label_if_end);
 
-  LoadInst* load_inst_type = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, label_if_end));
+  LoadInst* load_inst_type = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, data.label_if_end));
 
   CastInst* cast_inst_alloca_datatype =
-      push_back_ret(codegen, new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", label_if_end));
+      push_back_ret(codegen, new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", data.label_if_end));
   LoadInst* load_inst_alloca_datatype =
-      push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, cast_inst_alloca_datatype, label_if_end));
+      push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, cast_inst_alloca_datatype, data.label_if_end));
 
   return codegen;
 }
