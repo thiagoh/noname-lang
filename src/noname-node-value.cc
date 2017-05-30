@@ -69,44 +69,42 @@ Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb) {
 
   void* heap_value = 0;
 
-  if (true) {
-    // TODO: remove this code
-    if (type == TYPE_DOUBLE) {
-      heap_value = new long(*(double*)value);
-      // APFloat ap_value(*(double*)value);
-      // constant_value = ConstantFP::get(TheContext, ap_value);
-    } else if (type == TYPE_FLOAT) {
-      heap_value = new long(*(float*)value);
-      // APFloat ap_value(*(float*)value);
-      // constant_value = ConstantFP::get(TheContext, ap_value);
-    } else if (type == TYPE_LONG) {
-      // heap_value = new long(888);
-      heap_value = new long(*(long*)value);
-      // APInt ap_value(CHAR_BIT * sizeof(long), *(long*)value, true);
-      // constant_value = ConstantInt::get(TheContext, ap_value);
-    } else if (type == TYPE_INT) {
-      // heap_value = new long(888);
-      heap_value = new int(*(int*)value);
-      // APInt ap_value(CHAR_BIT * sizeof(int), *(int*)value, true);
-      // constant_value = ConstantInt::get(TheContext, ap_value);
-    } else if (type == TYPE_SHORT) {
-      heap_value = new short(*(short*)value);
-      // APInt ap_value(CHAR_BIT * sizeof(short), *(short*)value, true);
-      // constant_value = ConstantInt::get(TheContext, ap_value);
-    } else if (type == TYPE_CHAR) {
-      heap_value = new char(*(char*)value);
-      // APInt ap_value(CHAR_BIT * sizeof(char), *(char*)value, true);
-      // constant_value = ConstantInt::get(TheContext, ap_value);
-    } else {
-      char msg[1024];
-      sprintf(msg, "Invalid constant value type. Type: %d", type);
-      return logErrorLLVM(msg);
-    }
+  // TODO: remove this code
+  if (type == TYPE_DOUBLE) {
+    // heap_value = new long(*(double*)value);
+    // APFloat ap_value(*(double*)value);
+    // constant_value = ConstantFP::get(TheContext, ap_value);
+  } else if (type == TYPE_FLOAT) {
+    heap_value = new long(*(float*)value);
+    // APFloat ap_value(*(float*)value);
+    // constant_value = ConstantFP::get(TheContext, ap_value);
+  } else if (type == TYPE_LONG) {
+    // heap_value = new long(*(long*)value);
+    APInt ap_value(CHAR_BIT * sizeof(long), *(long*)value, true);
+    constant_value = ConstantInt::get(TheContext, ap_value);
+  } else if (type == TYPE_INT) {
+    // heap_value = new long(888);
+    heap_value = new int(*(int*)value);
+    // APInt ap_value(CHAR_BIT * sizeof(int), *(int*)value, true);
+    // constant_value = ConstantInt::get(TheContext, ap_value);
+  } else if (type == TYPE_SHORT) {
+    heap_value = new short(*(short*)value);
+    // APInt ap_value(CHAR_BIT * sizeof(short), *(short*)value, true);
+    // constant_value = ConstantInt::get(TheContext, ap_value);
+  } else if (type == TYPE_CHAR) {
+    heap_value = new char(*(char*)value);
+    // APInt ap_value(CHAR_BIT * sizeof(char), *(char*)value, true);
+    // constant_value = ConstantInt::get(TheContext, ap_value);
+  } else {
+    char msg[1024];
+    sprintf(msg, "Invalid constant value type. Type: %d", type);
+    return logErrorLLVM(msg);
   }
 
   // long* i = (long*) get_copy_address_long(784);
-  Constant* constant_address = ConstantInt::get(Type::getInt64Ty(TheContext), (uint64_t)heap_value);
-  constant_value = ConstantExpr::getIntToPtr(constant_address, PointerType::getUnqual(IntegerType::get(TheContext, 8)));
+
+  // Constant* constant_address = ConstantInt::get(Type::getInt64Ty(TheContext), (uint64_t)heap_value);
+  // constant_value = ConstantExpr::getIntToPtr(constant_address, PointerType::getUnqual(IntegerType::get(TheContext, 8)));
 
   return constant_value;
 }

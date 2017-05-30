@@ -25,7 +25,6 @@ extern std::unique_ptr<Module> TheModule;
 extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
-
 //===----------------------------------------------------------------------===//
 // "Library" functions that can be "extern'd" from user code.
 //===----------------------------------------------------------------------===//
@@ -42,9 +41,7 @@ extern "C" DLLEXPORT double printd(double X) {
   return 0;
 }
 
-extern "C" DLLEXPORT void* get_copy_address_string(const std::string& value) {
-  return new std::string(value);
-}
+extern "C" DLLEXPORT void* get_copy_address_string(const std::string& value) { return new std::string(value); }
 extern "C" DLLEXPORT void* get_copy_address_long(long value) {
   long* out_value = new long;
   memcpy(out_value, &value, sizeof(long));
@@ -75,8 +72,6 @@ extern "C" DLLEXPORT void* get_copy_address_float(float value) {
   memcpy(out_value, &value, sizeof(float));
   return out_value;
 }
-
-
 
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb) {
   Error error;
@@ -121,47 +116,50 @@ AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb) 
   return untyped_poiter_alloca;
 }
 
-AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb) {
-  AllocaInst* typed_pointer_alloca = nullptr;
+AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb) { return alloca_typed_var_codegen(type, "", bb); }
+AllocaInst* alloca_typed_var_codegen(int type, const std::string& sufix, llvm::BasicBlock* bb) {
+  AllocaInst* alloca_inst = nullptr;
 
   if (type == TYPE_DOUBLE) {
-    typed_pointer_alloca = new AllocaInst(Type::getDoubleTy(TheContext), "alloca_double");
-    typed_pointer_alloca->setAlignment(8);
+    alloca_inst = new AllocaInst(Type::getDoubleTy(TheContext), "alloca_double");
+    alloca_inst->setAlignment(8);
 
   } else if (type == TYPE_FLOAT) {
-    typed_pointer_alloca = new AllocaInst(Type::getFloatTy(TheContext), "alloca_float");
-    typed_pointer_alloca->setAlignment(4);
+    alloca_inst = new AllocaInst(Type::getFloatTy(TheContext), "alloca_float");
+    alloca_inst->setAlignment(4);
 
   } else if (type == TYPE_LONG) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 64), "alloca_long");
-    typed_pointer_alloca->setAlignment(8);
+    alloca_inst = new AllocaInst(IntegerType::get(TheContext, 64), "alloca_long");
+    alloca_inst->setAlignment(8);
 
   } else if (type == TYPE_INT) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 32), "alloca_int");
-    typed_pointer_alloca->setAlignment(4);
+    alloca_inst = new AllocaInst(IntegerType::get(TheContext, 32), "alloca_int");
+    alloca_inst->setAlignment(4);
 
   } else if (type == TYPE_SHORT) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 16), "alloca_short");
-    typed_pointer_alloca->setAlignment(2);
+    alloca_inst = new AllocaInst(IntegerType::get(TheContext, 16), "alloca_short");
+    alloca_inst->setAlignment(2);
 
   } else if (type == TYPE_CHAR) {
-    typed_pointer_alloca = new AllocaInst(IntegerType::get(TheContext, 8), "alloca_char");
-    typed_pointer_alloca->setAlignment(1);
+    alloca_inst = new AllocaInst(IntegerType::get(TheContext, 8), "alloca_char");
+    alloca_inst->setAlignment(1);
 
   } else if (type == TYPE_VOID_POINTER) {
-    typed_pointer_alloca = new AllocaInst(PointerTy_8, "alloca_char");
-    typed_pointer_alloca->setAlignment(8);
+    alloca_inst = new AllocaInst(PointerTy_8, "alloca_char");
+    alloca_inst->setAlignment(8);
 
   } else if (type == TYPE_DATATYPE) {
-    typed_pointer_alloca = new AllocaInst(StructTy_struct_datatype_t, "alloca_datatype");
-    typed_pointer_alloca->setAlignment(8);
+    alloca_inst = new AllocaInst(StructTy_struct_datatype_t, "alloca_datatype");
+    alloca_inst->setAlignment(8);
   }
 
-  if (bb && typed_pointer_alloca) {
-    bb->getInstList().push_back(typed_pointer_alloca);
+  alloca_inst->setName(alloca_inst->getName() + sufix);
+
+  if (bb && alloca_inst) {
+    bb->getInstList().push_back(alloca_inst);
   }
 
-  return typed_pointer_alloca;
+  return alloca_inst;
 }
 
 StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb) {
@@ -274,28 +272,28 @@ CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock*
   CastInst* casted_inst = nullptr;
 
   if (type == TYPE_DOUBLE) {
-    casted_inst = new BitCastInst(alloca_inst_from, Type::getDoubleTy(TheContext));//, "cast_inst_double_");
+    casted_inst = new BitCastInst(alloca_inst_from, Type::getDoubleTy(TheContext));  //, "cast_inst_double_");
 
   } else if (type == TYPE_FLOAT) {
-    casted_inst = new BitCastInst(alloca_inst_from, Type::getFloatTy(TheContext));//, "cast_inst_float_");
+    casted_inst = new BitCastInst(alloca_inst_from, Type::getFloatTy(TheContext));  //, "cast_inst_float_");
 
   } else if (type == TYPE_LONG) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 64));//, "cast_inst_long_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 64));  //, "cast_inst_long_");
 
   } else if (type == TYPE_INT) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 32));//, "cast_inst_int_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 32));  //, "cast_inst_int_");
 
   } else if (type == TYPE_SHORT) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 16));//, "cast_inst_short_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 16));  //, "cast_inst_short_");
 
   } else if (type == TYPE_CHAR) {
-    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 8));//, "cast_inst_char_");
+    casted_inst = new BitCastInst(alloca_inst_from, IntegerType::get(TheContext, 8));  //, "cast_inst_char_");
 
   } else if (type == TYPE_VOID_POINTER) {
-    casted_inst = new BitCastInst(alloca_inst_from, PointerTy_8);//, "cast_inst_ptr_v");
+    casted_inst = new BitCastInst(alloca_inst_from, PointerTy_8);  //, "cast_inst_ptr_v");
 
   } else if (type == TYPE_DATATYPE) {
-    casted_inst = new BitCastInst(alloca_inst_from, StructTy_struct_datatype_t);//, "cast_inst_struct");
+    casted_inst = new BitCastInst(alloca_inst_from, StructTy_struct_datatype_t);  //, "cast_inst_struct");
   }
 
   if (bb && casted_inst) {

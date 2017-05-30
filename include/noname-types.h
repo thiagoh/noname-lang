@@ -109,6 +109,7 @@ extern PointerType* PointerTy_Double;
 extern PointerType* PointerTy_Float;
 extern StructType* StructTy_struct_datatype_t;
 extern PointerType* PointerTy_StructTy_struct_datatype_t;
+extern Function* func__Znwm;
 
 extern int debug;
 extern ASTContext* context;

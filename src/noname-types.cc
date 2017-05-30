@@ -42,6 +42,7 @@ PointerType *PointerTy_Double;
 PointerType *PointerTy_Float;
 StructType *StructTy_struct_datatype_t;
 PointerType *PointerTy_StructTy_struct_datatype_t;
+Function *func__Znwm;
 
 ProcessorStrategy *astNodeProcessorStrategy;
 ProcessorStrategy *expNodeProcessorStrategy;
@@ -81,6 +82,50 @@ void InitializeNonameEnvironment() {
   }
 
   PointerTy_StructTy_struct_datatype_t = PointerType::get(StructTy_struct_datatype_t, 0);
+
+  // ###################################
+  // ############## _Znwm ##############
+  // ###################################
+
+  std::vector<Type *> FuncTy_Znwm_args;
+  FuncTy_Znwm_args.push_back(IntegerType::get(TheContext, 64));
+  FunctionType *FuncTy_Znwm = FunctionType::get(
+      /*Result=*/PointerTy_8,
+      /*Params=*/FuncTy_Znwm_args,
+      /*isVarArg=*/false);
+
+  Function *func__Znwm = TheModule->getFunction("_Znwm");
+  if (!func__Znwm) {
+    func__Znwm = Function::Create(
+        /*Type=*/FuncTy_Znwm,
+        /*Linkage=*/GlobalValue::ExternalLinkage,
+        /*Name=*/"_Znwm", TheModule.get());  // (external, no body)
+    func__Znwm->setCallingConv(CallingConv::C);
+  }
+  {
+    AttributeSet func__Znwm_PAL;
+    SmallVector<AttributeSet, 4> Attrs;
+    AttributeSet PAS;
+    {
+      AttrBuilder B;
+      B.addAttribute(Attribute::NoAlias);
+      PAS = AttributeSet::get(TheContext, 0U, B);
+    }
+
+    Attrs.push_back(PAS);
+    {
+      AttrBuilder B;
+      PAS = AttributeSet::get(TheContext, ~0U, B);
+    }
+
+    Attrs.push_back(PAS);
+    func__Znwm_PAL = AttributeSet::get(TheContext, Attrs);
+    func__Znwm->setAttributes(func__Znwm_PAL);
+  }
+
+  // ###################################
+  // ############## END ################
+  // ###################################
 
   // initialization
   astNodeProcessorStrategy = new ASTNodeProcessorStrategy();
@@ -891,7 +936,6 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
 
   // struct datatype_t
   AllocaInst *alloca_datatype = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
-  // AllocaInst *alloca_value = alloca_typed_var_codegen(type, bb);
 
   codegen.push_back(alloca_datatype);
   // codegen.push_back(alloca_value);
@@ -912,7 +956,13 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
   codegen.push_back(get_elem_ptr_v);
   codegen.push_back(get_elem_ptr_type);
 
-  StoreInst *store_ptr_v = store_typed_var_codegen(TYPE_VOID_POINTER, constant_value, get_elem_ptr_v, bb);
+  AllocaInst *alloca_value_typed = alloca_typed_var_codegen(type, bb);
+  codegen.push_back(store_typed_var_codegen(type, constant_value, alloca_value_typed, bb));
+
+  CastInst *cast_inst_untyped = new BitCastInst(alloca_value_typed, PointerTy_8, "cast_inst_untyped", bb);
+  codegen.push_back(cast_inst_untyped);
+
+  StoreInst *store_ptr_v = store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_untyped, get_elem_ptr_v, bb);
   codegen.push_back(store_ptr_v);
 
   StoreInst *store_ptr_type = store_typed_var_codegen(TYPE_INT, const_int32_type, get_elem_ptr_type, bb);

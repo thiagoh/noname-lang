@@ -169,17 +169,12 @@ llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock
 std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, llvm::Value* value,
                                         llvm::BasicBlock* bb = nullptr);
 AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb = nullptr);
+AllocaInst* alloca_typed_var_codegen(int type, const std::string& sufix, llvm::BasicBlock* bb = nullptr);
 LoadInst* load_inst_codegen(int type, llvm::Value* alloca_inst, llvm::BasicBlock* bb = nullptr);
 StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb = nullptr);
 StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
                                      llvm::BasicBlock* bb = nullptr);
 CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock* bb = nullptr);
-
-
-
-
-
-
 
 //===----------------------------------------------------------------------===//
 // "Library" functions that can be "extern'd" from user code.
@@ -195,13 +190,13 @@ CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock*
 extern "C" DLLEXPORT double putchard(double X);
 /// printd - printf that takes a double prints it as "%f\n", returning 0.
 extern "C" DLLEXPORT double printd(double X);
-extern "C" DLLEXPORT void* get_copy_address_string(const std::string& value) ;
-extern "C" DLLEXPORT void* get_copy_address_long(long value) ;
-extern "C" DLLEXPORT void* get_copy_address_int(int value) ;
-extern "C" DLLEXPORT void* get_copy_address_short(short value) ;
-extern "C" DLLEXPORT void* get_copy_address_char(char value) ;
-extern "C" DLLEXPORT void* get_copy_address_double(double value) ;
-extern "C" DLLEXPORT void* get_copy_address_float(float value) ;
+extern "C" DLLEXPORT void* get_copy_address_string(const std::string& value);
+extern "C" DLLEXPORT void* get_copy_address_long(long value);
+extern "C" DLLEXPORT void* get_copy_address_int(int value);
+extern "C" DLLEXPORT void* get_copy_address_short(short value);
+extern "C" DLLEXPORT void* get_copy_address_char(char value);
+extern "C" DLLEXPORT void* get_copy_address_double(double value);
+extern "C" DLLEXPORT void* get_copy_address_float(float value);
 }
 
 #endif
