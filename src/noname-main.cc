@@ -424,40 +424,12 @@ int main(int argc, char **argv) {
     def fun2(a,b) { return a + b; };
     fun2(32.2,4);
     
-    def f() { return 32122; };
-    def f1() { return 111; };
-    def f2() { return 222; };
-    def f3() { return 333; };
     def f4() { return 444; };
     def f5() { return 555; };
     def f6() { return 666; };
     def f7() { return 777; };
     def f8() { return 888; };
     f8();
-    f();
-    f();
-    f();
-    f();
-    f();
-    f();
-    f();
-    f();
-    f();
-    f();
-
-    ENDWhile deleting: i64 %
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Use still stuck around after Def is destroyed:  ret i64 32122
-    Assertion failed: (use_empty() && "Uses remain when a value is destroyed!"), function ~Value, file /Users/thiagoh/dev/llvm-src/llvm-3.9/lib/IR/Value.cpp, line 85.
    */
 
   noname::ReleaseNonameEnvironment();

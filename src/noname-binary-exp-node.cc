@@ -285,7 +285,7 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
     // fprintf(stdout, "\n\n");
     // fflush(stdout);
-    
+
     LHS = lhs_codegen_elements.back();
     RHS = rhs_codegen_elements.back();
   }
@@ -298,31 +298,31 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, LHS, data.alloca_datatype_larg, bb));
   push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, RHS, data.alloca_datatype_rarg, bb));
 
-  LoadInst* lload_inst_type = push_back_ret(codegen, load_inst_codegen(TYPE_INT, data.get_elem_ptr_larg_type, bb));
-  LoadInst* rload_inst_type = push_back_ret(codegen, load_inst_codegen(TYPE_INT, data.get_elem_ptr_rarg_type, bb));
+  LoadInst* lhs_type = push_back_ret(codegen, load_inst_codegen(TYPE_INT, data.get_elem_ptr_larg_type, bb));
+  LoadInst* rhs_type = push_back_ret(codegen, load_inst_codegen(TYPE_INT, data.get_elem_ptr_rarg_type, bb));
 
-  // codegen.push_back(store_typed_var_codegen(TYPE_VOID_POINTER, const_int32_1, get_elem_ptr_larg_v, bb));
-  // codegen.push_back(store_typed_var_codegen(TYPE_VOID_POINTER, const_int32_1, get_elem_ptr_rarg_v, bb));
+  // ###############################################################################################
+  // ###############################################################################################
 
-  LoadInst* lload_inst_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, data.get_elem_ptr_larg_v, bb));
-  LoadInst* rload_inst_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, data.get_elem_ptr_rarg_v, bb));
+  LoadInst* lhs_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, data.get_elem_ptr_larg_v, bb));
+  LoadInst* rhs_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, data.get_elem_ptr_rarg_v, bb));
 
-  CastInst* lcast_inst_long_v = push_back_ret(codegen, new BitCastInst(lload_inst_v, PointerTy_64, "lcast_inst_long_v", bb));
-  CastInst* rcast_inst_long_v = push_back_ret(codegen, new BitCastInst(rload_inst_v, PointerTy_64, "rcast_inst_long_v", bb));
+  CastInst* lcast_inst_long_v = push_back_ret(codegen, new BitCastInst(lhs_v, PointerTy_64, "lcast_inst_long_v", bb));
+  CastInst* rcast_inst_long_v = push_back_ret(codegen, new BitCastInst(rhs_v, PointerTy_64, "rcast_inst_long_v", bb));
   LoadInst* lload_inst_long_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, lcast_inst_long_v, bb));
   LoadInst* rload_inst_long_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, rcast_inst_long_v, bb));
 
-  CastInst* lcast_inst_double_v = push_back_ret(codegen, new BitCastInst(lload_inst_v, PointerTy_Double, "lcast_inst_double_v", bb));
-  CastInst* rcast_inst_double_v = push_back_ret(codegen, new BitCastInst(rload_inst_v, PointerTy_Double, "rcast_inst_double_v", bb));
+  CastInst* lcast_inst_double_v = push_back_ret(codegen, new BitCastInst(lhs_v, PointerTy_Double, "lcast_inst_double_v", bb));
+  CastInst* rcast_inst_double_v = push_back_ret(codegen, new BitCastInst(rhs_v, PointerTy_Double, "rcast_inst_double_v", bb));
   LoadInst* lload_inst_double_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, lcast_inst_double_v, bb));
   LoadInst* rload_inst_double_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, rcast_inst_double_v, bb));
 
   //http://llvm.org/docs/doxygen/html/IRBuilder_8h_source.html#l01428
 
-  CmpInst* cond_equal_double = new ICmpInst(*bb, ICmpInst::ICMP_EQ, lload_inst_type, const_int32_double, "cond_equal_double");
+  CmpInst* cond_equal_double = new ICmpInst(*bb, ICmpInst::ICMP_EQ, lhs_type, const_int32_double, "cond_equal_double");
   codegen.push_back(BranchInst::Create(data.label_if_then_double, data.label_else_if, cond_equal_double, bb));
 
-  CmpInst* cond_equal_long = new ICmpInst(*data.label_else_if, ICmpInst::ICMP_EQ, lload_inst_type, const_int32_long, "cond_equal_long");
+  CmpInst* cond_equal_long = new ICmpInst(*data.label_else_if, ICmpInst::ICMP_EQ, lhs_type, const_int32_long, "cond_equal_long");
   codegen.push_back(BranchInst::Create(data.label_else_if_then_long, data.label_if_default, cond_equal_long, data.label_else_if));
 
   AllocaInst* alloca_datatype_double_v = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DOUBLE, data.label_if_then_double));
@@ -403,7 +403,7 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   codegen.push_back(data.label_if_end);
 
-  LoadInst* load_inst_type = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, data.label_if_end));
+  LoadInst* hs_type = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, data.label_if_end));
 
   CastInst* cast_inst_alloca_datatype =
       push_back_ret(codegen, new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", data.label_if_end));
@@ -458,8 +458,8 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
     StoreInst* store_ptr_type = store_typed_var_codegen(TYPE_INT, const_int32_type, get_elem_ptr_type, bb);
     codegen.push_back(store_ptr_type);
 
-    LoadInst* load_inst_type = load_inst_codegen(TYPE_DATATYPE, alloca_datatype, bb);
-    codegen.push_back(load_inst_type);
+    LoadInst* hs_type = load_inst_codegen(TYPE_DATATYPE, alloca_datatype, bb);
+    codegen.push_back(hs_type);
 
     return codegen;
   }
@@ -571,21 +571,21 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   codegen.push_back(store_typed_var_codegen(TYPE_DATATYPE, LHS, alloca_datatype_larg, bb));
   codegen.push_back(store_typed_var_codegen(TYPE_DATATYPE, RHS, alloca_datatype_rarg, bb));
 
-  LoadInst* lload_inst_type = load_inst_codegen(TYPE_INT, get_elem_ptr_larg_type, bb);
-  LoadInst* rload_inst_type = load_inst_codegen(TYPE_INT, get_elem_ptr_rarg_type, bb);
-  codegen.push_back(lload_inst_type);
-  codegen.push_back(rload_inst_type);
+  LoadInst* lhs_type = load_inst_codegen(TYPE_INT, get_elem_ptr_larg_type, bb);
+  LoadInst* rhs_type = load_inst_codegen(TYPE_INT, get_elem_ptr_rarg_type, bb);
+  codegen.push_back(lhs_type);
+  codegen.push_back(rhs_type);
 
   // codegen.push_back(store_typed_var_codegen(TYPE_VOID_POINTER, const_int32_1, get_elem_ptr_larg_v, bb));
   // codegen.push_back(store_typed_var_codegen(TYPE_VOID_POINTER, const_int32_1, get_elem_ptr_rarg_v, bb));
 
-  LoadInst* lload_inst_v = load_inst_codegen(TYPE_VOID_POINTER, get_elem_ptr_larg_v, bb);
-  LoadInst* rload_inst_v = load_inst_codegen(TYPE_VOID_POINTER, get_elem_ptr_rarg_v, bb);
-  codegen.push_back(lload_inst_v);
-  codegen.push_back(rload_inst_v);
+  LoadInst* lhs_v = load_inst_codegen(TYPE_VOID_POINTER, get_elem_ptr_larg_v, bb);
+  LoadInst* rhs_v = load_inst_codegen(TYPE_VOID_POINTER, get_elem_ptr_rarg_v, bb);
+  codegen.push_back(lhs_v);
+  codegen.push_back(rhs_v);
 
-  CastInst* lcast_inst_long_v = new BitCastInst(lload_inst_v, PointerTy_64, "lcast_inst_long_v", bb);
-  CastInst* rcast_inst_long_v = new BitCastInst(rload_inst_v, PointerTy_64, "rcast_inst_long_v", bb);
+  CastInst* lcast_inst_long_v = new BitCastInst(lhs_v, PointerTy_64, "lcast_inst_long_v", bb);
+  CastInst* rcast_inst_long_v = new BitCastInst(rhs_v, PointerTy_64, "rcast_inst_long_v", bb);
   LoadInst* lload_inst_long_v = load_inst_codegen(TYPE_VOID_POINTER, lcast_inst_long_v, bb);
   LoadInst* rload_inst_long_v = load_inst_codegen(TYPE_VOID_POINTER, rcast_inst_long_v, bb);
 
@@ -594,8 +594,8 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   codegen.push_back(lload_inst_long_v);
   codegen.push_back(rload_inst_long_v);
 
-  CastInst* lcast_inst_double_v = new BitCastInst(lload_inst_v, PointerTy_Double, "lcast_inst_double_v", bb);
-  CastInst* rcast_inst_double_v = new BitCastInst(rload_inst_v, PointerTy_Double, "rcast_inst_double_v", bb);
+  CastInst* lcast_inst_double_v = new BitCastInst(lhs_v, PointerTy_Double, "lcast_inst_double_v", bb);
+  CastInst* rcast_inst_double_v = new BitCastInst(rhs_v, PointerTy_Double, "rcast_inst_double_v", bb);
   LoadInst* lload_inst_double_v = load_inst_codegen(TYPE_VOID_POINTER, lcast_inst_double_v, bb);
   LoadInst* rload_inst_double_v = load_inst_codegen(TYPE_VOID_POINTER, rcast_inst_double_v, bb);
 
@@ -607,11 +607,11 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   //http://llvm.org/docs/doxygen/html/IRBuilder_8h_source.html#l01428
 
   CmpInst* cond_equal_double =
-      new ICmpInst(*bb, ICmpInst::ICMP_EQ, lload_inst_type, const_int32_double, "cond_equal_double");
+      new ICmpInst(*bb, ICmpInst::ICMP_EQ, lhs_type, const_int32_double, "cond_equal_double");
   codegen.push_back(BranchInst::Create(label_if_then_double, label_else_if, cond_equal_double, bb));
 
   CmpInst* cond_equal_long =
-      new ICmpInst(*label_else_if, ICmpInst::ICMP_EQ, lload_inst_type, const_int32_long, "cond_equal_long");
+      new ICmpInst(*label_else_if, ICmpInst::ICMP_EQ, lhs_type, const_int32_long, "cond_equal_long");
 
   codegen.push_back(BranchInst::Create(label_else_if_then_long, label_if_default, cond_equal_long, label_else_if));
 
@@ -708,8 +708,8 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   codegen.push_back(label_if_end);
 
-  LoadInst* load_inst_type = load_inst_codegen(TYPE_DATATYPE, alloca_datatype, label_if_end);
-  codegen.push_back(load_inst_type);
+  LoadInst* hs_type = load_inst_codegen(TYPE_DATATYPE, alloca_datatype, label_if_end);
+  codegen.push_back(hs_type);
 
   CastInst* cast_inst_alloca_datatype =
       new BitCastInst(alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", label_if_end);
