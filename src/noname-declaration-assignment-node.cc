@@ -30,7 +30,7 @@ void* DeclarationAssignmentNode::eval() {
 
   getContext()->storeVariable(name, std::move(node_value.get()));
 
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n############ stored %s on context %s \n\n", name.c_str(), getContext()->getName().c_str());
   }
 

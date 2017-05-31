@@ -110,6 +110,7 @@ extern PointerType* PointerTy_Float;
 extern StructType* StructTy_struct_datatype_t;
 extern PointerType* PointerTy_StructTy_struct_datatype_t;
 extern Function* func__Znwm;
+extern Function* func_llvm_memcpy_p0i8_p0i8_i64;
 
 typedef struct BinaryExpNode_Data_t {
   // prepare variable to receive return

@@ -33,7 +33,7 @@ TopLevelExpNode::TopLevelExpNode(ASTContext* context, ExpNode* exp_node, CallExp
       exp_node(exp_node),
       call_exp_node(call_exp_node),
       anonymous_function(anonymous_function) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[TopLevelExpNode::TopLevelExpNode() called]");
     fflush(stdout);
   }

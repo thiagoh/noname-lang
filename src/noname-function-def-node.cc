@@ -218,7 +218,7 @@ ASTNode* FunctionDefNode::check() const {
       return new InvalidStatement(context, "Cannot import inside function definition");
     }
 
-    if (noname::debug >= 2) {
+    if (noname::debug >= 3) {
       fprintf(stdout, "\n[## evaluating body: ASTNode of type %s]\n",
               ASTNode::toString(bodyNode.get()->getKind()).c_str());
       fflush(stdout);
@@ -258,14 +258,14 @@ llvm::ReturnInst* FunctionDefNode::getLLVMReturnInst(Value* return_value) const 
   ReturnInst* return_inst = nullptr;
   // Finish off the function by creating the ReturnInst
   if (!return_value) {
-    if (noname::debug >= 2) {
+    if (noname::debug >= 3) {
       fprintf(stdout, "\n[## no return_value nullptr]\n");
       fflush(stdout);
     }
     return_inst = ReturnInst::Create(TheContext);
 
   } else {
-    if (noname::debug >= 2) {
+    if (noname::debug >= 3) {
       fprintf(stdout, "\n[## return_value]\n");
       fflush(stdout);
       return_value->dump();
@@ -346,7 +346,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   while (it_body_nodes != body_nodes.end()) {
     std::unique_ptr<ASTNode>& body_node = *it_body_nodes++;
 
-    if (noname::debug >= 1) {
+    if (noname::debug >= 2) {
       fprintf(stdout, "\n[## codegen of body statement (type %s)]", ASTNode::toString(body_node->getKind()).c_str());
       fflush(stdout);
     }
@@ -361,7 +361,7 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
     for (auto current_value : body_node_codegen_elements) {
       Instruction* instruction_codegen_value = (Instruction*)current_value;
 
-      if (noname::debug >= 1) {
+      if (noname::debug >= 2) {
         instruction_codegen_value->dump();
       }
 
@@ -446,14 +446,14 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   // Validate the generated code, checking for consistency.
   verifyFunction(*function, &errs());
 
-  if (noname::debug >= 1) {
+  if (noname::debug >= 2) {
     function->dump();
   }
 
   // Run the optimizer on the function.
   // TheFPM->run(*function);
 
-  if (noname::debug >= 1) {
+  if (noname::debug >= 2) {
     fprintf(stdout, "\n[Function %s defined inside Module %s]", getName().c_str(), TheModule->getName().str().c_str());
     fflush(stdout);
     function->dump();

@@ -43,6 +43,7 @@ PointerType *PointerTy_Float;
 StructType *StructTy_struct_datatype_t;
 PointerType *PointerTy_StructTy_struct_datatype_t;
 Function *func__Znwm;
+Function *func_llvm_memcpy_p0i8_p0i8_i64;
 
 ConstantInt *const_int32_0;
 ConstantInt *const_int32_1;
@@ -127,26 +128,79 @@ void InitializeNonameEnvironment() {
 
   PointerTy_StructTy_struct_datatype_t = PointerType::get(StructTy_struct_datatype_t, 0);
 
+  // #######################################################
+  // ############## llvm.memcpy.p0i8.p0i8.i64 ##############
+  // #######################################################
+
+  {
+    std::vector<Type *> FuncTy_memcpy_args;
+    FuncTy_memcpy_args.push_back(PointerTy_8);
+    FuncTy_memcpy_args.push_back(PointerTy_8);
+    FuncTy_memcpy_args.push_back(IntegerType::get(TheContext, 64));
+    FuncTy_memcpy_args.push_back(IntegerType::get(TheContext, 32));
+    FuncTy_memcpy_args.push_back(IntegerType::get(TheContext, 1));
+    FunctionType *FuncTy_memcpy = FunctionType::get(
+        /*Result=*/Type::getVoidTy(TheContext),
+        /*Params=*/FuncTy_memcpy_args,
+        /*isVarArg=*/false);
+
+    func_llvm_memcpy_p0i8_p0i8_i64 = TheModule->getFunction("llvm.memcpy.p0i8.p0i8.i64");
+    if (!func_llvm_memcpy_p0i8_p0i8_i64) {
+      func_llvm_memcpy_p0i8_p0i8_i64 = Function::Create(
+          /*Type=*/FuncTy_memcpy,
+          /*Linkage=*/GlobalValue::ExternalLinkage,
+          /*Name=*/"llvm.memcpy.p0i8.p0i8.i64", TheModule.get());  // (external, no body)
+      func_llvm_memcpy_p0i8_p0i8_i64->setCallingConv(CallingConv::C);
+    }
+    AttributeSet func_llvm_memcpy_p0i8_p0i8_i64_PAL;
+    SmallVector<AttributeSet, 4> Attrs;
+    AttributeSet PAS;
+    {
+      AttrBuilder B;
+      B.addAttribute(Attribute::NoCapture);
+      PAS = AttributeSet::get(TheContext, 1U, B);
+    }
+
+    Attrs.push_back(PAS);
+    {
+      AttrBuilder B;
+      B.addAttribute(Attribute::ReadOnly);
+      B.addAttribute(Attribute::NoCapture);
+      PAS = AttributeSet::get(TheContext, 2U, B);
+    }
+
+    Attrs.push_back(PAS);
+    {
+      AttrBuilder B;
+      B.addAttribute(Attribute::NoUnwind);
+      PAS = AttributeSet::get(TheContext, ~0U, B);
+    }
+
+    Attrs.push_back(PAS);
+    func_llvm_memcpy_p0i8_p0i8_i64_PAL = AttributeSet::get(TheContext, Attrs);
+    func_llvm_memcpy_p0i8_p0i8_i64->setAttributes(func_llvm_memcpy_p0i8_p0i8_i64_PAL);
+  }
+
   // ###################################
   // ############## _Znwm ##############
   // ###################################
 
-  std::vector<Type *> FuncTy_Znwm_args;
-  FuncTy_Znwm_args.push_back(IntegerType::get(TheContext, 64));
-  FunctionType *FuncTy_Znwm = FunctionType::get(
-      /*Result=*/PointerTy_8,
-      /*Params=*/FuncTy_Znwm_args,
-      /*isVarArg=*/false);
-
-  func__Znwm = TheModule->getFunction("_Znwm");
-  if (!func__Znwm) {
-    func__Znwm = Function::Create(
-        /*Type=*/FuncTy_Znwm,
-        /*Linkage=*/GlobalValue::ExternalLinkage,
-        /*Name=*/"_Znwm", TheModule.get());  // (external, no body)
-    func__Znwm->setCallingConv(CallingConv::C);
-  }
   {
+    std::vector<Type *> FuncTy_Znwm_args;
+    FuncTy_Znwm_args.push_back(IntegerType::get(TheContext, 64));
+    FunctionType *FuncTy_Znwm = FunctionType::get(
+        /*Result=*/PointerTy_8,
+        /*Params=*/FuncTy_Znwm_args,
+        /*isVarArg=*/false);
+
+    func__Znwm = TheModule->getFunction("_Znwm");
+    if (!func__Znwm) {
+      func__Znwm = Function::Create(
+          /*Type=*/FuncTy_Znwm,
+          /*Linkage=*/GlobalValue::ExternalLinkage,
+          /*Name=*/"_Znwm", TheModule.get());  // (external, no body)
+      func__Znwm->setCallingConv(CallingConv::C);
+    }
     AttributeSet func__Znwm_PAL;
     SmallVector<AttributeSet, 4> Attrs;
     AttributeSet PAS;
@@ -263,7 +317,7 @@ llvm::Function *logErrorLLVMF(ErrorNode *error_node) {
 }
 
 void print_node_value(FILE *file, NodeValue *node_value) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     if (!node_value) {
       fprintf(file, "\n##########[print_node_value] undef");
     } else if (node_value->getType() == TYPE_INT) {
@@ -374,7 +428,7 @@ void print_jit_symbol_value(FILE *file, llvm::Type *result_type, void *result) {
 void print_jit_symbol_value(int result_type, void *result) { print_jit_symbol_value(stdout, result_type, result); }
 void print_jit_symbol_value(FILE *file, int result_type, void *result) {
   // http://llvm.org/docs/doxygen/html/classllvm_1_1Value.html#pub-types
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     if (result_type == TYPE_VOID) {
       fprintf(file, "\n###########[call_and_print_jit_symbol_value] undef");
       fflush(file);
@@ -1065,15 +1119,20 @@ void prepare(Error &error, VarExpNode_Data_t &data, std::vector<Value *> &codege
     return;
   }
 
-  Type *llvm_type = node->getContext()->getValueType(node->getName());
-  if (!llvm_type) {
-    createError(error, "Value type could not be found");
-    return;
-  }
+  data.var_type = 0;
+  data.var_alloca_datatype = nullptr;
+  data.var_get_elem_ptr_v = nullptr;
+  data.var_get_elem_ptr_type = nullptr;
 
-  data.var_type = toNonameType(llvm_type);
-  GetElementPtrInst *var_get_elem_ptr_v;
-  GetElementPtrInst *var_get_elem_ptr_type;
+  // Type *llvm_type = node->getContext()->getValueType(node->getName());
+  // if (!llvm_type) {
+  //   createError(error, "Value type could not be found");
+  //   return;
+  // }
+  // data.var_type = toNonameType(llvm_type);
+  // data.var_alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_var", bb));
+  // data.var_get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.var_alloca_datatype, "_var", bb));
+  // data.var_get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.var_alloca_datatype, "_var", bb));
 }
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
@@ -1082,7 +1141,6 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   prepare(error, data, codegen, this, bb);
 
   push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.alloca_datatype, bb));
-
   LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb));
 
   return codegen;

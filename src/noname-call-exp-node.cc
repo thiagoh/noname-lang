@@ -200,7 +200,7 @@ std::vector<Value*> CallExpNode::codegen_elements(Error& error, llvm::BasicBlock
   call_inst->setTailCall(false);
   call_inst->setCallingConv(CallingConv::C);
 
-  if (noname::debug >= 1) {
+  if (noname::debug >= 2) {
     fprintf(stdout, "\n[call_inst->dump() calling '%s']", called_function->getName().str().c_str());
     fflush(stdout);
     call_inst->dump();
@@ -220,7 +220,7 @@ void* CallExpNodeProcessorStrategy::process(ASTNode* node) {
   Function* function = TheModule->getFunction(call_exp_node->getCallee());
 
   if (function) {
-    if (noname::debug >= 2) {
+    if (noname::debug >= 3) {
       fprintf(stdout, "\n[The called function was: '%s']", call_exp_node->getCallee().c_str());
     }
 

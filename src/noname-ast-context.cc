@@ -27,7 +27,7 @@ extern std::unique_ptr<NonameJIT> TheJIT;
 
 // Function Signatures
 FunctionSignature* ASTContext::getFunctionSignature(const std::string& name) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking FunctionSignature '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
   itFunctionSignatures = mFunctionSignatures.find(name);
@@ -57,7 +57,7 @@ NodeValue* ASTContext::getVariableShallow(const std::string& name) {
   return nullptr;
 };
 NodeValue* ASTContext::getVariable(const std::string& name) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking NodeValue '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
   itVariables = mVariables.find(name);
@@ -74,7 +74,7 @@ NodeValue* ASTContext::getVariable(const std::string& name) {
   return nullptr;
 };
 bool ASTContext::storeVariable(const std::string name, NodeValue* node_value) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Storing NodeValue '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
   mVariables[name] = node_value;
@@ -89,7 +89,7 @@ bool ASTContext::removeVariable(const std::string name) {
   return false;
 }
 NodeValue* ASTContext::updateVariable(const std::string name, NodeValue* node_value) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking Variable '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 
@@ -112,7 +112,7 @@ NodeValue* ASTContext::updateVariable(const std::string name, NodeValue* node_va
 NodeValue* ASTContext::update(const std::string name, NodeValue* node_value) { return updateVariable(name, node_value); }
 // AllocaInst
 llvm::AllocaInst* ASTContext::getAllocaInst(const std::string& name) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking AllocaInst '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 
@@ -130,7 +130,7 @@ llvm::AllocaInst* ASTContext::getAllocaInst(const std::string& name) {
   return nullptr;
 }
 bool ASTContext::storeAllocaInst(const std::string name, AllocaInst* alloca_inst) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Storing AllocaInst '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
   mAllocaInst[name] = alloca_inst;
@@ -145,7 +145,7 @@ bool ASTContext::removeAllocaInst(const std::string name) {
   return false;
 }
 llvm::AllocaInst* ASTContext::updateAllocaInst(const std::string name, AllocaInst* alloca_inst) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking AllocaInst '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 
@@ -168,7 +168,7 @@ llvm::AllocaInst* ASTContext::updateAllocaInst(const std::string name, AllocaIns
 llvm::AllocaInst* ASTContext::update(const std::string name, AllocaInst* alloca_inst) { return updateAllocaInst(name, alloca_inst); }
 
 llvm::Value* ASTContext::getValue(const std::string& name) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking Value '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 
@@ -187,7 +187,7 @@ llvm::Value* ASTContext::getValue(const std::string& name) {
 }
 
 llvm::Type* ASTContext::getValueType(const std::string& name) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking Value type '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 
@@ -205,7 +205,7 @@ llvm::Type* ASTContext::getValueType(const std::string& name) {
   return nullptr;
 }
 bool ASTContext::storeValue(const std::string name, llvm::Value* value) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Storing Value '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 
@@ -229,7 +229,7 @@ bool ASTContext::removeValue(const std::string name) {
   return false;
 }
 llvm::Value* ASTContext::updateValue(const std::string name, llvm::Value* value) {
-  if (noname::debug >= 2) {
+  if (noname::debug >= 3) {
     fprintf(stdout, "\n[Looking Value '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 

@@ -26,7 +26,7 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<NonameJIT> TheJIT;
 
 void initialize() {
-  if (noname::debug >= 1) {
+  if (noname::debug >= 3) {
     fprintf(stderr, "\n[NodeValue::NodeValue called]");
   }
 }
