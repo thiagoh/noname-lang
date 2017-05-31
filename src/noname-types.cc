@@ -729,7 +729,7 @@ void release(arglist_node_t *arglist_node) {
   //TODO: IMPLEMENT ME
 }
 
-llvm::Type *toLLVLType(int type) {
+llvm::Type *toLLVMType(int type) {
   if (type == TYPE_DOUBLE) {
     return llvm::Type::getDoubleTy(TheContext);
   } else if (type == TYPE_FLOAT) {
@@ -754,6 +754,16 @@ llvm::Type *toLLVLType(int type) {
 
   return nullptr;
 }
+llvm::Type *toLLVMPointerType(int type) {
+  Type *llvm_type = toLLVMType(type);
+
+  if (!llvm_type) {
+    return nullptr;
+  }
+
+  return PointerType::get(llvm_type, 0);
+}
+
 llvm::Type *toLLVMType(llvm::Value *value) {
   llvm::Type *type = nullptr;
 
@@ -1018,8 +1028,6 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
     return codegen;
   }
 
-  ConstantInt *const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
-  ConstantInt *const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
   ConstantInt *const_int32_type = ConstantInt::get(TheContext, APInt(32, type, true));
 
   // struct datatype_t
@@ -1036,13 +1044,17 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
     return codegen;
   }
 
-  GetElementPtrInst *get_elem_ptr_v =
-      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v", bb);
-  GetElementPtrInst *get_elem_ptr_type =
-      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_0}, "type", bb);
+  // CallInst *malloc_ptr = push_back_ret(codegen, CallInst::Create(func__Znwm, const_int64_8, "call1", bb));
+  // CastInst *ptr_146 = push_back_ret(codegen, new BitCastInst(malloc_ptr, toLLVMPointerType(type), "", bb));
+  // push_back_ret(codegen, new StoreInst(constant_value, ptr_146, false, bb));
+  // CastInst *ptr_148 = push_back_ret(codegen, new BitCastInst(ptr_146, PointerTy_8, "", bb));
 
-  codegen.push_back(get_elem_ptr_v);
-  codegen.push_back(get_elem_ptr_type);
+
+
+  GetElementPtrInst *get_elem_ptr_v = push_back_ret(
+      codegen, GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v", bb));
+  GetElementPtrInst *get_elem_ptr_type = push_back_ret(
+      codegen, GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_0}, "type", bb));
 
   AllocaInst *alloca_value_typed = alloca_typed_var_codegen(type, bb);
   codegen.push_back(store_typed_var_codegen(type, constant_value, alloca_value_typed, bb));
@@ -1142,20 +1154,6 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.alloca_datatype, bb));
   // push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.var_alloca_datatype, bb));
 
-  std::vector<unsigned> type_indice;
-  type_indice.push_back(0);
-  std::vector<unsigned> value_indice;
-  value_indice.push_back(1);
-
-  CastInst* cast_inst_call_return = new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", bb);
-  GetElementPtrInst* get_el_call_return_v = GetElementPtrInst::Create(StructTy_struct_datatype_t, cast_inst_call_return, {const_int32_0, const_int32_1}, "", bb);
-  ExtractValueInst* extract_call_return_v = ExtractValueInst::Create(data.var_value, value_indice, "", bb);
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, extract_call_return_v, get_el_call_return_v, bb));
-
-  CastInst* ptr_117 = new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", bb);
-  LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, ptr_117, bb));
-
-
   // LoadInst *load_void_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, data.var_get_elem_ptr_v, bb));
   // push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, load_void_v, data.get_elem_ptr_v, bb));
 
@@ -1177,7 +1175,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   // ##########################################################################
   // ##########################################################################
 
-  // LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb));
+  LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb));
 
   return codegen;
 }

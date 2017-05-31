@@ -163,7 +163,8 @@ bool match_to_types(NodeValue* lhs, NodeValue* rhs, int type1, int type2);
 int get_adequate_result_type(NodeValue* lhs, NodeValue* rhs);
 int get_adequate_result_type(int lhs_type, int rhs_type);
 
-llvm::Type* toLLVLType(int type);
+llvm::Type* toLLVMType(int type);
+llvm::Type* toLLVMPointerType(int type);
 llvm::Type* toLLVMType(llvm::Value* return_value);
 int toNonameType(llvm::Value* value);
 int toNonameType(llvm::Type* type);
