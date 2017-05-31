@@ -407,7 +407,8 @@ int main(int argc, char **argv) {
   bootstrap_codes.push("def f1(a,b) { return a; };");
   bootstrap_codes.push("def f2(a,b) { return b; };");
   bootstrap_codes.push("def f3(a,b) { return a + b; };");
-  bootstrap_codes.push("f3(11,22);");
+  bootstrap_codes.push("f3(11, 22);");
+  bootstrap_codes.push("f1(11, 22);");
 
   /**
     * 

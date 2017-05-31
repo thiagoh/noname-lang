@@ -184,7 +184,6 @@ void InitializeNonameEnvironment() {
   // ###################################
   // ############## _Znwm ##############
   // ###################################
-
   {
     std::vector<Type *> FuncTy_Znwm_args;
     FuncTy_Znwm_args.push_back(IntegerType::get(TheContext, 64));
@@ -1130,9 +1129,9 @@ void prepare(Error &error, VarExpNode_Data_t &data, std::vector<Value *> &codege
   //   return;
   // }
   // data.var_type = toNonameType(llvm_type);
-  // data.var_alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_var", bb));
-  // data.var_get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.var_alloca_datatype, "_var", bb));
-  // data.var_get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.var_alloca_datatype, "_var", bb));
+  data.var_alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_var", bb));
+  data.var_get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.var_alloca_datatype, "_var", bb));
+  data.var_get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.var_alloca_datatype, "_var", bb));
 }
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
@@ -1141,7 +1140,44 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   prepare(error, data, codegen, this, bb);
 
   push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.alloca_datatype, bb));
-  LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb));
+  // push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.var_alloca_datatype, bb));
+
+  std::vector<unsigned> type_indice;
+  type_indice.push_back(0);
+  std::vector<unsigned> value_indice;
+  value_indice.push_back(1);
+
+  CastInst* cast_inst_call_return = new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", bb);
+  GetElementPtrInst* get_el_call_return_v = GetElementPtrInst::Create(StructTy_struct_datatype_t, cast_inst_call_return, {const_int32_0, const_int32_1}, "", bb);
+  ExtractValueInst* extract_call_return_v = ExtractValueInst::Create(data.var_value, value_indice, "", bb);
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, extract_call_return_v, get_el_call_return_v, bb));
+
+  CastInst* ptr_117 = new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", bb);
+  LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, ptr_117, bb));
+
+
+  // LoadInst *load_void_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, data.var_get_elem_ptr_v, bb));
+  // push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, load_void_v, data.get_elem_ptr_v, bb));
+
+  // ##########################################################################
+  // ##########################################################################
+
+  // AllocaInst *alloca_datatype_long_v = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_LONG, bb));
+  // push_back_ret(codegen, store_typed_var_codegen(TYPE_LONG, const_int64_5, alloca_datatype_long_v, bb));
+
+  // ConstantInt *const_int64_8 = ConstantInt::get(TheContext, APInt(64, StringRef("8"), 10));
+  // CallInst *malloc_ptr_long_v = push_back_ret(codegen, CallInst::Create(func__Znwm, const_int64_8, "call", bb));  // new long
+  // CastInst *ptr_long_v = push_back_ret(codegen, new BitCastInst(malloc_ptr_long_v, PointerTy_64, "", bb));        // new long
+  // LoadInst *load_long_v = push_back_ret(codegen, load_inst_codegen(TYPE_LONG, alloca_datatype_long_v, bb));
+
+  // StoreInst *si_long_v1 = push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, load_long_v, ptr_long_v, bb));
+  // CastInst *cast_inst_long_v = push_back_ret(codegen, new BitCastInst(ptr_long_v, PointerTy_8, "", bb));
+  // StoreInst *si_long_v2 = push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, cast_inst_long_v, data.get_elem_ptr_v, bb));
+
+  // ##########################################################################
+  // ##########################################################################
+
+  // LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb));
 
   return codegen;
 }

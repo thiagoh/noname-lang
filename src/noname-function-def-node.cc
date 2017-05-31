@@ -380,8 +380,6 @@ Value* FunctionDefNode::codegen(BasicBlock* bb) {
   //////////////////////////////////////////////////////////////////////
 
   if (isa<CallInst>(last)) {
-    ConstantInt* const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
-    ConstantInt* const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
     ConstantInt* const_int32_double = ConstantInt::get(TheContext, APInt(32, TYPE_DOUBLE, true));
     ConstantInt* const_int32_long = ConstantInt::get(TheContext, APInt(32, TYPE_LONG, true));
 
