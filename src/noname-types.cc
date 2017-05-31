@@ -1081,21 +1081,9 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   VarExpNode_Data_t data;
   prepare(error, data, codegen, this, bb);
 
-  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.alloca_datatype, bb);
-  if (!store_inst) {
-    createError(error, "StoreInst could not be created");
-    return codegen;
-  }
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.alloca_datatype, bb));
 
-  codegen.push_back(store_inst);
-
-  LoadInst *load_inst = load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb);
-  if (!load_inst) {
-    createError(error, "LoadInst could not be created");
-    return codegen;
-  }
-
-  codegen.push_back(load_inst);
+  LoadInst *load_inst = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb));
 
   return codegen;
 }
