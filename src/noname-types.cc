@@ -44,6 +44,28 @@ StructType *StructTy_struct_datatype_t;
 PointerType *PointerTy_StructTy_struct_datatype_t;
 Function *func__Znwm;
 
+ConstantInt *const_int32_0;
+ConstantInt *const_int32_1;
+ConstantInt *const_int32_2;
+ConstantInt *const_int32_3;
+ConstantInt *const_int32_4;
+ConstantInt *const_int32_5;
+ConstantInt *const_int32_6;
+ConstantInt *const_int32_7;
+ConstantInt *const_int32_8;
+ConstantInt *const_int32_9;
+
+ConstantInt *const_int64_0;
+ConstantInt *const_int64_1;
+ConstantInt *const_int64_2;
+ConstantInt *const_int64_3;
+ConstantInt *const_int64_4;
+ConstantInt *const_int64_5;
+ConstantInt *const_int64_6;
+ConstantInt *const_int64_7;
+ConstantInt *const_int64_8;
+ConstantInt *const_int64_9;
+
 ProcessorStrategy *astNodeProcessorStrategy;
 ProcessorStrategy *expNodeProcessorStrategy;
 ProcessorStrategy *topLevelExpNodeProcessorStrategy;
@@ -62,6 +84,28 @@ void InitializeNonameEnvironment() {
   // std::unique_ptr<Module> TheModule;
   // std::unique_ptr<legacy::FunctionPassManager> TheFPM;
   // std::unique_ptr<NonameJIT> TheJIT;
+
+  const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
+  const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
+  const_int32_2 = ConstantInt::get(TheContext, APInt(32, StringRef("2"), 10));
+  const_int32_3 = ConstantInt::get(TheContext, APInt(32, StringRef("3"), 10));
+  const_int32_4 = ConstantInt::get(TheContext, APInt(32, StringRef("4"), 10));
+  const_int32_5 = ConstantInt::get(TheContext, APInt(32, StringRef("5"), 10));
+  const_int32_6 = ConstantInt::get(TheContext, APInt(32, StringRef("6"), 10));
+  const_int32_7 = ConstantInt::get(TheContext, APInt(32, StringRef("7"), 10));
+  const_int32_8 = ConstantInt::get(TheContext, APInt(32, StringRef("8"), 10));
+  const_int32_9 = ConstantInt::get(TheContext, APInt(32, StringRef("9"), 10));
+
+  const_int64_0 = ConstantInt::get(TheContext, APInt(64, StringRef("0"), 10));
+  const_int64_1 = ConstantInt::get(TheContext, APInt(64, StringRef("1"), 10));
+  const_int64_2 = ConstantInt::get(TheContext, APInt(64, StringRef("2"), 10));
+  const_int64_3 = ConstantInt::get(TheContext, APInt(64, StringRef("3"), 10));
+  const_int64_4 = ConstantInt::get(TheContext, APInt(64, StringRef("4"), 10));
+  const_int64_5 = ConstantInt::get(TheContext, APInt(64, StringRef("5"), 10));
+  const_int64_6 = ConstantInt::get(TheContext, APInt(64, StringRef("6"), 10));
+  const_int64_7 = ConstantInt::get(TheContext, APInt(64, StringRef("7"), 10));
+  const_int64_8 = ConstantInt::get(TheContext, APInt(64, StringRef("8"), 10));
+  const_int64_9 = ConstantInt::get(TheContext, APInt(64, StringRef("9"), 10));
 
   // Now we going to create JIT
 
@@ -1001,8 +1045,23 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 
   return node->constant_codegen(bb);
 }
+void prepare(Error &error, VarExpNode_Data_t &data, std::vector<Value *> &codegen, const VarExpNode *const node, llvm::BasicBlock *bb) {
+  // prepare variable to receive return
+  data.alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_main", bb));
+  data.get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.alloca_datatype, "_main", bb));
+  data.get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.alloca_datatype, "_main", bb));
+
+  AllocaInst *var_alloca_datatype;
+  Value *var_value;
+  int var_type;
+  GetElementPtrInst *var_get_elem_ptr_v;
+  GetElementPtrInst *var_get_elem_ptr_type;
+}
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
+
+  // VarExpNode_Data_t data;
+  // prepare(error, data, codege, this, bb);
 
   AllocaInst *alloca_inst = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
   if (!alloca_inst) {
