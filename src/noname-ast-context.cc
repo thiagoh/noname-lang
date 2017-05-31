@@ -109,9 +109,7 @@ NodeValue* ASTContext::updateVariable(const std::string name, NodeValue* node_va
   std::string error_msg("Variable '" + name + "' is not defined");
   return logErrorNV(new LogicErrorNode(this, error_msg));
 }
-NodeValue* ASTContext::update(const std::string name, NodeValue* node_value) {
-  return updateVariable(name, node_value);
-}
+NodeValue* ASTContext::update(const std::string name, NodeValue* node_value) { return updateVariable(name, node_value); }
 // AllocaInst
 llvm::AllocaInst* ASTContext::getAllocaInst(const std::string& name) {
   if (noname::debug >= 2) {
@@ -167,9 +165,7 @@ llvm::AllocaInst* ASTContext::updateAllocaInst(const std::string name, AllocaIns
   std::string error_msg("AllocaInst '" + name + "' is not set");
   return logErrorLLVMA(new LogicErrorNode(this, error_msg));
 }
-llvm::AllocaInst* ASTContext::update(const std::string name, AllocaInst* alloca_inst) {
-  return updateAllocaInst(name, alloca_inst);
-}
+llvm::AllocaInst* ASTContext::update(const std::string name, AllocaInst* alloca_inst) { return updateAllocaInst(name, alloca_inst); }
 
 llvm::Value* ASTContext::getValue(const std::string& name) {
   if (noname::debug >= 2) {
@@ -189,13 +185,32 @@ llvm::Value* ASTContext::getValue(const std::string& name) {
 
   return nullptr;
 }
+
+llvm::Type* ASTContext::getValueType(const std::string& name) {
+  if (noname::debug >= 2) {
+    fprintf(stdout, "\n[Looking Value type '%s' on context %s]", name.c_str(), this->getName().c_str());
+  }
+
+  itValueType = mValueType.find(name);
+  if (itValueType != mValueType.end()) {
+    return mValueType[name];
+  }
+
+  ASTContext* parent = this->getParent();
+
+  if (parent) {
+    return parent->getValueType(name);
+  }
+
+  return nullptr;
+}
 bool ASTContext::storeValue(const std::string name, llvm::Value* value) {
   if (noname::debug >= 2) {
     fprintf(stdout, "\n[Storing Value '%s' on context %s]", name.c_str(), this->getName().c_str());
   }
 
   mValue[name] = value;
-  mType[name] = toLLVMType(value);
+  mValueType[name] = toLLVMType(value);
 
   return true;
 }
@@ -204,9 +219,9 @@ bool ASTContext::removeValue(const std::string name) {
   if (itValue != mValue.end()) {
     mValue.erase(itValue);
 
-    itType = mType.find(name);
-    if (itType != mType.end()) {
-      mType.erase(itType);
+    itValueType = mValueType.find(name);
+    if (itValueType != mValueType.end()) {
+      mValueType.erase(itValueType);
     }
 
     return true;
@@ -222,7 +237,7 @@ llvm::Value* ASTContext::updateValue(const std::string name, llvm::Value* value)
 
   if (itValue != mValue.end()) {
     mValue[name] = value;
-    mType[name] = toLLVMType(value);
+    mValueType[name] = toLLVMType(value);
     return value;
   }
 

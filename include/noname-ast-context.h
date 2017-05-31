@@ -59,8 +59,8 @@ class ASTContext {
 
   std::map<std::string, llvm::Value*> mValue;
   std::map<std::string, llvm::Value*>::iterator itValue;
-  std::map<std::string, llvm::Type*> mType;
-  std::map<std::string, llvm::Type*>::iterator itType;
+  std::map<std::string, llvm::Type*> mValueType;
+  std::map<std::string, llvm::Type*>::iterator itValueType;
 
  public:
   ASTContext(const std::string& name) : name(name), parent(NULL) {}
@@ -72,7 +72,7 @@ class ASTContext {
         mVariables(copy.mVariables),
         mAllocaInst(copy.mAllocaInst),
         mValue(copy.mValue),
-        mType(copy.mType) {}
+        mValueType(copy.mValueType) {}
   ASTContext(const ASTContext& copy, ASTContext* parent)
       : name(copy.name),
         parent(parent),
@@ -80,7 +80,7 @@ class ASTContext {
         mVariables(copy.mVariables),
         mAllocaInst(copy.mAllocaInst),
         mValue(copy.mValue),
-        mType(copy.mType) {}
+        mValueType(copy.mValueType) {}
   ASTContext(const std::string& name, const ASTContext& copy, ASTContext* parent)
       : name(name),
         parent(parent),
@@ -88,7 +88,7 @@ class ASTContext {
         mVariables(copy.mVariables),
         mAllocaInst(copy.mAllocaInst),
         mValue(copy.mValue),
-        mType(copy.mType) {}
+        mValueType(copy.mValueType) {}
   virtual ~ASTContext() = default;
   ASTContext& operator=(const ASTContext& copy) {
     name = copy.name;
@@ -97,7 +97,7 @@ class ASTContext {
     mFunctionSignatures = copy.mFunctionSignatures;
     mAllocaInst = copy.mAllocaInst;
     mValue = copy.mValue;
-    mType = copy.mType;
+    mValueType = copy.mValueType;
     return *this;
   }
   std::string getName() const { return name; }

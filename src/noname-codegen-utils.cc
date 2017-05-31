@@ -232,8 +232,7 @@ LoadInst* load_inst_codegen(int type, llvm::Value* value, llvm::BasicBlock* bb) 
   return load_inst;
 }
 
-StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
-                                     llvm::BasicBlock* bb) {
+StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to, llvm::BasicBlock* bb) {
   StoreInst* store_inst = new StoreInst(cast_inst_from, alloca_inst_to, false);
 
   if (type == TYPE_DOUBLE) {
@@ -301,6 +300,25 @@ CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock*
   }
 
   return casted_inst;
+}
+
+GetElementPtrInst* get_element_ptr_type_codegen(llvm::Value* value, const std::string& sufix, llvm::BasicBlock* bb) {
+  GetElementPtrInst* get_elem_ptr =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, value, {const_int32_0, const_int32_0}, "get_element_ptr_type", bb);
+  get_elem_ptr->setName(get_elem_ptr->getName() + sufix);
+
+  // if (bb && get_elem_ptr) {
+  //   bb->getInstList().push_back(get_elem_ptr);
+  // }
+
+  return get_elem_ptr;
+}
+
+GetElementPtrInst* get_element_ptr_v_codegen(llvm::Value* value, const std::string& sufix, llvm::BasicBlock* bb) {
+  GetElementPtrInst* get_elem_ptr =
+      GetElementPtrInst::Create(StructTy_struct_datatype_t, value, {const_int32_0, const_int32_1}, "get_element_ptr_v", bb);
+  get_elem_ptr->setName(get_elem_ptr->getName() + sufix);
+  return get_elem_ptr;
 }
 
 std::vector<Value*> assign_codegen_util(AllocaInst* untyped_poiter_alloca, Value* value, llvm::BasicBlock* bb) {

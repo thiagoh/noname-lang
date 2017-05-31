@@ -156,56 +156,6 @@ Value* BinaryExpNode::CreatePow(Value* LHS, Value* RHS, const char* name = "call
   return nullptr;
 }
 
-template <typename T, typename E>
-E push_back_ret(std::vector<T>& vec, E item) {
-  vec.push_back(item);
-  return item;
-};
-
-GetElementPtrInst* get_element_ptr_type_codegen(llvm::AllocaInst* alloca_inst, const std::string& sufix = "",
-                                                llvm::BasicBlock* bb = nullptr) {
-  ConstantInt* const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
-
-  GetElementPtrInst* get_elem_ptr =
-      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_inst, {const_int32_0, const_int32_0}, "get_element_ptr_type", bb);
-  get_elem_ptr->setName(get_elem_ptr->getName() + sufix);
-  return get_elem_ptr;
-}
-
-GetElementPtrInst* get_element_ptr_v_codegen(llvm::AllocaInst* alloca_inst, const std::string& sufix = "", llvm::BasicBlock* bb = nullptr) {
-  ConstantInt* const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
-  ConstantInt* const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
-
-  GetElementPtrInst* get_elem_ptr =
-      GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_inst, {const_int32_0, const_int32_1}, "get_element_ptr_v", bb);
-  get_elem_ptr->setName(get_elem_ptr->getName() + sufix);
-  return get_elem_ptr;
-}
-
-typedef struct BinaryExpNode_Data_t {
-  // prepare variable to receive return
-  AllocaInst* alloca_datatype;
-  GetElementPtrInst* get_elem_ptr_v;
-  GetElementPtrInst* get_elem_ptr_type;
-
-  // prepare variable to receive LHS
-  AllocaInst* alloca_datatype_larg;
-  GetElementPtrInst* get_elem_ptr_larg_v;
-  GetElementPtrInst* get_elem_ptr_larg_type;
-
-  // prepare variable to receive RHS
-  AllocaInst* alloca_datatype_rarg;
-  GetElementPtrInst* get_elem_ptr_rarg_v;
-  GetElementPtrInst* get_elem_ptr_rarg_type;
-
-  BasicBlock* label_if_then_double;
-  BasicBlock* label_else_if;
-  BasicBlock* label_else_if_then_long;
-  BasicBlock* label_if_default;
-  BasicBlock* label_if_end;
-
-} BinaryExpNode_Data_t;
-
 void prepare(Error& error, BinaryExpNode_Data_t& data, std::vector<Value*>& codegen, llvm::BasicBlock* bb) {
   // prepare variable to receive return
   data.alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_main", bb));
@@ -235,15 +185,9 @@ void prepare(Error& error, BinaryExpNode_Data_t& data, std::vector<Value*>& code
 std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlock* bb) const {
   std::vector<Value*> codegen;
 
-  ConstantInt* const_int32_1 = ConstantInt::get(TheContext, APInt(32, StringRef("1"), 10));
-  ConstantInt* const_int32_0 = ConstantInt::get(TheContext, APInt(32, StringRef("0"), 10));
+  // TODO: are all these constants necessary?
   ConstantInt* const_int32_double = ConstantInt::get(TheContext, APInt(32, TYPE_DOUBLE, true));
   ConstantInt* const_int32_long = ConstantInt::get(TheContext, APInt(32, TYPE_LONG, true));
-
-  ConstantInt* const_int64_1 = ConstantInt::get(TheContext, APInt(64, StringRef("1"), 10));
-  ConstantInt* const_int64_0 = ConstantInt::get(TheContext, APInt(64, StringRef("0"), 10));
-  ConstantInt* const_int64_double = ConstantInt::get(TheContext, APInt(64, TYPE_DOUBLE, true));
-  ConstantInt* const_int64_long = ConstantInt::get(TheContext, APInt(64, TYPE_LONG, true));
 
   BinaryExpNode_Data_t data;
   prepare(error, data, codegen, bb);
@@ -390,7 +334,7 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   //////////////////////////////////////
   //////////////////////////////////////
 
-  ConstantInt* const_int32_777 = ConstantInt::get(TheContext, APInt(32, 777, true));
+  ConstantInt* const_int32_5432 = ConstantInt::get(TheContext, APInt(32, 5432, true));
 
   long* heap_value = new long(888777);
   Constant* default_constant_address = ConstantInt::get(Type::getInt64Ty(TheContext), (uint64_t)heap_value);
@@ -402,7 +346,7 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
   }
 
   push_back_ret(codegen, store_typed_var_codegen(TYPE_VOID_POINTER, constant_value, data.get_elem_ptr_v, data.label_if_default));
-  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_777, data.get_elem_ptr_type, data.label_if_default));
+  push_back_ret(codegen, store_typed_var_codegen(TYPE_INT, const_int32_5432, data.get_elem_ptr_type, data.label_if_default));
 
   //////////////////////////////////////
   //////////////////////////////////////
@@ -414,12 +358,10 @@ std::vector<Value*> BinaryExpNode::codegen_elements(Error& error, llvm::BasicBlo
 
   codegen.push_back(data.label_if_end);
 
-  LoadInst* hs_type = push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, data.label_if_end));
-
+  push_back_ret(codegen, load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, data.label_if_end));
   CastInst* cast_inst_alloca_datatype =
       push_back_ret(codegen, new BitCastInst(data.alloca_datatype, PointerTy_StructTy_struct_datatype_t, "", data.label_if_end));
-  LoadInst* load_inst_alloca_datatype =
-      push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, cast_inst_alloca_datatype, data.label_if_end));
+  push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, cast_inst_alloca_datatype, data.label_if_end));
 
   return codegen;
 }

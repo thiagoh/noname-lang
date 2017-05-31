@@ -111,6 +111,65 @@ extern StructType* StructTy_struct_datatype_t;
 extern PointerType* PointerTy_StructTy_struct_datatype_t;
 extern Function* func__Znwm;
 
+typedef struct BinaryExpNode_Data_t {
+  // prepare variable to receive return
+  AllocaInst* alloca_datatype;
+  GetElementPtrInst* get_elem_ptr_v;
+  GetElementPtrInst* get_elem_ptr_type;
+
+  // prepare variable to receive LHS
+  AllocaInst* alloca_datatype_larg;
+  GetElementPtrInst* get_elem_ptr_larg_v;
+  GetElementPtrInst* get_elem_ptr_larg_type;
+
+  // prepare variable to receive RHS
+  AllocaInst* alloca_datatype_rarg;
+  GetElementPtrInst* get_elem_ptr_rarg_v;
+  GetElementPtrInst* get_elem_ptr_rarg_type;
+
+  BasicBlock* label_if_then_double;
+  BasicBlock* label_else_if;
+  BasicBlock* label_else_if_then_long;
+  BasicBlock* label_if_default;
+  BasicBlock* label_if_end;
+
+} BinaryExpNode_Data_t;
+
+typedef struct VarExpNode_Data_t {
+  AllocaInst* alloca_datatype;
+  GetElementPtrInst* get_elem_ptr_v;
+  GetElementPtrInst* get_elem_ptr_type;
+
+  AllocaInst* var_alloca_datatype;
+  Value* var_value;
+  int var_type;
+  GetElementPtrInst* var_get_elem_ptr_v;
+  GetElementPtrInst* var_get_elem_ptr_type;
+
+} VarExpNode_Data_t;
+
+extern ConstantInt* const_int32_0;
+extern ConstantInt* const_int32_1;
+extern ConstantInt* const_int32_2;
+extern ConstantInt* const_int32_3;
+extern ConstantInt* const_int32_4;
+extern ConstantInt* const_int32_5;
+extern ConstantInt* const_int32_6;
+extern ConstantInt* const_int32_7;
+extern ConstantInt* const_int32_8;
+extern ConstantInt* const_int32_9;
+
+extern ConstantInt* const_int64_0;
+extern ConstantInt* const_int64_1;
+extern ConstantInt* const_int64_2;
+extern ConstantInt* const_int64_3;
+extern ConstantInt* const_int64_4;
+extern ConstantInt* const_int64_5;
+extern ConstantInt* const_int64_6;
+extern ConstantInt* const_int64_7;
+extern ConstantInt* const_int64_8;
+extern ConstantInt* const_int64_9;
+
 extern int debug;
 extern ASTContext* context;
 extern std::vector<std::string> imported_files;
@@ -233,18 +292,14 @@ class ASTNode {
 
     return codegen_elements_vector.back();
   }
-  virtual std::vector<Value*> codegen_elements(Error& error, llvm::BasicBlock* bb = nullptr) const {
-    return codegen_elements_vector;
-  }
+  virtual std::vector<Value*> codegen_elements(Error& error, llvm::BasicBlock* bb = nullptr) const { return codegen_elements_vector; }
 
   virtual ASTNode* check() const { return nullptr; };
   virtual ProcessorStrategy* getProcessorStrategy() { return astNodeProcessorStrategy; };
 
   ASTContext* getContext() const { return context; };
 
-  static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_AST_NODE && S->getKind() <= AST_NODE_TYPE_AST_NODE_LAST;
-  }
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_AST_NODE && S->getKind() <= AST_NODE_TYPE_AST_NODE_LAST; }
 
   static std::string toString(ASTNode::ASTNodeKind kind) {
     std::string s;
@@ -361,9 +416,7 @@ class ExpNode : public ASTNode {
   // int getType() const override { return getClassType(); };
   // static int getClassType() { return AST_NODE_TYPE_EXP_NODE; };
 
-  static bool classof(const ASTNode* S) {
-    return S->getKind() >= AST_NODE_TYPE_EXP_NODE && S->getKind() <= AST_NODE_TYPE_EXP_NODE_LAST;
-  }
+  static bool classof(const ASTNode* S) { return S->getKind() >= AST_NODE_TYPE_EXP_NODE && S->getKind() <= AST_NODE_TYPE_EXP_NODE_LAST; }
 };
 
 class NumberExpNode : public ExpNode {
@@ -414,8 +467,7 @@ class StringExpNode : public ExpNode {
 
  public:
   StringExpNode(ASTContext* context, const std::string& value) : ExpNode(context, AST_NODE_TYPE_STRING), value(value){};
-  StringExpNode(ASTContext* context, const char* value)
-      : ExpNode(context, AST_NODE_TYPE_STRING), value(std::string(value)){};
+  StringExpNode(ASTContext* context, const char* value) : ExpNode(context, AST_NODE_TYPE_STRING), value(std::string(value)){};
 
   // virtual void* eval() override;
   virtual std::unique_ptr<NodeValue> getValue() const override;
@@ -502,8 +554,7 @@ class ImportNode : public ASTNode {
   std::string filename;
 
  public:
-  ImportNode(ASTContext* context, const std::string& filename)
-      : ASTNode(context, AST_NODE_TYPE_IMPORT), filename(filename) {}
+  ImportNode(ASTContext* context, const std::string& filename) : ASTNode(context, AST_NODE_TYPE_IMPORT), filename(filename) {}
 
   // virtual void* eval() override;
   ProcessorStrategy* getProcessorStrategy() override { return importNodeProcessorStrategy; };
@@ -596,8 +647,7 @@ class FunctionDefNode : public ASTNode {
   static bool classof(const ASTNode* S) { return S->getKind() == AST_NODE_TYPE_DEF_FUNCTION; }
 
  private:
-  FunctionSignature* createFunctionSignature(Error& error, const std::string& name,
-                                             std::vector<FunctionArgument*> args_defs);
+  FunctionSignature* createFunctionSignature(Error& error, const std::string& name, std::vector<FunctionArgument*> args_defs);
   llvm::ReturnInst* getLLVMReturnInst(Value* return_value) const;
 };
 
@@ -723,8 +773,7 @@ class DeclarationNode : public ASTNode {
   std::string name;
 
  public:
-  DeclarationNode(ASTContext* context, const std::string& name)
-      : ASTNode(context, AST_NODE_TYPE_DECLARATION), name(name) {}
+  DeclarationNode(ASTContext* context, const std::string& name) : ASTNode(context, AST_NODE_TYPE_DECLARATION), name(name) {}
 
   virtual void* eval() override;
   virtual Value* codegen(llvm::BasicBlock* bb = nullptr) override;

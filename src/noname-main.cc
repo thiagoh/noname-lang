@@ -404,8 +404,8 @@ int main(int argc, char **argv) {
 
   noname::InitializeNonameEnvironment();
 
-  bootstrap_codes.push("def f1(a,b) { return a; };");
-  bootstrap_codes.push("def f2(a,b) { return b; };");
+  // bootstrap_codes.push("def f1(a,b) { return a; };");
+  // bootstrap_codes.push("def f2(a,b) { return b; };");
   bootstrap_codes.push("def f3(a,b) { return a + b; };");
   bootstrap_codes.push("f3(11,22);");
 

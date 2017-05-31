@@ -100,6 +100,12 @@ inline To cast(const From& from) {
   return cast_impl<To, From>::doit(from);
 }
 
+template <typename T, typename E>
+E push_back_ret(std::vector<T>& vec, E item) {
+  vec.push_back(item);
+  return item;
+};
+
 bool is_file_already_imported(const std::string& file_path);
 bool is_file_already_imported(const char* file_path);
 char* get_current_dir();
@@ -166,15 +172,15 @@ int toNonameType(llvm::Type* type);
 Value* constant_codegen_util(int type, void* value, llvm::BasicBlock* bb = nullptr);
 Value* codegen_elements_retlast(ASTNode* node, llvm::BasicBlock* bb = nullptr);
 llvm::AllocaInst* declaration_codegen_util(const ASTNode* node, llvm::BasicBlock* bb = nullptr);
-std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, llvm::Value* value,
-                                        llvm::BasicBlock* bb = nullptr);
+std::vector<Value*> assign_codegen_util(llvm::AllocaInst* untyped_poiter_alloca, llvm::Value* value, llvm::BasicBlock* bb = nullptr);
 AllocaInst* alloca_typed_var_codegen(int type, llvm::BasicBlock* bb = nullptr);
 AllocaInst* alloca_typed_var_codegen(int type, const std::string& sufix, llvm::BasicBlock* bb = nullptr);
 LoadInst* load_inst_codegen(int type, llvm::Value* alloca_inst, llvm::BasicBlock* bb = nullptr);
 StoreInst* store_typed_var_codegen(int type, llvm::Value* value, llvm::Value* ptr, llvm::BasicBlock* bb = nullptr);
-StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to,
-                                     llvm::BasicBlock* bb = nullptr);
+StoreInst* store_untyped_var_codegen(int type, CastInst* cast_inst_from, AllocaInst* alloca_inst_to, llvm::BasicBlock* bb = nullptr);
 CastInst* cast_codegen(int type, AllocaInst* alloca_inst_from, llvm::BasicBlock* bb = nullptr);
+GetElementPtrInst* get_element_ptr_type_codegen(llvm::Value* value, const std::string& sufix = "", llvm::BasicBlock* bb = nullptr);
+GetElementPtrInst* get_element_ptr_v_codegen(llvm::Value* value, const std::string& sufix = "", llvm::BasicBlock* bb = nullptr);
 
 //===----------------------------------------------------------------------===//
 // "Library" functions that can be "extern'd" from user code.
