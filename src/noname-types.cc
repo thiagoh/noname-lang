@@ -1058,8 +1058,20 @@ void prepare(Error &error, VarExpNode_Data_t &data, std::vector<Value *> &codege
   data.get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.alloca_datatype, "_main", bb));
 
   AllocaInst *var_alloca_datatype;
-  Value *var_value;
-  int var_type;
+
+  data.var_value = node->getContext()->getValue(node->getName());
+  if (!data.var_value) {
+    createError(error, "Value could not be found");
+    return;
+  }
+
+  Type *llvm_type = node->getContext()->getValueType(node->getName());
+  if (!llvm_type) {
+    createError(error, "Value type could not be found");
+    return;
+  }
+
+  data.var_type = toNonameType(llvm_type);
   GetElementPtrInst *var_get_elem_ptr_v;
   GetElementPtrInst *var_get_elem_ptr_type;
 }
@@ -1069,16 +1081,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   VarExpNode_Data_t data;
   prepare(error, data, codegen, this, bb);
 
-  Value *codegen_value = getContext()->getValue(name);
-
-  // Value *codegen_type = getContext()->getValue(name + "_type");
-  // Value *codegen_value = getContext()->getValue(name + "_value");
-  if (!codegen_value) {
-    createError(error, "Value could not be found");
-    return codegen;
-  }
-
-  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, codegen_value, data.alloca_datatype, bb);
+  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.alloca_datatype, bb);
   if (!store_inst) {
     createError(error, "StoreInst could not be created");
     return codegen;
