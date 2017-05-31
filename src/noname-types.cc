@@ -1048,6 +1048,12 @@ Value *VarExpNode::codegen(llvm::BasicBlock *bb) {
 void prepare(Error &error, VarExpNode_Data_t &data, std::vector<Value *> &codegen, const VarExpNode *const node, llvm::BasicBlock *bb) {
   // prepare variable to receive return
   data.alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_main", bb));
+
+  if (!data.alloca_datatype) {
+    createError(error, "AllocaInst could not be created");
+    return;
+  }
+
   data.get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.alloca_datatype, "_main", bb));
   data.get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.alloca_datatype, "_main", bb));
 
@@ -1060,16 +1066,8 @@ void prepare(Error &error, VarExpNode_Data_t &data, std::vector<Value *> &codege
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
 
-  // VarExpNode_Data_t data;
-  // prepare(error, data, codege, this, bb);
-
-  AllocaInst *alloca_inst = alloca_typed_var_codegen(TYPE_DATATYPE, bb);
-  if (!alloca_inst) {
-    createError(error, "AllocaInst could not be created");
-    return codegen;
-  }
-
-  codegen.push_back(alloca_inst);
+  VarExpNode_Data_t data;
+  prepare(error, data, codegen, this, bb);
 
   Value *codegen_value = getContext()->getValue(name);
 
@@ -1080,13 +1078,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
     return codegen;
   }
 
-  if (noname::debug >= 1) {
-    codegen_value->dump();
-  }
-
-  // codegen.push_back(value);
-
-  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, codegen_value, alloca_inst, bb);
+  StoreInst *store_inst = store_typed_var_codegen(TYPE_DATATYPE, codegen_value, data.alloca_datatype, bb);
   if (!store_inst) {
     createError(error, "StoreInst could not be created");
     return codegen;
@@ -1094,7 +1086,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
 
   codegen.push_back(store_inst);
 
-  LoadInst *load_inst = load_inst_codegen(TYPE_DATATYPE, alloca_inst, bb);
+  LoadInst *load_inst = load_inst_codegen(TYPE_DATATYPE, data.alloca_datatype, bb);
   if (!load_inst) {
     createError(error, "LoadInst could not be created");
     return codegen;
