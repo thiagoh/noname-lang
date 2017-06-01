@@ -2,7 +2,8 @@
 .vagrant/
 bc-output/
 accessory-src/bc-output/*
-accessory-src/to-be-translated/translated/*
+accessory-src/to-be-translated/ll-and-api-output/*
+accessory-src/to-be-translated/cpp-and-bin-from-ll-output/*
 noname
 noname.output
 noname-lex.cc
