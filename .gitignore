@@ -1,6 +1,8 @@
 # Custom
 .vagrant/
 bc-output/
+accessory-src/bc-output/*
+accessory-src/to-be-translated/translated/*
 noname
 noname.output
 noname-lex.cc

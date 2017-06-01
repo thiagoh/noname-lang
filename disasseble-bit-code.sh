@@ -1,7 +1,7 @@
 #!/bin/bash
 
 verbose=0
-output_directory=bc-output
+output_directory=$(pwd)/accessory-src/bc-output
 
 for i in "$@"; do
   key="$1"

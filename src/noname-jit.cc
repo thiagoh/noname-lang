@@ -109,9 +109,9 @@ JITSymbol NonameJIT::findMangledSymbol(const std::string &symbol_name) {
 void NonameJIT::writeToFile(const Module *mod) {
   // if (true) return;
 
-  std::string output_filenam = "bc-output/";
-  output_filenam += mod->getName().str() + ".bc";
-  FILE *output_file = fopen(output_filenam.c_str(), "w");
+  std::string output_filename = "accessory-src/bc-output/";
+  output_filename += mod->getName().str() + ".bc";
+  FILE *output_file = fopen(output_filename.c_str(), "w");
   int output_filedescriptor = fileno(output_file);
 
   raw_fd_ostream os(output_filedescriptor, true, true);

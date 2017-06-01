@@ -1044,12 +1044,16 @@ std::vector<Value *> NumberExpNode::codegen_elements(Error &error, llvm::BasicBl
     return codegen;
   }
 
+  // TODO: START HERE
+  // TODO: START HERE
+  // TODO: START HERE
+  // TODO: START HERE
+  // TODO: START HERE
+  // TODO: START HERE
   // CallInst *malloc_ptr = push_back_ret(codegen, CallInst::Create(func__Znwm, const_int64_8, "call1", bb));
   // CastInst *ptr_146 = push_back_ret(codegen, new BitCastInst(malloc_ptr, toLLVMPointerType(type), "", bb));
   // push_back_ret(codegen, new StoreInst(constant_value, ptr_146, false, bb));
   // CastInst *ptr_148 = push_back_ret(codegen, new BitCastInst(ptr_146, PointerTy_8, "", bb));
-
-
 
   GetElementPtrInst *get_elem_ptr_v = push_back_ret(
       codegen, GetElementPtrInst::Create(StructTy_struct_datatype_t, alloca_datatype, {const_int32_0, const_int32_1}, "v", bb));
@@ -1141,9 +1145,9 @@ void prepare(Error &error, VarExpNode_Data_t &data, std::vector<Value *> &codege
   //   return;
   // }
   // data.var_type = toNonameType(llvm_type);
-  data.var_alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_var", bb));
-  data.var_get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.var_alloca_datatype, "_var", bb));
-  data.var_get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.var_alloca_datatype, "_var", bb));
+  // data.var_alloca_datatype = push_back_ret(codegen, alloca_typed_var_codegen(TYPE_DATATYPE, "_var", bb));
+  // data.var_get_elem_ptr_v = push_back_ret(codegen, get_element_ptr_v_codegen(data.var_alloca_datatype, "_var", bb));
+  // data.var_get_elem_ptr_type = push_back_ret(codegen, get_element_ptr_type_codegen(data.var_alloca_datatype, "_var", bb));
 }
 std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock *bb) const {
   std::vector<Value *> codegen;
@@ -1152,6 +1156,7 @@ std::vector<Value *> VarExpNode::codegen_elements(Error &error, llvm::BasicBlock
   prepare(error, data, codegen, this, bb);
 
   push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.alloca_datatype, bb));
+
   // push_back_ret(codegen, store_typed_var_codegen(TYPE_DATATYPE, data.var_value, data.var_alloca_datatype, bb));
 
   // LoadInst *load_void_v = push_back_ret(codegen, load_inst_codegen(TYPE_VOID_POINTER, data.var_get_elem_ptr_v, bb));
