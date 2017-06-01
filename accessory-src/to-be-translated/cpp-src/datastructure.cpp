@@ -7,6 +7,7 @@
 typedef struct datatype_t {
   int type;
   void* void_v;
+  long nop1;
 } datatype_t;
 typedef struct datatype_t datatype_t;
 
@@ -31,11 +32,11 @@ datatype_t function_conditional(datatype_t param_a, datatype_t param_b) {
 datatype_t __anon_expr() {
   datatype_t var_a;
   var_a.type = 12;
-  var_a.void_v = new long(321);
+  var_a.void_v = new long(123);
 
   datatype_t var_b;
-  var_b.type = 12;
-  var_b.void_v = new long(321);
+  var_b.type = 13;
+  var_b.void_v = new double(321);
 
   datatype_t datatype_t_out = function_conditional(var_a, var_b);
 
