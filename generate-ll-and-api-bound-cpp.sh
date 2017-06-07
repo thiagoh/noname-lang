@@ -2,7 +2,8 @@
 
 verbose=0
 to_be_translated_directory=$(pwd)/accessory-src/to-be-translated
-clang_dir=/Users/thiagoh/dev/llvm-src/build-3.8/bin
+# clang_dir=/Users/thiagoh/dev/llvm-src/build-3.8/bin
+clang_dir=/Users/thiagoh/dev/llvm-src/build-3.9/bin
 
 for i in "$@"; do
   key="$1"
